@@ -7,10 +7,14 @@ WORKDIR /app/
 
 COPY . .
 
-RUN pnpm install
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
+# Build the project
 RUN pnpm run build
 
+# Expose the port for the application
 EXPOSE 5173
 
+# Run the start script
 CMD ["pnpm", "run", "start"]
