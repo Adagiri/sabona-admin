@@ -1,33 +1,76 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import api from "../../../services/api-service"
-import { OrdersResponse, USER_TYPES, UserResponse } from "../interface"
+import { FetchApplicationsParams, FetchOrdersParams, FetchUsersParams, OrdersResponse, USER_TYPES, UserResponse } from "../interface"
 import { AxiosError, AxiosResponse } from "axios"
 
 export const FETCH_ORDER_QUERIES = {
     FETCH_ALL_ORDERS: 'FETCH_ALL_ORDERS',
-    FETCH_ALL_USERS: 'FETCH_ALL_USERS'
+    FETCH_ALL_USERS: 'FETCH_ALL_USERS',
+    FETCH_ALL_APPLICATIONS: 'FETCH_ALL_APPLICATIONS'
 }
 
-const getAllOrders = async () => {
-    const response: AxiosResponse<OrdersResponse> = await api.get('/admin/orders/all')
-    return response.data;
-}
+const getAllOrders = async ({ type, page = 1, limit = 10, column = "createdAt", direction = "DESC" }: FetchOrdersParams) => {
+  const response: AxiosResponse<OrdersResponse> = await api.get('/admin/orders/all', {
+    params: {
+      type,
+      page,
+      limit,
+      column,
+      direction,
+    },
+  });
+  return response.data;
+};
 
-export const useFetchAllOrders = () => {
+export const useFetchAllOrders = ({ type, page = 1, limit = 10, column="createdAt" , direction="DESC" }: FetchOrdersParams) => {
     return useQuery({
-        queryFn: getAllOrders,
+        queryFn: ()=> getAllOrders({ type, page, limit, column, direction }),
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_ORDERS]
     })
 }
 
-const getAllUsers = async (type: keyof typeof USER_TYPES): Promise<UserResponse> => {
-    const response: AxiosResponse<UserResponse> = await api.get(`/admin/users/all?type=${type}`);
+const getAllUsers = async ({ type, page = 1, limit = 10, column="createdAt" , direction="DESC" }: FetchUsersParams): Promise<UserResponse> => {
+    const response: AxiosResponse<UserResponse> = await api.get(
+      `/admin/users/all`,
+      {
+        params: {
+          type,
+          page,
+          limit,
+          column,
+          direction,
+        },
+      }
+    );
     return response.data;
-};
-
-export const useFetchAllUsers = (type: keyof typeof USER_TYPES): UseQueryResult<UserResponse, AxiosError> => {
+  };
+  
+  export const useFetchAllUsers = ({ type, page = 1, limit = 10, column="createdAt" , direction="DESC"}: FetchUsersParams): UseQueryResult<UserResponse, AxiosError> => {
     return useQuery({
-        queryFn: () => getAllUsers(type),
-        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_USERS, type]
-    })
-}
+      queryFn: () => getAllUsers({ type, page, limit, column, direction }),
+      queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_USERS, type, page, limit, column, direction],
+    });
+  };
+
+  const getApplicationsAction = async({ type, page = 1, limit = 10, column="createdAt" , direction="DESC" }: FetchApplicationsParams): Promise<UserResponse> => {
+    const response: AxiosResponse<UserResponse> = await api.get(
+      `/admin/applications`,
+      {
+        params: {
+          type,
+          page,
+          limit,
+          column,
+          direction,
+        },
+      }
+    );
+    return response.data;
+  }
+
+  export const useGetApplications = ({ type, page = 1, limit = 10,column="createdAt" , direction="DESC" }: FetchApplicationsParams): UseQueryResult<UserResponse, AxiosError> => {
+    return useQuery({
+      queryFn: () => getApplicationsAction({ type, page, limit, column, direction }),
+      queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_APPLICATIONS, type, page, limit, column, direction],
+    });
+  }

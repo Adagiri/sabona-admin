@@ -4,6 +4,26 @@ export enum USER_TYPES {
     RIDER = "RIDER",
     ADMIN = "ADMIN"
 }
+export interface FetchUsersParams {
+    type: keyof typeof USER_TYPES;
+    page?: number;
+    limit?: number;
+    column?: string;
+    direction?: "ASC" | "DESC";
+}
+
+export enum USER_TYPES_APPLICATIONS {
+    VENDOR = "VENDOR",
+    RIDER = "RIDER",
+}
+
+export interface FetchApplicationsParams {
+    type: keyof typeof USER_TYPES_APPLICATIONS;
+    page?: number;
+    limit?: number;
+    column?: string;
+    direction?: "ASC" | "DESC";
+}
 
 
 export enum ORDER_STATUSES {
@@ -14,6 +34,25 @@ export enum ORDER_STATUSES {
     IN_PROGRESS = 'IN_PROGRESS',
     READY_FOR_PICKUP = 'READY_FOR_PICKUP',
     COMPLETED = 'COMPLETED',
+}
+
+export const ORDER_STATUSES_ARRAY = [
+   {value: ORDER_STATUSES.PENDING, status: "PENDING"},
+    {value: ORDER_STATUSES.ACCEPTED, status: "ACCEPTED"},
+    {value: ORDER_STATUSES.REJECTED, status: "REJECTED"},
+    {value: ORDER_STATUSES.CANCELLED, status: "CANCELLED"},
+    {value: ORDER_STATUSES.IN_PROGRESS, status: "IN PROGRESS"},
+    {value: ORDER_STATUSES.READY_FOR_PICKUP, status: "READY FOR PICKUP"},
+    {value: ORDER_STATUSES.COMPLETED, status: "COMPLETED"},
+  
+]
+
+export interface FetchOrdersParams {
+    page?: number;
+    limit?: number;
+    column?: string;
+    direction?: "ASC" | "DESC";
+    type: keyof typeof ORDER_STATUSES;
 }
 
 export const STATUSES = {
@@ -33,7 +72,8 @@ export type User = {
 }
 
 export type UserResponse = {
-    data: User[]
+    data: User[],
+    count: number,
 }
 
 
@@ -46,14 +86,20 @@ export type UserLoginResponse = {
     token: string
 }
 
+export type Laundry = {
+    name: string
+}
 
 export type Order = {
     id: string,
     status: keyof typeof ORDER_STATUSES;
-    createdAt: string,
+    user: User,
     totalAmount: number,
+    totalQuantity: number,
+    laundry: Laundry
 }
 
 export type OrdersResponse = { 
-    data: Order[]
+    data: Order[],
+    count: number
 }
