@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback } from "react";
 import { AppBar, Toolbar, IconButton, Typography, Menu, MenuItem, Avatar } from "@mui/material";
 import { Notifications, MoreVert } from "@mui/icons-material";
 import useAuthStore from "../store/Auth";

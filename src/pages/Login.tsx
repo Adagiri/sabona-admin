@@ -14,7 +14,7 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     if (error) {
-      showError(error?.response?.data?.message || 'Unknown error')
+      showError((error as any)?.response?.data?.message || 'Unknown error')
     }
   }, [error])
 

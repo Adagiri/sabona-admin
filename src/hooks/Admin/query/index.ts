@@ -1,6 +1,6 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import api from "../../../services/api-service"
-import { FetchApplicationsParams, FetchOrdersParams, FetchUsersParams, OrdersResponse, USER_TYPES, UserResponse } from "../interface"
+import { FetchApplicationsParams, FetchOrdersParams, FetchUsersParams, OrdersResponse, UserResponse } from "../interface"
 import { AxiosError, AxiosResponse } from "axios"
 
 export const FETCH_ORDER_QUERIES = {

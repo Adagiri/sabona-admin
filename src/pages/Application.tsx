@@ -25,7 +25,7 @@ const Application = () => {
 
   useEffect(() => {
     if (errorApprovingApplication) {
-      showError(errorApprovingApplication?.response?.data?.message);
+      showError((errorApprovingApplication as any)?.response?.data?.message);
     }
   }, [errorApprovingApplication])
 
