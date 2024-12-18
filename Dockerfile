@@ -9,11 +9,7 @@ COPY . .
 
 RUN pnpm install
 
-RUN pnpm run db:generate
-
 RUN pnpm run build
-
-RUN pnpm run db:deploy
 
 EXPOSE 5173
 
