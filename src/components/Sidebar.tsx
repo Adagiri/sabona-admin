@@ -37,10 +37,10 @@ const Sidebar: React.FC = () => {
               textDecoration: "none",
               color: "inherit",
               borderRadius: 1,
-              mb: 0.5,
+              // mb: 0.5,
             }}
           >
-            <ListItemIcon sx={{ color: "inherit" }}>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{ color: "inherit",  minWidth: "40px", }}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
