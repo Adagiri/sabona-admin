@@ -10,7 +10,7 @@ const Order = () => {
     const [limit] = useState(10);
     const [selectedStatus, setSelectedStatus] = useState<ORDER_STATUSES>(ORDER_STATUSES.PENDING);
 
-    const { data: orders, refetch: refetchOrders, error, isError, isLoading } = useFetchAllOrders({
+    const { data: orders, refetch: refetchOrders, error, isError, isLoading, isRefetching } = useFetchAllOrders({
         type: selectedStatus,
         page,
         limit,
@@ -18,17 +18,17 @@ const Order = () => {
 
     useEffect(() => {
         if (error) {
-          showError(((error as any)?.response?.data?.message))
+            showError(((error as any)?.response?.data?.message))
         }
-      }, [error])
-    
-      const showError = useCallback((errorMessage: string) => {
+    }, [error])
+
+    const showError = useCallback((errorMessage: string) => {
         toast(errorMessage, { type: "error" });
-      }, []);
+    }, []);
 
     useEffect(() => {
         refetchOrders();
-    }, [selectedStatus, refetchOrders]);
+    }, [selectedStatus, refetchOrders, page]);
 
     const handleChange = useCallback((
         _: React.MouseEvent<HTMLElement>,
@@ -46,8 +46,8 @@ const Order = () => {
     }, []);
     return (
         <Box pr={5}>
-        <ToastContainer />
-            <Typography variant="h4" gutterBottom mb={5}> 
+            <ToastContainer />
+            <Typography variant="h4" gutterBottom mb={5}>
                 Order
             </Typography>
             {/* <TextField fullWidth placeholder="Search..." variant="outlined" sx={{ mb: 2 }} /> */}
@@ -64,7 +64,7 @@ const Order = () => {
                     ))}
                 </ToggleButtonGroup>
             </Box>
-            {isLoading ? (
+            {isLoading || isRefetching ? (
                 <Box display="flex" justifyContent="center" alignItems="center" height="200px">
                     <CircularProgress />
                 </Box>
@@ -72,11 +72,11 @@ const Order = () => {
                 <Box display="flex" justifyContent="center" alignItems="center" height="200px">
                     <Alert severity="error">Failed to load orders. Please try again later.</Alert>
                 </Box>
-            ) :(<Paper>
+            ) : (<Paper>
                 <Table>
                     <TableHead>
                         <TableRow hover selected>
-                            {["Order Id", "Ordered By", "Total Amount", "Total Items", "Order Status", "Laundry Name"].map((col) => (
+                            {["Order Id", "Ordered By", "Total Amount", "Total Items", "Order Status", "Laundry Name", "Assigned Rider"].map((col) => (
                                 <TableCell key={col}>{col}</TableCell>
                             ))}
                         </TableRow>
@@ -91,6 +91,12 @@ const Order = () => {
                                     <TableCell>{row?.totalQuantity}</TableCell>
                                     <TableCell>{row?.status}</TableCell>
                                     <TableCell>{row?.laundry?.name}</TableCell>
+                                    <TableCell>
+                                        {row?.riderOrders
+                                            ?.map((order) => order?.rider?.firstName)
+                                            .filter(Boolean) // Remove any undefined or null values
+                                            .join(', ') || 'N/A'}
+                                    </TableCell>
                                 </TableRow>
                             ))
                         ) : (

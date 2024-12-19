@@ -21,15 +21,8 @@ const Navbar: React.FC = () => {
         <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1 }}>
           Sabonah Admin
         </Typography>
-        <IconButton color="inherit">
-          <Notifications />
-        </IconButton>
-        <IconButton color="inherit" onClick={handleMenuOpen}>
-          <MoreVert />
-        </IconButton>
-        <Avatar sx={{ ml: 1 }} />
+        <Avatar sx={{ ml: 1 }}  onClick={handleMenuOpen} />
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-          <MenuItem>Settings</MenuItem>
           <MenuItem onClick={handleLogout}>Logout</MenuItem>
         </Menu>
       </Toolbar>
