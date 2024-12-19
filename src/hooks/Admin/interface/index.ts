@@ -90,13 +90,21 @@ export type Laundry = {
     name: string
 }
 
+type rider = {
+    firstName: string,
+    lastName: string,
+}
+
 export type Order = {
     id: string,
     status: keyof typeof ORDER_STATUSES;
     user: User,
     totalAmount: number,
     totalQuantity: number,
-    laundry: Laundry
+    laundry: Laundry,
+    riderOrders:{
+        rider: rider
+    }[]
 }
 
 export type OrdersResponse = { 
