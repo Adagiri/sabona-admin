@@ -3,9 +3,12 @@ import { useFetchAllUsers } from "../hooks/Admin/query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { USER_TYPES } from "../hooks/Admin/interface";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate, useParams } from "react-router-dom";
 
 const Customer = () => {
-  const [page, setPage] = useState(1);
+  const { pageNumber } = useParams<{ pageNumber: string }>();
+const [page, setPage] = useState<number>(Number(pageNumber) || 1);
+
   const [limit] = useState(10);
 
   const { data: customers, isLoading, error, isError } = useFetchAllUsers({
@@ -24,10 +27,26 @@ const Customer = () => {
     toast(errorMessage, { type: "error" });
   }, []);
 
+
   const totalPages = useMemo(() => Math.ceil((customers?.count ?? 0) / limit), [customers, limit]);
-  const handlePageChange = useCallback((_: any, value: number) => {
-    setPage(value);
-  }, []);
+
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!pageNumber) {
+      navigate(`/customer/1`, { replace: true });
+    } else {
+      setPage(Number(pageNumber));
+    }
+  }, [pageNumber, navigate]);
+  
+  const handlePageChange = useCallback(
+    (_: any, value: number) => {
+      setPage(value);
+      navigate(`/customer/${value}`); 
+    },
+    [navigate]
+  );
+  
   return (
     <Box pr={5}>
       <ToastContainer />

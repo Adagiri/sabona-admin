@@ -37,7 +37,7 @@ export enum ORDER_STATUSES {
 }
 
 export const ORDER_STATUSES_ARRAY = [
-   {value: ORDER_STATUSES.PENDING, status: "PENDING"},
+    {value: ORDER_STATUSES.PENDING, status: "PENDING"},
     {value: ORDER_STATUSES.ACCEPTED, status: "ACCEPTED"},
     {value: ORDER_STATUSES.REJECTED, status: "REJECTED"},
     {value: ORDER_STATUSES.CANCELLED, status: "CANCELLED"},
@@ -86,13 +86,27 @@ export type UserLoginResponse = {
     token: string
 }
 
+export type Vendor = {
+    phone: string
+}
+
 export type Laundry = {
-    name: string
+    name: string,
+    vendor: Vendor,
+}
+
+export type pickup = {
+        rider: rider
+        pickupAddress : string,
+        pickupLat: string,
+        pickupLong: string,
+
 }
 
 type rider = {
     firstName: string,
     lastName: string,
+    phone: string,
 }
 
 export type Order = {
@@ -102,12 +116,35 @@ export type Order = {
     totalAmount: number,
     totalQuantity: number,
     laundry: Laundry,
-    riderOrders:{
+    pickup : pickup,
+    delivery: {
         rider: rider
-    }[]
+    },
 }
 
 export type OrdersResponse = { 
     data: Order[],
     count: number
 }
+
+
+export interface OrderDetails {
+    id: string;
+    status: keyof typeof ORDER_STATUSES;
+    totalAmount: number;
+    laundry: {
+      name: string; 
+      laundryService: {
+        id: string;
+        name: string; 
+        description: string; 
+        laundryServiceItems: {
+          id: string;
+          name: string; 
+          price: number; 
+        }[];
+      }[];
+    };
+  }
+  
+  

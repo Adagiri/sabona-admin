@@ -3,10 +3,12 @@ import { useFetchAllUsers } from "../hooks/Admin/query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { USER_TYPES } from "../hooks/Admin/interface";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate, useParams } from "react-router-dom";
 
 
 const Vendor = () => {
-  const [page, setPage] = useState(1);
+  const { pageNumber } = useParams<{ pageNumber: string }>();
+  const [page, setPage] = useState<number>(Number(pageNumber) || 1);
   const [limit] = useState(10);
 
   const { data: vendors, isLoading, error, isError } = useFetchAllUsers({
@@ -26,9 +28,24 @@ const Vendor = () => {
   }, []);
 
   const totalPages = useMemo(() => Math.ceil((vendors?.count ?? 0) / limit), [vendors, limit]);
-  const handlePageChange = useCallback((_: any, value: number) => {
-    setPage(value);
-  }, []);
+
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!pageNumber) {
+      navigate(`/vendor/1`, { replace: true });
+    } else {
+      setPage(Number(pageNumber));
+    }
+  }, [pageNumber, navigate]);
+  
+
+  const handlePageChange = useCallback(
+    (_: any, value: number) => {
+      setPage(value);
+      navigate(`/vendor/${value}`);
+    },
+    [navigate]
+  );
   return (
     <Box pr={5}>
       <ToastContainer />
@@ -40,7 +57,6 @@ const Vendor = () => {
           <CircularProgress />
         </Box>
       )  : isError ? (
-        // Show error message when there's an error
         <Box display="flex" justifyContent="center" alignItems="center" height="200px">
           <Alert severity="error">Failed to load vendors. Please try again later.</Alert>
         </Box>

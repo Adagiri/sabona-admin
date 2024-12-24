@@ -1,12 +1,13 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import api from "../../../services/api-service"
-import { FetchApplicationsParams, FetchOrdersParams, FetchUsersParams, OrdersResponse, UserResponse } from "../interface"
+import { FetchApplicationsParams, FetchOrdersParams, FetchUsersParams, OrderDetails, OrdersResponse, UserResponse } from "../interface"
 import { AxiosError, AxiosResponse } from "axios"
 
 export const FETCH_ORDER_QUERIES = {
     FETCH_ALL_ORDERS: 'FETCH_ALL_ORDERS',
     FETCH_ALL_USERS: 'FETCH_ALL_USERS',
-    FETCH_ALL_APPLICATIONS: 'FETCH_ALL_APPLICATIONS'
+    FETCH_ALL_APPLICATIONS: 'FETCH_ALL_APPLICATIONS',
+    FETCH_ORDER_DETAILS:'FETCH_ORDER_DETAILS'
 }
 
 const getAllOrders = async ({ type, page = 1, limit = 10, column = "createdAt", direction = "DESC" }: FetchOrdersParams) => {
@@ -74,3 +75,20 @@ const getAllUsers = async ({ type, page = 1, limit = 10, column="createdAt" , di
       queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_APPLICATIONS, type, page, limit, column, direction],
     });
   }
+
+
+  export const useFetchOrderDetails = (id: string) => {
+    return useQuery<OrderDetails, Error>({
+      queryFn: () => getOrderDetails(id),
+      queryKey: ["FETCH_ORDER_DETAILS", id],
+      enabled: !!id,
+    });
+  };
+  
+
+  const getOrderDetails = async (id: string): Promise<OrderDetails> => {
+    const response: AxiosResponse<OrderDetails> = await api.get(`/admin/orders/${id}`);
+    return response.data;
+  };
+  
+

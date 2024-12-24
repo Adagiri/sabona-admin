@@ -3,14 +3,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetApplications } from "../hooks/Admin/query";
 import { useApproveApplication } from "../hooks/Admin/mutation";
 import { ToastContainer, toast } from 'react-toastify';
-
-
+import { useNavigate, useParams } from "react-router-dom";
 
 const Application = () => {
-  const [selectedType, setSelectedType] = useState<"VENDOR" | "RIDER">('VENDOR');
-  const [page, setPage] = useState(1);
+  const [selectedType, setSelectedType] = useState<"VENDOR" | "RIDER">("VENDOR");
+const { pageNumber } = useParams<{ pageNumber: string }>();
+const [page, setPage] = useState<number>(Number(pageNumber) || 1);
   const [limit] = useState(10);
-  const { mutateAsync: approveApplication, isPending: IsApproving, error: errorApprovingApplication } = useApproveApplication();
+  const [approvingRow, setApprovingRow] = useState<string | null>(null); 
+  const { mutateAsync: approveApplication } = useApproveApplication();
   const { data: applications, isLoading: isLoadingApplications, refetch: refetchApplications, error, isError } = useGetApplications({
     type: selectedType,
     page,
@@ -19,38 +20,58 @@ const Application = () => {
 
   useEffect(() => {
     if (error) {
-      showError((error?.response?.data as { message: string })?.message || 'Unknown error');
+      showError((error?.response?.data as { message: string })?.message || "Unknown error");
     }
-  }, [error])
-
-  useEffect(() => {
-    if (errorApprovingApplication) {
-      showError((errorApprovingApplication as any)?.response?.data?.message);
-    }
-  }, [errorApprovingApplication])
+  }, [error]);
 
   const totalPages = useMemo(() => Math.ceil((applications?.count ?? 0) / limit), [applications, limit]);
-  const handlePageChange = useCallback((_: any, value: number) => {
-    setPage(value);
-  }, [setPage]);
 
-  const handleChange = useCallback((
-    _: React.MouseEvent<HTMLElement>,
-    newType: "VENDOR" | "RIDER",
-  ) => {
-    if (newType !== null) {
-      setSelectedType(newType);
-    }
-  }, [setSelectedType]);
+  const navigate = useNavigate();
 
-  const handleApprove = useCallback(async (userId: string) => {
-    try {
-      await approveApplication(userId);
-      refetchApplications();
-    } catch (error: any) {
-      console.log("error", error);
+  useEffect(() => {
+    if (!pageNumber) {
+      navigate(`/application/1`, { replace: true });
+    } else {
+      setPage(Number(pageNumber));
     }
-  }, [approveApplication])
+  }, [pageNumber, navigate]);
+  
+
+  const handlePageChange = useCallback(
+    (_: any, value: number) => {
+      setPage(value);
+      navigate(`/application/${value}`);
+    },
+    [navigate]
+  );
+  
+  const handleChange = useCallback(
+    (_: React.MouseEvent<HTMLElement>, newType: "VENDOR" | "RIDER") => {
+      if (newType !== null) {
+        setSelectedType(newType);
+        setPage(1);
+        navigate(`/application/1`); 
+      }
+    },
+    [navigate]
+  );
+  
+
+  const handleApprove = useCallback(
+    async (userId: string) => {
+      setApprovingRow(userId);
+      try {
+        await approveApplication(userId);
+        await refetchApplications();
+      } catch (error: any) {
+        const errorMessage = error?.response?.data?.message || "Failed to approve application.";
+        showError(errorMessage);
+      } finally {
+        setApprovingRow(null);
+      }
+    },
+    [approveApplication, refetchApplications]
+  );
 
   const showError = useCallback((errorMessage: string) => {
     toast(errorMessage, { type: "error" });
@@ -62,15 +83,8 @@ const Application = () => {
       <Typography variant="h4" gutterBottom mb={5}>
         Applications
       </Typography>
-      {/* <TextField fullWidth placeholder="Search..." variant="outlined" sx={{ mb: 2 }} /> */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
-        <ToggleButtonGroup
-          color="primary"
-          value={selectedType}
-          exclusive
-          onChange={handleChange}
-          aria-label="Platform"
-        >
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mb: 2 }}>
+        <ToggleButtonGroup color="primary" value={selectedType} exclusive onChange={handleChange} aria-label="Platform">
           <ToggleButton value="VENDOR">Vendor</ToggleButton>
           <ToggleButton value="RIDER">Rider</ToggleButton>
         </ToggleButtonGroup>
@@ -81,7 +95,6 @@ const Application = () => {
           <CircularProgress />
         </Box>
       ) : isError ? (
-        // Show error message when there's an error
         <Box display="flex" justifyContent="center" alignItems="center" height="200px">
           <Alert severity="error">Failed to load applications. Please try again later.</Alert>
         </Box>
@@ -89,9 +102,9 @@ const Application = () => {
         <Paper>
           <Table>
             <TableHead>
-              <TableRow>
+              <TableRow hover selected>
                 {["First Name", "Last Name", "Type", "Phone", "Email", "Status"].map((col) => (
-                  <TableCell key={col}>{col}</TableCell>
+                  <TableCell style={{ fontWeight: 'bold' }} key={col}>{col}</TableCell>
                 ))}
               </TableRow>
             </TableHead>
@@ -105,8 +118,13 @@ const Application = () => {
                     <TableCell>{row.phone}</TableCell>
                     <TableCell>{row.email ?? "N/A"}</TableCell>
                     <TableCell>
-                      <Button variant="outlined" onClick={() => handleApprove(row.id)}>
-                        {IsApproving ? <CircularProgress size="10px" /> : `Approve`}
+                      <Button
+                        variant="outlined"
+                        onClick={() => handleApprove(row.id)}
+                        disabled={approvingRow === row.id}
+                        sx={{ minWidth: 100 }} 
+                      >
+                        {approvingRow === row.id ? <CircularProgress size={17} /> : "Approve"}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -116,20 +134,20 @@ const Application = () => {
                   <TableCell colSpan={6} align="center">
                     No applications
                   </TableCell>
-                </TableRow>)}
+                </TableRow>
+              )}
             </TableBody>
           </Table>
           <Box display="flex" justifyContent="center" mt={2} py={2}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-            />
+            <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" />
           </Box>
-        </Paper>)}
+        </Paper>
+      )}
     </Box>
-  )
-}
+  );
+};
 
 export default Application
+
+
+

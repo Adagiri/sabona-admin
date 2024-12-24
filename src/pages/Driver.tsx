@@ -3,9 +3,11 @@ import { useFetchAllUsers } from "../hooks/Admin/query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { USER_TYPES } from "../hooks/Admin/interface";
 import { ToastContainer, toast } from 'react-toastify';
+import { useNavigate, useParams } from "react-router-dom";
 
 const Driver = () => {
-    const [page, setPage] = useState(1);
+    const { pageNumber } = useParams<{ pageNumber: string }>();
+    const [page, setPage] = useState<number>(Number(pageNumber) || 1);
     const [limit] = useState(10);
 
     const { data: drivers, isLoading, error: errorFetchingUsers, isError } = useFetchAllUsers({
@@ -21,9 +23,25 @@ const Driver = () => {
     }, [errorFetchingUsers])
 
     const totalPages = useMemo(() => Math.ceil((drivers?.count ?? 0) / limit), [drivers, limit]);
-    const handlePageChange = useCallback((_: any, value: number) => {
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      if (!pageNumber) {
+        navigate(`/driver/1`, { replace: true });
+      } else {
+        setPage(Number(pageNumber));
+      }
+    }, [pageNumber, navigate]);
+    
+    const handlePageChange = useCallback(
+      (_: any, value: number) => {
         setPage(value);
-    }, []);
+        navigate(`/driver/${value}`); 
+      },
+      [navigate]
+    );
+      
 
     const showError = useCallback((errorMessage: string) => {
         toast(errorMessage, { type: "error" });
@@ -41,7 +59,7 @@ const Driver = () => {
                         <CircularProgress />
                     </Box>
                 ): isError ? (
-                    // Show error message when there's an error
+                    
                     <Box display="flex" justifyContent="center" alignItems="center" height="200px">
                       <Alert severity="error">Failed to load drivers. Please try again later.</Alert>
                     </Box>
