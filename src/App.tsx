@@ -11,6 +11,7 @@ import Application from "./pages/Application";
 import Order from "./pages/Order";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Login from "./pages/Login";
+import MapStats from "./pages/MapStats";
 
 const App: React.FC = () => {
   return (
@@ -42,6 +43,7 @@ const AppContent: React.FC = () => {
             <Route path="/driver" element={<Driver />} />
             <Route path="/application" element={<Application />} />
             <Route path="/order" element={<Order />} />
+            <Route path="/map-stats" element={<MapStats />} />
           </Route>
 
           {/* Default Redirect to Login */}

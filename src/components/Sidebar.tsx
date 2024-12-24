@@ -1,6 +1,6 @@
 import React from "react";
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar } from "@mui/material";
-import { Home, People, Business, LocalShipping, Apps, Inventory } from "@mui/icons-material";
+import { Home, People, Business, LocalShipping, Apps, Inventory, Map } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 
 const menuItems = [
@@ -10,6 +10,7 @@ const menuItems = [
   { text: "Vendor", icon: <Business />, route: "/vendor" },
   { text: "Driver", icon: <LocalShipping />, route: "/driver" },
   { text: "Application", icon: <Apps />, route: "/application" },
+  { text: "Map Stats", icon: <Map />, route: "/map-stats" },
 ];
 
 const Sidebar: React.FC = () => {
@@ -40,7 +41,7 @@ const Sidebar: React.FC = () => {
               // mb: 0.5,
             }}
           >
-            <ListItemIcon sx={{ color: "inherit",  minWidth: "40px", }}>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{ color: "inherit", minWidth: "40px", }}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
