@@ -10,6 +10,7 @@ export interface FetchUsersParams {
     limit?: number;
     column?: string;
     direction?: "ASC" | "DESC";
+    dateFilter?: keyof Filter;
 }
 
 export enum USER_TYPES_APPLICATIONS {
@@ -25,6 +26,13 @@ export interface FetchApplicationsParams {
     direction?: "ASC" | "DESC";
 }
 
+export type Filter =  {
+    Today: string,
+    ByWeek: string,
+    ByMonth: string,
+    BySixMonths: string,
+    ByYear: string,
+}
 
 export enum ORDER_STATUSES {
     PENDING = 'PENDING',
@@ -52,7 +60,7 @@ export interface FetchOrdersParams {
     limit?: number;
     column?: string;
     direction?: "ASC" | "DESC";
-    type: keyof typeof ORDER_STATUSES;
+    type?: keyof typeof ORDER_STATUSES | null;
 }
 
 export const STATUSES = {
@@ -102,6 +110,7 @@ export type Order = {
     totalAmount: number,
     totalQuantity: number,
     laundry: Laundry,
+    pickup: any;
     riderOrders:{
         rider: rider
     }[]
@@ -110,4 +119,18 @@ export type Order = {
 export type OrdersResponse = { 
     data: Order[],
     count: number
+}
+
+type userSettingCorrds = {
+    lat: number,
+    long: number
+}
+
+type coords = {
+    id: string;
+    settings: userSettingCorrds,
+}
+
+export type UserCoords =  {
+    data: coords[]
 }

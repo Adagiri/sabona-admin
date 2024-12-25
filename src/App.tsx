@@ -30,7 +30,7 @@ const AppContent: React.FC = () => {
       <CssBaseline />
       {!isAuthPage && <Navbar />}
       {!isAuthPage && <Sidebar />}
-      <Box component="main" sx={{ flexGrow: 1, height: "calc(100vh - 64px)", mt: "64px", pl: 3, pr: 3, overflowY: "auto" }}>
+      <Box component="main" sx={{ flexGrow: 1, height: "calc(100vh - 64px)", mt: "64px", pl: 3, overflowY: "auto" }}>
         <Toolbar />
         <Routes>
           <Route path="/login" element={<Login />} />

@@ -14,6 +14,8 @@ const Order = () => {
         type: selectedStatus,
         page,
         limit,
+        column: 'createdAt',
+        direction: 'DESC',
     });
 
     useEffect(() => {
@@ -45,7 +47,7 @@ const Order = () => {
         setPage(value);
     }, []);
     return (
-        <Box pr={5}>
+        <Box width='calc(100% - 80px)' overflow={'hidden'}>
             <ToastContainer />
             <Typography variant="h4" gutterBottom mb={5}>
                 Order
@@ -72,12 +74,36 @@ const Order = () => {
                 <Box display="flex" justifyContent="center" alignItems="center" height="200px">
                     <Alert severity="error">Failed to load orders. Please try again later.</Alert>
                 </Box>
-            ) : (<Paper>
+            ) : (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2 }}>
+            <Paper sx={{borderWidth:2, overflow: 'auto', width: 'auto' }}>
                 <Table>
                     <TableHead>
                         <TableRow hover selected>
-                            {["Order Id", "Ordered By", "Total Amount", "Total Items", "Order Status", "Laundry Name", "Assigned Rider"].map((col) => (
-                                <TableCell key={col}>{col}</TableCell>
+                            {[
+                                "Order Id",
+                                "Ordered By",
+                                ...(selectedStatus === ORDER_STATUSES.READY_FOR_PICKUP
+                                    ? ["Customer Number", "Customer Location"]
+                                    : []),
+                                ...(selectedStatus === ORDER_STATUSES.PENDING
+                                    ? ["Customer Phone Number"]
+                                    : []),
+                                "Total Amount",
+                                "Total Items",
+                                "Order Status",
+                                "Laundry Name",
+                                "Laundry Phone Number",
+                                ...(selectedStatus === ORDER_STATUSES.ACCEPTED
+                                    ? ["Assigned Pickup Rider", "Assigned Delivery Rider"]
+                                    : []),
+                                ...(selectedStatus === ORDER_STATUSES.READY_FOR_PICKUP
+                                    ? ["Rider Number"]
+                                    : []),
+                            ].map((col) => (
+                                <TableCell style={{ fontWeight: "bold" }} key={col}>
+                                    {col}
+                                </TableCell>
                             ))}
                         </TableRow>
                     </TableHead>
@@ -86,17 +112,62 @@ const Order = () => {
                             orders.data.map((row, index) => (
                                 <TableRow key={index}>
                                     <TableCell>{row?.id}</TableCell>
-                                    <TableCell>{row?.user?.firstName} {row?.user?.lastName}</TableCell>
+                                    <TableCell>
+                                        {row?.user?.firstName || row?.user?.lastName ? `${row?.user?.firstName || ""} ${row?.user?.lastName || ""}`.trim() : "N/A"}
+                                    </TableCell>
+                                    {selectedStatus === ORDER_STATUSES.READY_FOR_PICKUP && (
+                                        <>
+                                            <TableCell>{row?.user?.phone || "N/A"}</TableCell>
+                                            <TableCell>
+                                                {row?.pickup?.pickupAddress || "N/A"}
+                                            </TableCell>
+                                        </>
+                                    )}
+                                    {selectedStatus === ORDER_STATUSES.PENDING && (
+                                        <TableCell>{row?.user?.phone || "N/A"}</TableCell>
+                                    )}
                                     <TableCell>{row?.totalAmount} SAR</TableCell>
-                                    <TableCell>{row?.totalQuantity}</TableCell>
+                                    {/* <TableCell>{row?.totalQuantity}</TableCell> */}
+                                    <TableCell>
+                                        <button
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                color: "inherit",
+                                                cursor: "pointer",
+                                                textDecoration: "none",
+                                                fontWeight: "bold",
+                                            }}
+                                            onClick={() => { }
+                                                // navigate(`/order-details/${row?.id}`)
+                                            }
+                                        >
+                                            {row?.totalQuantity}
+                                        </button>
+                                    </TableCell>
                                     <TableCell>{row?.status}</TableCell>
                                     <TableCell>{row?.laundry?.name}</TableCell>
-                                    <TableCell>
-                                        {row?.riderOrders
-                                            ?.map((order) => order?.rider?.firstName)
-                                            .filter(Boolean) // Remove any undefined or null values
-                                            .join(', ') || 'N/A'}
+                                    <TableCell> {row?.laundry?.vendor?.phone || "N/A"}
                                     </TableCell>
+                                    {selectedStatus === ORDER_STATUSES.ACCEPTED && (
+                                        <>
+                                            <TableCell>
+                                                {row?.pickup?.rider
+                                                    ? `${row?.pickup?.rider?.firstName} : ${row?.pickup?.rider?.phone}`
+                                                    : "N/A"}
+                                            </TableCell>
+                                            <TableCell>
+                                                {row?.delivery?.rider
+                                                    ? `${row?.delivery?.rider?.firstName} : ${row?.delivery?.rider?.phone}`
+                                                    : "N/A"}
+                                            </TableCell>
+                                        </>
+                                    )}
+                                    {selectedStatus === ORDER_STATUSES.READY_FOR_PICKUP && (
+                                        <TableCell>
+                                            {row?.delivery?.rider?.phone || "N/A"}
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))
                         ) : (
@@ -116,7 +187,8 @@ const Order = () => {
                         color="primary"
                     />
                 </Box>
-            </Paper>)}
+            </Paper>
+            </Box>)}
         </Box>
     )
 }

@@ -1,10 +1,12 @@
-import { Typography } from '@mui/material'
+import { Box, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material'
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api'
 import { useCallback, useState } from 'react'
+import { useFetchUserLocations } from '../hooks/Admin/query'
+import { Filter } from '../hooks/Admin/interface'
 
 const containerStyle = {
     width: '100%',
-    height: '90vh',
+    height: '80vh',
 }
 
 const center = {
@@ -12,62 +14,38 @@ const center = {
     lng: 46.71954221514672
 }
 
-const markersData = [
-    {
-        id: 1,
-        position: center,
-    },
-    {
-        id: 2,
-        position: { lat: 24.646, lng: 46.718 },
-    },
-    {
-        id: 3,
-        position: { lat: 24.647, lng: 46.720 },
-    },
-    {
-        id: 4,
-        position: { lat: 24.648, lng: 46.721 },
-    },
-    {
-        id: 5,
-        position: { lat: 24.645, lng: 46.717 },
-    },
-    {
-        id: 6,
-        position: { lat: 24.649, lng: 46.722 },
-    },
-    {
-        id: 7,
-        position: { lat: 24.644, lng: 46.716 },
-    },
-    {
-        id: 8,
-        position: { lat: 24.650, lng: 46.723 },
-    },
-    {
-        id: 9,
-        position: { lat: 24.643, lng: 46.715 },
-    },
-    {
-        id: 10,
-        position: { lat: 24.651, lng: 46.724 },
-    },
-]
+const bounds = {
+    north: 32.0, // Northernmost point
+    south: 16.0, // Southernmost point
+    east: 60.0,  // Easternmost point
+    west: 34.0   // Westernmost point
+}
+
 
 const MapStats = () => {
+    const { data: userLocations } = useFetchUserLocations();
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API,
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
     })
-
     const [map, setMap] = useState(null)
 
-    const onLoad = useCallback(function callback(map) {
-        const bounds = new window.google.maps.LatLngBounds(center)
-        map.fitBounds(bounds)
+    // const onLoad = useCallback(function callback(map: any) {
+    //     const bounds = new window.google.maps.LatLngBounds(center)
+    //     map.fitBounds(bounds)
 
-        setMap(map)
+    //     setMap(map)
+    // }, [])
+
+    const onLoad = useCallback(function callback(map:any) {
+        // Fit the map to the bounds of Saudi Arabia
+        const latLngBounds = new window.google.maps.LatLngBounds(
+            new window.google.maps.LatLng(bounds.south, bounds.west),
+            new window.google.maps.LatLng(bounds.north, bounds.east)
+        );
+        map.fitBounds(latLngBounds);
+
+        setMap(map);
     }, [])
 
     const onUnmount = useCallback(function callback() {
@@ -83,22 +61,24 @@ const MapStats = () => {
             {isLoaded && <GoogleMap
                 mapContainerStyle={containerStyle}
                 center={center}
-                zoom={10}
+                // zoom={0.001}
                 onLoad={onLoad}
                 onUnmount={onUnmount}
             >
-                {markersData.map(marker => (
-                    <Marker
-                        key={marker.id}
-                        position={marker.position}
-                        icon={{
-                            url: '/pin.png',
-                            scaledSize: new window.google.maps.Size(40, 40),
-                            fillOpacity: 1,
-                            strokeWeight: 0,
-                        }}
-                    />
-                ))}
+                {userLocations && userLocations.data?.map(marker => {
+                    return (
+                        <Marker
+                            key={marker.id}
+                            position={{ lat: marker.settings?.lat, lng: marker.settings?.long }}
+                            icon={{
+                                url: '/pin.png',
+                                scaledSize: new window.google.maps.Size(40, 40),
+                                fillOpacity: 1,
+                                strokeWeight: 0,
+                            }}
+                        />
+                    )
+                })}
             </GoogleMap>}
         </main>
     )

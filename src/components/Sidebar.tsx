@@ -11,6 +11,7 @@ const menuItems = [
   { text: "Driver", icon: <LocalShipping />, route: "/driver" },
   { text: "Application", icon: <Apps />, route: "/application" },
   { text: "Map Stats", icon: <Map />, route: "/map-stats" },
+  // { text: "Map Stats", icon: <Map />, route: "/MapStats" },
 ];
 
 const Sidebar: React.FC = () => {
