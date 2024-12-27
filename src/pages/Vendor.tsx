@@ -3,10 +3,12 @@ import { useFetchAllUsers } from "../hooks/Admin/query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { USER_TYPES } from "../hooks/Admin/interface";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate, useParams } from "react-router-dom";
 
 
 const Vendor = () => {
-  const [page, setPage] = useState(1);
+  const { pageNumber } = useParams<{ pageNumber: string }>();
+  const [page, setPage] = useState<number>(Number(pageNumber) || 1);
   const [limit] = useState(10);
 
   const { data: vendors, isLoading, error, isError } = useFetchAllUsers({
@@ -26,9 +28,26 @@ const Vendor = () => {
   }, []);
 
   const totalPages = useMemo(() => Math.ceil((vendors?.count ?? 0) / limit), [vendors, limit]);
-  const handlePageChange = useCallback((_: any, value: number) => {
-    setPage(value);
-  }, []);
+
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!pageNumber) {
+      navigate(`/vendor/1`, { replace: true });
+    } else {
+      setPage(Number(pageNumber));
+    }
+  }, [pageNumber, navigate]);
+  
+
+  const handlePageChange = useCallback(
+    (_: any, value: number) => {
+      setPage(value);
+      navigate(`/vendor/${value}`);
+    },
+    [navigate]
+  );
+  const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
+  const currentEnd = useMemo(() => Math.min(page * limit, vendors?.count || 0), [page, limit, vendors?.count]);
   return (
     <Box pr={5}>
       <ToastContainer />
@@ -40,7 +59,6 @@ const Vendor = () => {
           <CircularProgress />
         </Box>
       )  : isError ? (
-        // Show error message when there's an error
         <Box display="flex" justifyContent="center" alignItems="center" height="200px">
           <Alert severity="error">Failed to load vendors. Please try again later.</Alert>
         </Box>
@@ -76,14 +94,21 @@ const Vendor = () => {
               )}
             </TableBody>
           </Table>
-          <Box display="flex" justifyContent="center" mt={2} py={2}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-            />
-          </Box>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} py={2} px={2}>
+              <Box flex="1" display="flex" justifyContent="center" marginLeft={20}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                />
+              </Box>
+              {vendors && (
+                <Typography variant="body2" sx={{ ml: 3 }}>
+                  Showing {vendors?.data?.length > 0 ? `${currentStart}-${currentEnd}` : 0} of {vendors?.count || 0} items
+                </Typography>
+              )}
+            </Box>
         </Paper>)}
     </Box>
   )

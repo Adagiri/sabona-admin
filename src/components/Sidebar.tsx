@@ -11,7 +11,6 @@ const menuItems = [
   { text: "Driver", icon: <LocalShipping />, route: "/driver" },
   { text: "Application", icon: <Apps />, route: "/application" },
   { text: "Map Stats", icon: <Map />, route: "/map-stats" },
-  // { text: "Map Stats", icon: <Map />, route: "/MapStats" },
 ];
 
 const Sidebar: React.FC = () => {
@@ -34,7 +33,7 @@ const Sidebar: React.FC = () => {
             component={Link}
             to={item.route}
             sx={{
-              backgroundColor: location.pathname === item.route ? "#E3F2FD" : "transparent",
+              backgroundColor:`/${location.pathname.split("/")[1]}` === item.route ? "#E3F2FD" : "transparent",
               "&:hover": { backgroundColor: "#BBDEFB" },
               textDecoration: "none",
               color: "inherit",

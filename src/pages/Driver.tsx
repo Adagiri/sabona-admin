@@ -3,9 +3,11 @@ import { useFetchAllUsers } from "../hooks/Admin/query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { USER_TYPES } from "../hooks/Admin/interface";
 import { ToastContainer, toast } from 'react-toastify';
+import { useNavigate, useParams } from "react-router-dom";
 
 const Driver = () => {
-    const [page, setPage] = useState(1);
+    const { pageNumber } = useParams<{ pageNumber: string }>();
+    const [page, setPage] = useState<number>(Number(pageNumber) || 1);
     const [limit] = useState(10);
 
     const { data: drivers, isLoading, error: errorFetchingUsers, isError } = useFetchAllUsers({
@@ -21,13 +23,31 @@ const Driver = () => {
     }, [errorFetchingUsers])
 
     const totalPages = useMemo(() => Math.ceil((drivers?.count ?? 0) / limit), [drivers, limit]);
-    const handlePageChange = useCallback((_: any, value: number) => {
-        setPage(value);
-    }, []);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (!pageNumber) {
+            navigate(`/driver/1`, { replace: true });
+        } else {
+            setPage(Number(pageNumber));
+        }
+    }, [pageNumber, navigate]);
+
+    const handlePageChange = useCallback(
+        (_: any, value: number) => {
+            setPage(value);
+            navigate(`/driver/${value}`);
+        },
+        [navigate]
+    );
+
 
     const showError = useCallback((errorMessage: string) => {
         toast(errorMessage, { type: "error" });
     }, []);
+    const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
+    const currentEnd = useMemo(() => Math.min(page * limit, drivers?.count || 0), [page, limit, drivers?.count]);
     return (
         <Box pr={5}>
             <ToastContainer />
@@ -40,12 +60,12 @@ const Driver = () => {
                     <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
                         <CircularProgress />
                     </Box>
-                ): isError ? (
-                    // Show error message when there's an error
+                ) : isError ? (
+
                     <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-                      <Alert severity="error">Failed to load drivers. Please try again later.</Alert>
+                        <Alert severity="error">Failed to load drivers. Please try again later.</Alert>
                     </Box>
-                  ) : (<Table>
+                ) : (<Table>
                     <TableHead>
                         <TableRow
                             hover selected
@@ -79,13 +99,20 @@ const Driver = () => {
                         )}
                     </TableBody>
                 </Table>)}
-                <Box display="flex" justifyContent="center" mt={2} py={2}>
-                    <Pagination
-                        count={totalPages}
-                        page={page}
-                        onChange={handlePageChange}
-                        color="primary"
-                    />
+                <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} py={2} px={2}>
+                    <Box flex="1" display="flex" justifyContent="center" marginLeft={20}>
+                        <Pagination
+                            count={totalPages}
+                            page={page}
+                            onChange={handlePageChange}
+                            color="primary"
+                        />
+                    </Box>
+                    {drivers && (
+                        <Typography variant="body2" sx={{ ml: 3 }}>
+                            Showing {drivers?.data?.length > 0 ? `${currentStart}-${currentEnd}` : 0} of {drivers?.count || 0} items
+                        </Typography>
+                    )}
                 </Box>
             </Paper>
         </Box>

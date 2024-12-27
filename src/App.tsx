@@ -9,6 +9,7 @@ import Vendor from "./pages/Vendor";
 import Driver from "./pages/Driver";
 import Application from "./pages/Application";
 import Order from "./pages/Order";
+import OrderDetails from "./pages/OrderDetails";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Login from "./pages/Login";
 import MapStats from "./pages/MapStats";
@@ -38,14 +39,16 @@ const AppContent: React.FC = () => {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Home />} />
-            <Route path="/customer" element={<Customer />} />
-            <Route path="/vendor" element={<Vendor />} />
-            <Route path="/driver" element={<Driver />} />
-            <Route path="/application" element={<Application />} />
-            <Route path="/order" element={<Order />} />
+            <Route path="/customer/:pageNumber?" element={<Customer />} />
+            <Route path="/vendor/:pageNumber?" element={<Vendor />} />
+            <Route path="/driver/:pageNumber?" element={<Driver />} />
+            <Route path="/application/:pageNumber?" element={<Application />} />
+            {/* <Route path="/application/:type/:pageNumber?" element={<Application />} /> */}
+
+            <Route path="/order/:pageNumber?/:orderStatus?" element={<Order />} />
+            <Route path="/order-details/:orderId" element={<OrderDetails />} />
             <Route path="/map-stats" element={<MapStats />} />
           </Route>
-
           {/* Default Redirect to Login */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

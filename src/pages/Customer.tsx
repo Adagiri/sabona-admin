@@ -1,8 +1,9 @@
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper, Pagination, CircularProgress, Alert, ToggleButtonGroup, ToggleButton } from "@mui/material";
 import { useFetchAllUsers } from "../hooks/Admin/query";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Filter, USER_TYPES } from "../hooks/Admin/interface";
+import { Filter, LEVELS, USER_TYPES } from "../hooks/Admin/interface";
 import { toast, ToastContainer } from "react-toastify";
+import { useNavigate, useParams } from "react-router-dom";
 
 const FILTER_ARRAY = [
   { value: 'Today', status: "Today" },
@@ -14,7 +15,9 @@ const FILTER_ARRAY = [
 
 const Customer = () => {
   const [selectedFilter, setSelectedFilter] = useState<any>('ByMonth');
-  const [page, setPage] = useState(1);
+  const { pageNumber } = useParams<{ pageNumber: string }>();
+const [page, setPage] = useState<number>(Number(pageNumber) || 1);
+
   const [limit] = useState(10);
 
   const { data: customers, isLoading, error, isError } = useFetchAllUsers({
@@ -34,11 +37,8 @@ const Customer = () => {
     toast(errorMessage, { type: "error" });
   }, []);
 
-  const totalPages = useMemo(() => Math.ceil((customers?.count ?? 0) / limit), [customers, limit]);
-  const handlePageChange = useCallback((_: any, value: number) => {
-    setPage(value);
-  }, []);
 
+  const totalPages = useMemo(() => Math.ceil((customers?.count ?? 0) / limit), [customers, limit]);
 
   const handleChange = useCallback((
     _: React.MouseEvent<HTMLElement>,
@@ -48,6 +48,26 @@ const Customer = () => {
       setSelectedFilter(filter);
     }
   }, [setSelectedFilter]);
+
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!pageNumber) {
+      navigate(`/customer/1`, { replace: true });
+    } else {
+      setPage(Number(pageNumber));
+    }
+  }, [pageNumber, navigate]);
+  
+  const handlePageChange = useCallback(
+    (_: any, value: number) => {
+      setPage(value);
+      navigate(`/customer/${value}`); 
+    },
+    [navigate]
+  );
+  const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
+  const currentEnd = useMemo(() => Math.min(page * limit, customers?.count || 0), [page, limit, customers?.count]);
+  
   return (
     <Box pr={5}>
       <ToastContainer />
@@ -84,7 +104,7 @@ const Customer = () => {
               <TableRow style={{
                 backgroundColor: 'secondary',
               }} hover selected>
-                {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At"].map((col) => (
+                {["First Name", "Last Name", "Level", "Phone", "Email", "Status", "Created At"].map((col) => (
                   <TableCell style={{ fontWeight: 'bold' }} key={col}>{col}</TableCell>
                 ))}
               </TableRow>
@@ -96,7 +116,7 @@ const Customer = () => {
                     <TableRow key={index}>
                       <TableCell>{row.firstName ?? 'N/A'}</TableCell>
                       <TableCell>{row.lastName ?? 'N/A'}</TableCell>
-                      <TableCell>{row.type}</TableCell>
+                      <TableCell style={row.level === LEVELS.LOYAL ? { color: 'maroon', fontWeight: 'bolder' } : {}}>{row.level}</TableCell>
                       <TableCell>{row.phone}</TableCell>
                       <TableCell>{row.email ?? 'N/A'}</TableCell>
                       <TableCell style={row.status === 'INACTIVE' ? { color: 'red' } : { color: 'green' }}>
@@ -113,14 +133,21 @@ const Customer = () => {
               )}
             </TableBody>
           </Table>
-          <Box display="flex" justifyContent="center" mt={2} py={2}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-            />
-          </Box>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} py={2} px={2}>
+              <Box flex="1" display="flex" justifyContent="center" marginLeft={20}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                />
+              </Box>
+              {customers && (
+                <Typography variant="body2" sx={{ ml: 3 }}>
+                  Showing {customers?.data?.length > 0 ? `${currentStart}- ${currentEnd}` : 0} of {customers?.count || 0} items
+                </Typography>
+              )}
+            </Box>
         </Paper>)}
     </Box>
   );

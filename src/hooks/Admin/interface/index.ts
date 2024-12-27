@@ -45,9 +45,9 @@ export enum ORDER_STATUSES {
 }
 
 export const ORDER_STATUSES_ARRAY = [
-   {value: ORDER_STATUSES.PENDING, status: "PENDING"},
+    {value: ORDER_STATUSES.PENDING, status: "PENDING"},
     {value: ORDER_STATUSES.ACCEPTED, status: "ACCEPTED"},
-    {value: ORDER_STATUSES.REJECTED, status: "REJECTED"},
+    // {value: ORDER_STATUSES.REJECTED, status: "REJECTED"},
     {value: ORDER_STATUSES.CANCELLED, status: "CANCELLED"},
     {value: ORDER_STATUSES.IN_PROGRESS, status: "IN PROGRESS"},
     {value: ORDER_STATUSES.READY_FOR_PICKUP, status: "READY FOR PICKUP"},
@@ -68,6 +68,12 @@ export const STATUSES = {
     INACTIVE: "INACTIVE"
 }
 
+export enum LEVELS  {
+   BASIC= "BASIC",
+    LOYAL= "LOYAL",
+    ELITE= "ELITE",
+}
+
 export type User = {
     id: string,
     firstName: string,
@@ -77,6 +83,7 @@ export type User = {
     phone: string,
     status: keyof typeof STATUSES;
     createdAt: string,
+    level: LEVELS,
 }
 
 export type UserResponse = {
@@ -94,13 +101,27 @@ export type UserLoginResponse = {
     token: string
 }
 
+export type Vendor = {
+    phone: string
+}
+
 export type Laundry = {
-    name: string
+    name: string,
+    vendor: Vendor,
+}
+
+export type pickup = {
+        rider: rider
+        pickupAddress : string,
+        pickupLat: string,
+        pickupLong: string,
+
 }
 
 type rider = {
     firstName: string,
     lastName: string,
+    phone: string,
 }
 
 export type Order = {
@@ -110,10 +131,10 @@ export type Order = {
     totalAmount: number,
     totalQuantity: number,
     laundry: Laundry,
-    pickup: any;
-    riderOrders:{
+    pickup : pickup,
+    delivery: {
         rider: rider
-    }[]
+    },
 }
 
 export type OrdersResponse = { 
@@ -134,3 +155,37 @@ type coords = {
 export type UserCoords =  {
     data: coords[]
 }
+
+export interface OrderDetails {
+    id: string;
+    status: keyof typeof ORDER_STATUSES;
+    totalAmount: number;
+    services: {
+        id: string;
+        laundryService: {
+            id: string;
+            name: string;
+            description: string;
+            laundryServiceItems: {
+                id: string;
+                name: string;
+                price: number;
+            }[];
+        }
+    }[],
+    laundry: {
+      name: string; 
+      laundryService: {
+        id: string;
+        name: string; 
+        description: string; 
+        laundryServiceItems: {
+          id: string;
+          name: string; 
+          price: number; 
+        }[];
+      }[];
+    };
+  }
+  
+  
