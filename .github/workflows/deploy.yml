@@ -30,6 +30,8 @@ jobs:
       - name: Creation of .env file
         run: |
           echo VITE_API_URL=${{ vars.VITE_API_URL }} >> .env
+          echo VITE_GOOGLE_MAPS_API_KEY=${{ vars.VITE_GOOGLE_MAPS_API_KEY }} >> .env
+          echo VITE_GOOGLE_MAP_ID=${{ vars.VITE_GOOGLE_MAP_ID }} >> .env
       - name: Build, tag, and push image to Amazon ECR
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
