@@ -9,6 +9,8 @@ const api = axios.create({
   },
 });
 
+console.log(import.meta.env.VITE_API_URL);
+
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
