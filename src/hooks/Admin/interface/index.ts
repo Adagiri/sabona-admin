@@ -26,7 +26,7 @@ export interface FetchApplicationsParams {
     direction?: "ASC" | "DESC";
 }
 
-export type Filter =  {
+export type Filter = {
     Today: string,
     ByWeek: string,
     ByMonth: string,
@@ -45,14 +45,14 @@ export enum ORDER_STATUSES {
 }
 
 export const ORDER_STATUSES_ARRAY = [
-    {value: ORDER_STATUSES.PENDING, status: "PENDING"},
-    {value: ORDER_STATUSES.ACCEPTED, status: "ACCEPTED"},
+    { value: ORDER_STATUSES.PENDING, status: "PENDING" },
+    { value: ORDER_STATUSES.ACCEPTED, status: "ACCEPTED" },
     // {value: ORDER_STATUSES.REJECTED, status: "REJECTED"},
-    {value: ORDER_STATUSES.CANCELLED, status: "CANCELLED"},
-    {value: ORDER_STATUSES.IN_PROGRESS, status: "IN PROGRESS"},
-    {value: ORDER_STATUSES.READY_FOR_PICKUP, status: "READY FOR PICKUP"},
-    {value: ORDER_STATUSES.COMPLETED, status: "COMPLETED"},
-  
+    { value: ORDER_STATUSES.CANCELLED, status: "CANCELLED" },
+    { value: ORDER_STATUSES.IN_PROGRESS, status: "IN PROGRESS" },
+    { value: ORDER_STATUSES.READY_FOR_PICKUP, status: "READY FOR PICKUP" },
+    { value: ORDER_STATUSES.COMPLETED, status: "COMPLETED" },
+
 ]
 
 export interface FetchOrdersParams {
@@ -68,10 +68,10 @@ export const STATUSES = {
     INACTIVE: "INACTIVE"
 }
 
-export enum LEVELS  {
-   BASIC= "BASIC",
-    LOYAL= "LOYAL",
-    ELITE= "ELITE",
+export enum LEVELS {
+    BASIC = "BASIC",
+    LOYAL = "LOYAL",
+    ELITE = "ELITE",
 }
 
 export type User = {
@@ -84,6 +84,13 @@ export type User = {
     status: keyof typeof STATUSES;
     createdAt: string,
     level: LEVELS,
+    medias: MediaFile[],
+}
+
+export type MediaFile = {
+    id: number;
+    location: string;
+    status: string;
 }
 
 export type UserResponse = {
@@ -91,6 +98,16 @@ export type UserResponse = {
     count: number,
 }
 
+export interface UploadImage {
+    name: string;
+    size: number;
+    type: string;
+    public: boolean;
+}
+
+export interface MediaId {
+    id: number;
+}
 
 export type UserCredentials = {
     phone: string,
@@ -111,10 +128,10 @@ export type Laundry = {
 }
 
 export type pickup = {
-        rider: rider
-        pickupAddress : string,
-        pickupLat: string,
-        pickupLong: string,
+    rider: rider
+    pickupAddress: string,
+    pickupLat: string,
+    pickupLong: string,
 
 }
 
@@ -131,13 +148,13 @@ export type Order = {
     totalAmount: number,
     totalQuantity: number,
     laundry: Laundry,
-    pickup : pickup,
+    pickup: pickup,
     delivery: {
         rider: rider
     },
 }
 
-export type OrdersResponse = { 
+export type OrdersResponse = {
     data: Order[],
     count: number
 }
@@ -152,7 +169,7 @@ type coords = {
     settings: userSettingCorrds,
 }
 
-export type UserCoords =  {
+export type UserCoords = {
     data: coords[]
 }
 
@@ -174,18 +191,16 @@ export interface OrderDetails {
         }
     }[],
     laundry: {
-      name: string; 
-      laundryService: {
-        id: string;
-        name: string; 
-        description: string; 
-        laundryServiceItems: {
-          id: string;
-          name: string; 
-          price: number; 
+        name: string;
+        laundryService: {
+            id: string;
+            name: string;
+            description: string;
+            laundryServiceItems: {
+                id: string;
+                name: string;
+                price: number;
+            }[];
         }[];
-      }[];
     };
-  }
-  
-  
+}
