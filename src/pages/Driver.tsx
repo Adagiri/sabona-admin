@@ -15,11 +15,11 @@ const Driver = () => {
     const fileInputRefs = useRef<Record<string | number, HTMLInputElement>>({});
     const [uploadId, setUploadId] = useState<string | null>(null);
 
-    const { mutateAsync: uploadVendorDoc, isPending: isUploadPending } = useUploadImage();
-    const { mutateAsync: finaliseVendorDoc, isPending: isFinalisePending } = useFinaliseUploadImage();
-    const isUploading = isUploadPending || isFinalisePending;
+    const { mutateAsync: uploadVendorDoc } = useUploadImage();
+    const { mutateAsync: finaliseVendorDoc } = useFinaliseUploadImage();
+    const [isUploading, setIsUploading] = useState<boolean>(false);
 
-    const { data: drivers, isLoading, error: errorFetchingUsers, isError } = useFetchAllUsers({
+    const { data: drivers, isLoading, error: errorFetchingUsers, isError , refetch : refetchDrivers } = useFetchAllUsers({
         type: USER_TYPES.RIDER,
         page,
         limit,
@@ -40,14 +40,27 @@ const Driver = () => {
             const file = e.target.files?.[0];
             let media = null;
             if (file) {
-                const mediaId = await uploadAndFinalizeImage(
-                    file,
-                    uploadVendorDoc,
-                    finaliseVendorDoc,
-                    vendorId
-                );
-                media = mediaId;
-                console.log("MEDIA", media);
+                setIsUploading(true);
+                try {
+                    const mediaId = await uploadAndFinalizeImage(
+                        file,
+                        uploadVendorDoc,
+                        finaliseVendorDoc,
+                        vendorId
+                    );
+                    media = mediaId;
+                    if(media) {
+                        showSuccess('Document uploaded successfully');
+                    }
+
+                }
+                catch (error: any) {
+                    showError(error.message);
+                }
+                finally {
+                    setIsUploading(false);
+                    refetchDrivers();
+                }
             }
         },
         [finaliseVendorDoc, uploadVendorDoc]
@@ -55,6 +68,10 @@ const Driver = () => {
 
     const showError = useCallback((errorMessage: string) => {
         toast(errorMessage, { type: "error" });
+    }, []);
+
+    const showSuccess = useCallback((errorMessage: string) => {
+        toast(errorMessage, { type: "success" });
     }, []);
 
     useEffect(() => {

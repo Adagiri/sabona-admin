@@ -13,13 +13,13 @@ const Vendor = () => {
   const [page, setPage] = useState<number>(Number(pageNumber) || 1);
   const [limit] = useState(10);
 
-  const { mutateAsync: uploadVendorDoc, isPending: isUploadPending } = useUploadImage();
-  const { mutateAsync: finaliseVendorDoc, isPending: isFinalisePending } = useFinaliseUploadImage();
+  const { mutateAsync: uploadVendorDoc } = useUploadImage();
+  const { mutateAsync: finaliseVendorDoc } = useFinaliseUploadImage();
   const [uploadId, setUploadId] = useState<string | null>(null);
 
-  const isUploading = isUploadPending || isFinalisePending;
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRefs = useRef<Record<string | number, HTMLInputElement>>({});
-  const { data: vendors, isLoading, error, isError } = useFetchAllUsers({
+  const { data: vendors, isLoading, error, isError , refetch : refetchVendor } = useFetchAllUsers({
     type: USER_TYPES.VENDOR,
     page,
     limit,
@@ -27,6 +27,10 @@ const Vendor = () => {
 
   const showError = useCallback((errorMessage: string) => {
     toast(errorMessage, { type: "error" });
+  }, []);
+
+  const showSuccess = useCallback((errorMessage: string) => {
+    toast(errorMessage, { type: "success" });
   }, []);
 
   useEffect(() => {
@@ -60,14 +64,27 @@ const Vendor = () => {
       const file = e.target.files?.[0];
       let media = null;
       if (file) {
-        const mediaId = await uploadAndFinalizeImage(
-          file,
-          uploadVendorDoc,
-          finaliseVendorDoc,
-          vendorId
-        );
-        media = mediaId;
-        console.log("MEDIA", media);
+        setIsUploading(true);
+        try {
+          const mediaId = await uploadAndFinalizeImage(
+            file,
+            uploadVendorDoc,
+            finaliseVendorDoc,
+            vendorId
+          );
+          media = mediaId;
+          if(media) {
+            showSuccess('Document uploaded successfully');
+        }
+
+        }
+        catch (err) {
+          console.log("ERROR", err);
+        }
+        finally {
+          setIsUploading(false);
+          refetchVendor();
+        }
       }
     },
     [finaliseVendorDoc, uploadVendorDoc]
