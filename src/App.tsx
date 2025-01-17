@@ -13,6 +13,7 @@ import OrderDetails from "./pages/OrderDetails";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Login from "./pages/Login";
 import MapStats from "./pages/MapStats";
+import UserDetails from "./pages/UserDetails";
 
 const App: React.FC = () => {
   return (
@@ -43,10 +44,9 @@ const AppContent: React.FC = () => {
             <Route path="/vendor/:pageNumber?" element={<Vendor />} />
             <Route path="/driver/:pageNumber?" element={<Driver />} />
             <Route path="/application/:pageNumber?" element={<Application />} />
-            {/* <Route path="/application/:type/:pageNumber?" element={<Application />} /> */}
-
             <Route path="/order/:pageNumber?/:orderStatus?" element={<Order />} />
             <Route path="/order-details/:orderId" element={<OrderDetails />} />
+            <Route path="/user-details/:userId" element={<UserDetails />} />
             <Route path="/map-stats" element={<MapStats />} />
           </Route>
           {/* Default Redirect to Login */}

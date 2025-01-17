@@ -8,6 +8,19 @@ export interface UserData {
     status: string;
     imageUrl: string;
     addresses: Address[];
+    medias: Media[];
+}
+
+export interface Media {
+    id: number;
+    url: string;
+    type: string;
+    public: boolean;
+    userId: string;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt: string;
+    user: UserData;
 }
 
 export interface Address {

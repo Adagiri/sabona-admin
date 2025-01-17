@@ -1,30 +1,84 @@
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper, Pagination, CircularProgress, Alert } from "@mui/material";
 import { useFetchAllUsers } from "../hooks/Admin/query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { USER_TYPES } from "../hooks/Admin/interface";
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate, useParams } from "react-router-dom";
+import ImageUpload from "../components/upload/ImageUpload";
+import { useFinaliseUploadImage, useUploadImage } from "../hooks/Admin/mutation";
+import uploadAndFinalizeImage from "../utils/uploadAndFinalizeImage";
 
 const Driver = () => {
     const { pageNumber } = useParams<{ pageNumber: string }>();
     const [page, setPage] = useState<number>(Number(pageNumber) || 1);
     const [limit] = useState(10);
+    const fileInputRefs = useRef<Record<string | number, HTMLInputElement>>({});
+    const [uploadId, setUploadId] = useState<string | null>(null);
 
-    const { data: drivers, isLoading, error: errorFetchingUsers, isError } = useFetchAllUsers({
+    const { mutateAsync: uploadVendorDoc } = useUploadImage();
+    const { mutateAsync: finaliseVendorDoc } = useFinaliseUploadImage();
+    const [isUploading, setIsUploading] = useState<boolean>(false);
+
+    const { data: drivers, isLoading, error: errorFetchingUsers, isError , refetch : refetchDrivers } = useFetchAllUsers({
         type: USER_TYPES.RIDER,
         page,
         limit,
     });
+    const totalPages = useMemo(() => Math.ceil((drivers?.count ?? 0) / limit), [drivers, limit]);
+
+    const navigate = useNavigate();
+
+    const handleImageClick = useCallback((vendorId: string) => () => {
+        if (vendorId) {
+            fileInputRefs.current[vendorId]?.click();
+            setUploadId(vendorId);
+        }
+    }, []);
+
+    const handleImageChange = useCallback(
+        (vendorId: string) => async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            let media = null;
+            if (file) {
+                setIsUploading(true);
+                try {
+                    const mediaId = await uploadAndFinalizeImage(
+                        file,
+                        uploadVendorDoc,
+                        finaliseVendorDoc,
+                        vendorId
+                    );
+                    media = mediaId;
+                    if(media) {
+                        showSuccess('Document uploaded successfully');
+                    }
+
+                }
+                catch (error: any) {
+                    showError(error.message);
+                }
+                finally {
+                    setIsUploading(false);
+                    refetchDrivers();
+                }
+            }
+        },
+        [finaliseVendorDoc, uploadVendorDoc]
+    );
+
+    const showError = useCallback((errorMessage: string) => {
+        toast(errorMessage, { type: "error" });
+    }, []);
+
+    const showSuccess = useCallback((errorMessage: string) => {
+        toast(errorMessage, { type: "success" });
+    }, []);
 
     useEffect(() => {
         if (errorFetchingUsers) {
             showError((errorFetchingUsers?.response?.data as { message: string })?.message || 'Unknown error');
         }
-    }, [errorFetchingUsers])
-
-    const totalPages = useMemo(() => Math.ceil((drivers?.count ?? 0) / limit), [drivers, limit]);
-
-    const navigate = useNavigate();
+    }, [errorFetchingUsers, showError])
 
     useEffect(() => {
         if (!pageNumber) {
@@ -43,9 +97,6 @@ const Driver = () => {
     );
 
 
-    const showError = useCallback((errorMessage: string) => {
-        toast(errorMessage, { type: "error" });
-    }, []);
     const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
     const currentEnd = useMemo(() => Math.min(page * limit, drivers?.count || 0), [page, limit, drivers?.count]);
     return (
@@ -54,7 +105,6 @@ const Driver = () => {
             <Typography variant="h4" gutterBottom mb={5}>
                 Driver
             </Typography>
-            {/* <TextField fullWidth placeholder="Search..." variant="outlined" sx={{ mb: 2 }} /> */}
             <Paper>
                 {isLoading ? (
                     <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
@@ -70,7 +120,7 @@ const Driver = () => {
                         <TableRow
                             hover selected
                         >
-                            {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At"].map((col) => (
+                            {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At", "Document"].map((col) => (
                                 <TableCell style={{ fontWeight: 'bold' }} key={col}>{col}</TableCell>
                             ))}
                         </TableRow>
@@ -78,7 +128,7 @@ const Driver = () => {
                     <TableBody>
                         {drivers?.data && drivers?.data.length > 0 ? (
                             drivers.data.map((row, index) => (
-                                <TableRow key={index}>
+                                <TableRow key={index} onClick={() => navigate(`/user-details/${row?.id}`)} sx={{ cursor: 'pointer' }}>
                                     <TableCell>{row.firstName ?? 'N/A'}</TableCell>
                                     <TableCell>{row.lastName ?? 'N/A'}</TableCell>
                                     <TableCell>{row.type}</TableCell>
@@ -88,6 +138,20 @@ const Driver = () => {
                                         {row.status}
                                     </TableCell>
                                     <TableCell>{row.createdAt}</TableCell>
+                                    <TableCell onClick={(e) => e.stopPropagation()}>
+                                        <ImageUpload
+                                            isLoading={isUploading && row.id === uploadId ? true : false}
+                                            variant="base"
+                                            selectedImage={!!row?.medias.length}
+                                            handleImageClick={handleImageClick(row.id)}
+                                            fileInputRef={(el: HTMLInputElement | null) => {
+                                                if (el) {
+                                                    fileInputRefs.current[row.id] = el;
+                                                }
+                                            }}
+                                            handleImageChange={handleImageChange(row.id)}
+                                        />
+                                    </TableCell>
                                 </TableRow>
                             ))
                         ) : (

@@ -1,31 +1,44 @@
 import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper, Pagination, CircularProgress, Alert } from "@mui/material";
 import { useFetchAllUsers } from "../hooks/Admin/query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { USER_TYPES } from "../hooks/Admin/interface";
 import { toast, ToastContainer } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
-
+import ImageUpload from "../components/upload/ImageUpload";
+import { useFinaliseUploadImage, useUploadImage } from "../hooks/Admin/mutation";
+import uploadAndFinalizeImage from "../utils/uploadAndFinalizeImage";
 
 const Vendor = () => {
   const { pageNumber } = useParams<{ pageNumber: string }>();
   const [page, setPage] = useState<number>(Number(pageNumber) || 1);
   const [limit] = useState(10);
 
-  const { data: vendors, isLoading, error, isError } = useFetchAllUsers({
+  const { mutateAsync: uploadVendorDoc } = useUploadImage();
+  const { mutateAsync: finaliseVendorDoc } = useFinaliseUploadImage();
+  const [uploadId, setUploadId] = useState<string | null>(null);
+
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const fileInputRefs = useRef<Record<string | number, HTMLInputElement>>({});
+  const { data: vendors, isLoading, error, isError , refetch : refetchVendor } = useFetchAllUsers({
     type: USER_TYPES.VENDOR,
     page,
     limit,
   });
 
+  const showError = useCallback((errorMessage: string) => {
+    toast(errorMessage, { type: "error" });
+  }, []);
+
+  const showSuccess = useCallback((errorMessage: string) => {
+    toast(errorMessage, { type: "success" });
+  }, []);
+
   useEffect(() => {
     if (error) {
       showError((error?.response?.data as { message: string })?.message || 'Unknown error');
     }
-  }, [error])
+  }, [error, showError]);
 
-  const showError = useCallback((errorMessage: string) => {
-    toast(errorMessage, { type: "error" });
-  }, []);
 
   const totalPages = useMemo(() => Math.ceil((vendors?.count ?? 0) / limit), [vendors, limit]);
 
@@ -37,7 +50,45 @@ const Vendor = () => {
       setPage(Number(pageNumber));
     }
   }, [pageNumber, navigate]);
-  
+
+  const handleImageClick = useCallback((vendorId: string) => () => {
+    if (vendorId) {
+      fileInputRefs.current[vendorId]?.click();
+      setUploadId(vendorId);
+    }
+  }, []);
+
+  const handleImageChange = useCallback(
+    (vendorId: string) => async (e: React.ChangeEvent<HTMLInputElement>) => {
+      console.log("ASDASDASD", vendorId);
+      const file = e.target.files?.[0];
+      let media = null;
+      if (file) {
+        setIsUploading(true);
+        try {
+          const mediaId = await uploadAndFinalizeImage(
+            file,
+            uploadVendorDoc,
+            finaliseVendorDoc,
+            vendorId
+          );
+          media = mediaId;
+          if(media) {
+            showSuccess('Document uploaded successfully');
+        }
+
+        }
+        catch (err) {
+          console.log("ERROR", err);
+        }
+        finally {
+          setIsUploading(false);
+          refetchVendor();
+        }
+      }
+    },
+    [finaliseVendorDoc, uploadVendorDoc]
+  );
 
   const handlePageChange = useCallback(
     (_: any, value: number) => {
@@ -58,16 +109,16 @@ const Vendor = () => {
         <Box display="flex" justifyContent="center" alignItems="center" height="200px">
           <CircularProgress />
         </Box>
-      )  : isError ? (
+      ) : isError ? (
         <Box display="flex" justifyContent="center" alignItems="center" height="200px">
           <Alert severity="error">Failed to load vendors. Please try again later.</Alert>
         </Box>
-      ) :
-        (<Paper>
+      ) : (
+        <Paper>
           <Table>
             <TableHead>
               <TableRow hover selected>
-                {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At"].map((col) => (
+                {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At", "Document"].map((col) => (
                   <TableCell style={{ fontWeight: 'bold' }} key={col}>{col}</TableCell>
                 ))}
               </TableRow>
@@ -75,7 +126,7 @@ const Vendor = () => {
             <TableBody>
               {vendors?.data && vendors?.data?.length > 0 ? (
                 vendors.data.map((row, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={index} onClick={() => navigate(`/user-details/${row?.id}`)} sx={{ cursor: 'pointer' }}>
                     <TableCell>{row.firstName ?? 'N/A'}</TableCell>
                     <TableCell>{row.lastName ?? 'N/A'}</TableCell>
                     <TableCell>{row.type}</TableCell>
@@ -85,33 +136,48 @@ const Vendor = () => {
                       {row.status}
                     </TableCell>
                     <TableCell>{row.createdAt}</TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <ImageUpload
+                        isLoading={isUploading && row.id === uploadId ? true : false}
+                        variant="base"
+                        selectedImage={row?.medias.length > 0 ? true : false}
+                        handleImageClick={handleImageClick(row.id)}
+                        fileInputRef={(el: HTMLInputElement | null) => {
+                          if (el) {
+                            fileInputRefs.current[row.id] = el;
+                          }
+                        }}
+                        handleImageChange={handleImageChange(row.id)}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">No vendors available</TableCell>
+                  <TableCell colSpan={8} align="center">No vendors available</TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
           <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} py={2} px={2}>
-              <Box flex="1" display="flex" justifyContent="center" marginLeft={20}>
-                <Pagination
-                  count={totalPages}
-                  page={page}
-                  onChange={handlePageChange}
-                  color="primary"
-                />
-              </Box>
-              {vendors && (
-                <Typography variant="body2" sx={{ ml: 3 }}>
-                  Showing {vendors?.data?.length > 0 ? `${currentStart}-${currentEnd}` : 0} of {vendors?.count || 0} items
-                </Typography>
-              )}
+            <Box flex="1" display="flex" justifyContent="center" marginLeft={20}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+              />
             </Box>
-        </Paper>)}
+            {vendors && (
+              <Typography variant="body2" sx={{ ml: 3 }}>
+                Showing {vendors?.data?.length > 0 ? `${currentStart}-${currentEnd}` : 0} of {vendors?.count || 0} items
+              </Typography>
+            )}
+          </Box>
+        </Paper>
+      )}
     </Box>
-  )
-}
+  );
+};
 
-export default Vendor
+export default Vendor;
