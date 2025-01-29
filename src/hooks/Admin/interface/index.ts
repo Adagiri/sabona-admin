@@ -204,3 +204,30 @@ export interface OrderDetails {
         }[];
     };
 }
+
+export enum DISCOUNT_TYPE {
+    FIXED = "FIXED",
+    PERCENTAGE = "PERCENTAGE"
+
+}
+export interface CreateCouponRequest {
+    code : string;
+    name : string;
+    type: DISCOUNT_TYPE;
+    discount : number;
+    maxDiscount?: number;
+    minOrderAmount?:number;
+    expiryDate:string;
+    usageLimit?: number;
+    singleUse: boolean;
+    isActive:boolean;
+    startDate?:string
+}
+
+export interface FetchCouponParams {
+    page: number;
+    limit: number;
+    column?: string;
+    direction?: "ASC" | "DESC";
+}
+

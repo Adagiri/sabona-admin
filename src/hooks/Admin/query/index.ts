@@ -1,6 +1,6 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import api from "../../../services/api-service"
-import { FetchApplicationsParams, FetchOrdersParams, FetchUsersParams, OrderDetails, OrdersResponse, User, UserCoords, UserResponse } from "../interface"
+import { FetchApplicationsParams, FetchCouponParams, FetchOrdersParams, FetchUsersParams, OrderDetails, OrdersResponse, User, UserCoords, UserResponse } from "../interface"
 import { AxiosError, AxiosResponse } from "axios"
 
 export const FETCH_ORDER_QUERIES = {
@@ -9,7 +9,9 @@ export const FETCH_ORDER_QUERIES = {
   FETCH_ALL_APPLICATIONS: 'FETCH_ALL_APPLICATIONS',
   FETCH_USER_LOCATIONS: 'FETCH_USER_LOCATIONS',
   FETCH_ORDER_DETAILS: 'FETCH_ORDER_DETAILS',
-  FETCH_USER_DETAILS: 'FETCH_USER_DETAILS'
+  FETCH_USER_DETAILS: 'FETCH_USER_DETAILS',
+  FETCH_ALL_COUPONS : 'FETCH_ALL_COUPONS',
+  FETCH_COUPON_USAGE: 'FETCH_COUPON_USAGE'
 }
 
 const getAllOrders = async ({
@@ -132,5 +134,31 @@ const getOrderDetails = async (id: string): Promise<OrderDetails> => {
   const response: AxiosResponse<OrderDetails> = await api.get(`/admin/orders/${id}`);
   return response.data;
 };
+
+const getAllCoupons = async (params :FetchCouponParams) => {
+  const response: AxiosResponse = await api.get('/admin/coupons/all', { params });
+  return response.data;
+}
+
+export const useGetAllCoupons = (params:FetchCouponParams) => {
+  return useQuery({
+    queryFn: () =>  getAllCoupons(params),
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_COUPONS]
+  })
+}
+
+const getCouponUsageAction = async (couponId: string) => {
+  const response: AxiosResponse = await api.get(`/admin/coupons/${couponId}/usage`);
+  return response.data;
+}
+
+export const useGetCouponUsage = (couponId: string) => {
+  console.log("couponId", couponId)
+  return useQuery({
+    queryFn: () => getCouponUsageAction(couponId),
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_COUPON_USAGE, couponId],
+    enabled: !!couponId
+  })
+}
 
 
