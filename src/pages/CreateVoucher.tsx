@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import {
   Box,
   Button,
@@ -29,7 +29,7 @@ interface FormDataInterface {
   name: string;
   type: DISCOUNT_TYPE;
   discount: number;
-  maxDiscount?: number;
+  maxDiscount?: number; 
   minOrderAmount?: number;
   expiryDate: Dayjs;
   usageLimit?: number;
@@ -39,10 +39,10 @@ interface FormDataInterface {
 }
 
 // Validation schema with Yup
-const schema = yup.object().shape({
+const schema = yup.object<FormDataInterface>().shape({
   code: yup.string().required("Coupon Code is required"),
   name: yup.string().required("Coupon Name is required"),
-  type: yup.string().oneOf([DISCOUNT_TYPE.PERCENTAGE, DISCOUNT_TYPE.FIXED]),
+  type: yup.mixed<DISCOUNT_TYPE>().required().oneOf([DISCOUNT_TYPE.PERCENTAGE, DISCOUNT_TYPE.FIXED]),
   discount: yup
     .number()
     .positive("Discount value must be greater than 0")
@@ -55,46 +55,41 @@ const schema = yup.object().shape({
     }),
   maxDiscount: yup
     .number()
-    .nullable(), // Allow null if not required
+    .optional()
+    .transform((value) => (isNaN(value) ? undefined : value)),
   minOrderAmount: yup
     .number()
     .positive("Min Order Amount must be greater than 0")
+    .optional()
     .when("type", {
       is: DISCOUNT_TYPE.FIXED,
       then: (schema) => schema.required("Min Order Amount is required"),
-      otherwise: (schema) => schema, // No additional validation for other types
     }),
   expiryDate: yup
-    .date()
+    .mixed<Dayjs>()
     .required("Expiry Date is required")
     .test("is-future", "Expiry Date must be in the future", (value) => {
-      return value ? new Date(value) > new Date() : false;
+      return value ? value.isAfter(dayjs()) : false;
     }),
-  usageLimit: yup.number().nullable(),
-  isActive: yup.boolean().required(),
-  startDate: yup
-  .date()
-  .test('conditional-validation', 'Start Date must be in the future and before Expiry Date', function (value) {
-    const { isActive, expiryDate } = this.parent;
-    // If isActive is false, apply the validations
-    if (!isActive) {
-      if (!value) {
-        return this.createError({ message: 'Start Date is required' });
+    usageLimit: yup.number().optional().transform((value) => (isNaN(value) ? undefined : value)),  // Transform null/empty to undefined
+    singleUse: yup.boolean().required(),
+    isActive: yup.boolean().required(),
+    startDate: yup.mixed<Dayjs>().optional()
+    .test('conditional-validation', 'Start Date must be in the future and before Expiry Date', function (value) {
+      const { isActive, expiryDate } = this.parent;
+      if (!isActive) {
+        if (!value) {
+          return this.createError({ message: 'Start Date is required' });
+        }
+        if (value && value.isBefore(dayjs())) {
+          return this.createError({ message: 'Start Date must be in the future' });
+        }
+        if (value && expiryDate && value.isAfter(expiryDate)) {
+          return this.createError({ message: 'Start Date must be before Expiry Date' });
+        }
       }
-      // Check if the value is in the futurep
-      if (value && new Date(value) <= new Date()) {
-        return this.createError({ message: 'Start Date must be in the future' });
-      }
-
-      // Check if the value is before the expiryDate
-      if (value && expiryDate && new Date(value) >= new Date(expiryDate)) {
-        return this.createError({ message: 'Start Date must be before Expiry Date' });
-      }
-    }
-
-    return true; // If isActive is true, no validation is applied
-  }),
-  singleUse: yup.boolean().required(),
+      return true;
+    }),
 });
 
 const CreateVoucher = () => {
