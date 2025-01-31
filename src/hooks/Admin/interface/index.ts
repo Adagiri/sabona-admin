@@ -152,6 +152,10 @@ export type Order = {
     delivery: {
         rider: rider
     },
+    coupon?: {
+        code: string;
+        id: string;
+    }
 }
 
 export type OrdersResponse = {

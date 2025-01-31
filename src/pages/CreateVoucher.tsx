@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback } from "react";
 import {
   Box,
   Button,
@@ -289,6 +289,12 @@ const CreateVoucher = () => {
                     label="Usage Limit (Optional)"
                     type="number"
                     fullWidth
+                    value={field.value || ''}  // Make sure empty input is handled
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // If input is empty, set the value to null or undefined
+                      field.onChange(value === '' ? null : value);
+                    }}
                   />
                 )}
               />

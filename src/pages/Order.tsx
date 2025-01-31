@@ -70,6 +70,10 @@ const Order = () => {
 
   const navigate = useNavigate();
 
+  const handleNavigateToCoupon = useCallback((id: string)=> {
+    navigate('/voucherUsage/'+id)
+  },[navigate])
+
   useEffect(() => {
     if (!pageNumber) {
       navigate(`/order/1`, { replace: true });
@@ -173,6 +177,7 @@ const Order = () => {
                     ...(selectedStatus === ORDER_STATUSES.READY_FOR_PICKUP
                       ? ["Rider Number"]
                       : []),
+                      "Coupon Code"
                   ].map((col) => (
                     <TableCell className="table-header" style={{ fontWeight: "bold" }} key={col}>
                       {col}
@@ -228,6 +233,10 @@ const Order = () => {
                       {selectedStatus === ORDER_STATUSES.READY_FOR_PICKUP && (
                         <TableCell>{row?.delivery?.rider?.phone || "N/A"}</TableCell>
                       )}
+                      <TableCell style={{cursor: 'pointer'}} onClick={(e) => 
+                        { e.stopPropagation();
+                          row?.coupon?.id && handleNavigateToCoupon(row?.coupon?.id)
+                          }}>{row?.coupon?.code || "N/A"}</TableCell>
                     </TableRow>
                   ))
                 ) : (
