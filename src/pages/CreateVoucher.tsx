@@ -32,7 +32,7 @@ interface FormDataInterface {
   maxDiscount?: number; 
   minOrderAmount?: number;
   expiryDate: Dayjs;
-  usageLimit?: number;
+  usageLimit?: number | any;  // Allow null value
   singleUse: boolean;
   isActive: boolean;
   startDate?: Dayjs;
@@ -71,7 +71,7 @@ const schema = yup.object<FormDataInterface>().shape({
     .test("is-future", "Expiry Date must be in the future", (value) => {
       return value ? value.isAfter(dayjs()) : false;
     }),
-    usageLimit: yup.number().optional().transform((value) => (isNaN(value) ? undefined : value)),  // Transform null/empty to undefined
+    usageLimit: yup.number().optional().nullable(),  // Transform null/empty to undefined
     singleUse: yup.boolean().required(),
     isActive: yup.boolean().required(),
     startDate: yup.mixed<Dayjs>().optional()
