@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../services/api-service";
 import useAuthStore from "../../../store/Auth";
-import { MediaId, UploadImage, UserCredentials, UserLoginResponse } from "../interface";
+import { CreateCouponRequest, MediaId, UploadImage, UserCredentials, UserLoginResponse } from "../interface";
 import { AxiosResponse } from "axios";
 import { FETCH_ORDER_QUERIES } from "../query";
 
@@ -82,3 +82,21 @@ export const useFinaliseUploadImage = () => {
         }
     });
 };
+
+const createCouponAction = async (body: CreateCouponRequest) => {
+    const response : AxiosResponse = await api.post("/admin/create/coupon",body);
+    return response.data;
+}
+
+export const useCreateCoupon = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (body: CreateCouponRequest) => createCouponAction(body),
+        onError: (err) => {
+            console.error(err.message)
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_COUPONS });
+        }
+    })
+}

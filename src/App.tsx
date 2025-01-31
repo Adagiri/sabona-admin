@@ -14,6 +14,9 @@ import ProtectedRoute from "./pages/ProtectedRoute";
 import Login from "./pages/Login";
 import MapStats from "./pages/MapStats";
 import UserDetails from "./pages/UserDetails";
+import CreateVoucher from "./pages/CreateVoucher";
+import Voucher from "./pages/Voucher";
+import VoucherUsage from "./pages/VoucherUsage";
 
 const App: React.FC = () => {
   return (
@@ -43,6 +46,9 @@ const AppContent: React.FC = () => {
             <Route path="/customer/:pageNumber?" element={<Customer />} />
             <Route path="/vendor/:pageNumber?" element={<Vendor />} />
             <Route path="/driver/:pageNumber?" element={<Driver />} />
+            <Route path="/voucher/:pageNumber?" element={<Voucher />} />
+            <Route path="/createVoucher" element={<CreateVoucher />} />
+            <Route path="/voucherUsage/:voucherId" element={<VoucherUsage />} />
             <Route path="/application/:pageNumber?" element={<Application />} />
             <Route path="/order/:pageNumber?/:orderStatus?" element={<Order />} />
             <Route path="/order-details/:orderId" element={<OrderDetails />} />

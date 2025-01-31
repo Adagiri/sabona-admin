@@ -1,6 +1,6 @@
 import React from "react";
 import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar } from "@mui/material";
-import { Home, People, Business, LocalShipping, Apps, Inventory, Map } from "@mui/icons-material";
+import { Home, People, Business, LocalShipping, Apps, Inventory, Map, Discount } from "@mui/icons-material";
 import { Link, useLocation } from "react-router-dom";
 
 const menuItems = [
@@ -11,6 +11,7 @@ const menuItems = [
   { text: "Driver", icon: <LocalShipping />, route: "/driver" },
   { text: "Application", icon: <Apps />, route: "/application" },
   { text: "Map Stats", icon: <Map />, route: "/map-stats" },
+  { text: "Voucher", icon: <Discount />, route: "/voucher" },
 ];
 
 const Sidebar: React.FC = () => {

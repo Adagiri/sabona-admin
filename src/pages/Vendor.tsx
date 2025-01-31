@@ -125,7 +125,7 @@ const Vendor = () => {
             </TableHead>
             <TableBody>
               {vendors?.data && vendors?.data?.length > 0 ? (
-                vendors.data.map((row, index) => (
+                vendors?.data?.map((row, index) => (
                   <TableRow key={index} onClick={() => navigate(`/user-details/${row?.id}`)} sx={{ cursor: 'pointer' }}>
                     <TableCell>{row.firstName ?? 'N/A'}</TableCell>
                     <TableCell>{row.lastName ?? 'N/A'}</TableCell>
@@ -140,7 +140,7 @@ const Vendor = () => {
                       <ImageUpload
                         isLoading={isUploading && row.id === uploadId ? true : false}
                         variant="base"
-                        selectedImage={row?.medias.length > 0 ? true : false}
+                        selectedImage={row?.medias?.length > 0 ? true : false}
                         handleImageClick={handleImageClick(row.id)}
                         fileInputRef={(el: HTMLInputElement | null) => {
                           if (el) {
