@@ -17,6 +17,7 @@ import UserDetails from "./pages/UserDetails";
 import CreateVoucher from "./pages/CreateVoucher";
 import Voucher from "./pages/Voucher";
 import VoucherUsage from "./pages/VoucherUsage";
+import Tip from "./pages/Tip";
 
 const App: React.FC = () => {
   return (
@@ -51,9 +52,10 @@ const AppContent: React.FC = () => {
             <Route path="/voucherUsage/:voucherId" element={<VoucherUsage />} />
             <Route path="/application/:pageNumber?" element={<Application />} />
             <Route path="/order/:pageNumber?/:orderStatus?" element={<Order />} />
-            <Route path="/order-details/:orderId" element={<OrderDetails />} />
+            <Route path="/order-details/:orderId/:start?&end?" element={<OrderDetails />} />
             <Route path="/user-details/:userId" element={<UserDetails />} />
             <Route path="/map-stats" element={<MapStats />} />
+            <Route path="/tip/:pageNumber?" element={<Tip />} />
           </Route>
           {/* Default Redirect to Login */}
           <Route path="*" element={<Navigate to="/login" replace />} />

@@ -206,7 +206,18 @@ export interface OrderDetails {
                 price: number;
             }[];
         }[];
-    };
+    },
+    tip: {
+        id: string;
+        amount: number;
+        riderId: string;
+        type: TIP_TYPE;
+    }[],
+}
+
+export enum TIP_TYPE {
+    RIDER_PICKUP=  "RIDER_PICKUP",
+    RIDER_DELIVERY= "RIDER_DELIVERY"
 }
 
 export enum DISCOUNT_TYPE {
@@ -233,5 +244,10 @@ export interface FetchCouponParams {
     limit: number;
     column?: string;
     direction?: "ASC" | "DESC";
+}
+
+export interface getRiderTipsParams {
+    startDate: string;
+    endDate: string;
 }
 
