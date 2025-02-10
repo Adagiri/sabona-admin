@@ -1,6 +1,6 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query"
 import api from "../../../services/api-service"
-import { FetchApplicationsParams, FetchCouponParams, FetchOrdersParams, FetchUsersParams, OrderDetails, OrdersResponse, User, UserCoords, UserResponse } from "../interface"
+import { FetchApplicationsParams, FetchCouponParams, FetchOrdersParams, FetchUsersParams, getRiderTipsParams, OrderDetails, OrdersResponse, User, UserCoords, UserResponse } from "../interface"
 import { AxiosError, AxiosResponse } from "axios"
 
 export const FETCH_ORDER_QUERIES = {
@@ -11,7 +11,9 @@ export const FETCH_ORDER_QUERIES = {
   FETCH_ORDER_DETAILS: 'FETCH_ORDER_DETAILS',
   FETCH_USER_DETAILS: 'FETCH_USER_DETAILS',
   FETCH_ALL_COUPONS : 'FETCH_ALL_COUPONS',
-  FETCH_COUPON_USAGE: 'FETCH_COUPON_USAGE'
+  FETCH_COUPON_USAGE: 'FETCH_COUPON_USAGE',
+  FETCH_DRIVER_TIPS: 'FETCH_DRIVER_TIPS',
+  FETCH_ALL_TIPS: 'FETCH_ALL_TIPS'
 }
 
 const getAllOrders = async ({
@@ -153,11 +155,35 @@ const getCouponUsageAction = async (couponId: string) => {
 }
 
 export const useGetCouponUsage = (couponId: string) => {
-  console.log("couponId", couponId)
   return useQuery({
     queryFn: () => getCouponUsageAction(couponId),
     queryKey: [FETCH_ORDER_QUERIES.FETCH_COUPON_USAGE, couponId],
     enabled: !!couponId
+  })
+}
+
+export const getDriverTipsAction = async (driverId: string, params: getRiderTipsParams) => {
+  const response: AxiosResponse = await api.get(`/admin/driver-tips/${driverId}`, { params });
+  return response.data;
+}
+
+// export const useGetDriverTips = (driverId: string, params: getRiderTipsParams) => {
+//   return useQuery({
+//     queryFn: () => getDriverTipsAction(driverId, params),
+//     queryKey: [FETCH_ORDER_QUERIES.FETCH_DRIVER_TIPS, driverId],
+//     enabled: !!params.startDate && !!params.endDate
+//   })
+// }
+
+const fetchAllTips = async (params: FetchCouponParams) => {
+  const response: AxiosResponse = await api.get(`/admin/tips/all`, { params });
+  return response.data;
+}
+
+export const useFetchAllTips = (params: FetchCouponParams) => {
+  return useQuery({
+    queryFn: () => fetchAllTips(params),
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_TIPS]
   })
 }
 
