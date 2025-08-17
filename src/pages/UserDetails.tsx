@@ -27,6 +27,7 @@ import { useCallback, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import DocumentUploadSection from '../components/DocumentUploadSection';
 import VendorLocationMap from '../components/VendorLocationMap';
+import VendorLaundriesSection from '../components/VendorLaundriesSection';
 
 interface DateRangeFormData {
   dateFrom: Dayjs | null;
@@ -281,6 +282,7 @@ const UserDetails = () => {
                   p: 3,
                   bgcolor: 'white',
                   boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)',
+                  height: 'fit-content',
                 }}
               >
                 <Typography
@@ -289,37 +291,37 @@ const UserDetails = () => {
                   fontWeight='bold'
                   color='#333'
                 >
-                  🏪 Business Details
+                  🏢 Business Details
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
 
                 <Stack spacing={2}>
-                  {userDetails?.data.settings?.laundryName && (
+                  {userDetails?.data.settings?.businessCertificateNumber && (
                     <Box>
                       <Typography
                         variant='subtitle2'
                         fontWeight='bold'
                         color='#666'
                       >
-                        Laundry Name
+                        Business Certificate
                       </Typography>
                       <Typography variant='body1'>
-                        {userDetails.data.settings.laundryName}
+                        {userDetails.data.settings.businessCertificateNumber}
                       </Typography>
                     </Box>
                   )}
 
-                  {userDetails?.data.settings?.contactPhone && (
+                  {userDetails?.data.settings?.vatNumber && (
                     <Box>
                       <Typography
                         variant='subtitle2'
                         fontWeight='bold'
                         color='#666'
                       >
-                        Contact Phone
+                        VAT Number
                       </Typography>
                       <Typography variant='body1'>
-                        {userDetails.data.settings.contactPhone}
+                        {userDetails.data.settings.vatNumber}
                       </Typography>
                     </Box>
                   )}
@@ -330,14 +332,12 @@ const UserDetails = () => {
                       fontWeight='bold'
                       color='#666'
                     >
-                      Registration Status
+                      Account Status
                     </Typography>
                     <Chip
-                      label={userDetails?.data.status || 'UNKNOWN'}
+                      label={userDetails?.data.status}
                       sx={{
-                        fontWeight: 'bold',
-                        textTransform: 'none',
-                        bgcolor:
+                        backgroundColor:
                           userDetails?.data.status === 'ACTIVE'
                             ? '#e8f5e8'
                             : '#ffebee',
@@ -370,6 +370,9 @@ const UserDetails = () => {
               </Paper>
             </Grid>
           </Grid>
+
+          {/* Vendor Laundries Section */}
+          <VendorLaundriesSection vendorId={userDetails.data.id} />
 
           {/* Document Management Section */}
           <DocumentUploadSection userId={userDetails?.data.id} />

@@ -1,116 +1,128 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "../../../services/api-service";
-import useAuthStore from "../../../store/Auth";
-import { CreateCouponRequest, MediaId, UploadImage, UserCredentials, UserLoginResponse } from "../interface";
-import { AxiosResponse } from "axios";
-import { FETCH_ORDER_QUERIES } from "../query";
+// File: src/hooks/Admin/mutation.ts
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '../../../services/api-service';
+import useAuthStore from '../../../store/Auth';
+import {
+  CreateCouponRequest,
+  MediaId,
+  UploadImage,
+  UserCredentials,
+  UserLoginResponse,
+} from '../interface';
+import { AxiosResponse } from 'axios';
+import { FETCH_ORDER_QUERIES } from '../query';
 
 const LoginUser = async (creds: UserCredentials) => {
-    const { phone, password } = creds;
-    const response: AxiosResponse<UserLoginResponse> = await api.post("/auth/login", { phone, password });
-    return response.data;
+  const { phone, password } = creds;
+  const response: AxiosResponse<UserLoginResponse> = await api.post(
+    '/auth/login',
+    { phone, password }
+  );
+  return response.data;
 };
 
-
 export const useLoginUser = () => {
-    const setToken = useAuthStore(store => store.setToken);
-    return useMutation({
-        mutationFn: (creds: UserCredentials) => LoginUser(creds),
-        onSuccess: (res) => {
-            setToken(res.token);
-        }
-    })
-}
-
-// const approveApplicationAction = async (userId: string) => {
-//     const response: AxiosResponse = await api.post(`/admin/application/approve/${userId}`);
-//     return response.data;
-// }
-
-// export const useApproveApplication = () => {
-//     const queryClient = useQueryClient();
-//     return useMutation({
-//         mutationFn: (userId: string) => approveApplicationAction(userId),
-//         onSuccess: () => {
-//             queryClient.invalidateQueries({ queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_APPLICATIONS });
-//         }
-//     })
-// }
+  const setToken = useAuthStore((store) => store.setToken);
+  return useMutation({
+    mutationFn: (creds: UserCredentials) => LoginUser(creds),
+    onSuccess: (res) => {
+      setToken(res.token);
+    },
+  });
+};
 
 const uploadImage = async (body: UploadImage) => {
-    const response: AxiosResponse = await api.post(`/media/application/init`, body);
-    return response.data;
+  const response: AxiosResponse = await api.post(
+    `/media/application/init`,
+    body
+  );
+  return response.data;
 };
 
 export const useUploadImage = () => {
-    return useMutation({
-        mutationFn: async (body: UploadImage) => uploadImage(body),
-    });
+  return useMutation({
+    mutationFn: async (body: UploadImage) => uploadImage(body),
+  });
 };
 
 const deleteMediaAction = async (mediaId: number) => {
-    return await api.delete(`/media/${mediaId}`);
-}
+  return await api.delete(`/media/${mediaId}`);
+};
 
 export const useDeleteMedia = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (mediaId: number) => deleteMediaAction(mediaId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_USERS,FETCH_ORDER_QUERIES.FETCH_USER_DETAILS] });
-        },
-        onError: (err) => {
-            console.error(err.message)
-        }
-    });
-}
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (mediaId: number) => deleteMediaAction(mediaId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_ALL_USERS,
+          FETCH_ORDER_QUERIES.FETCH_USER_DETAILS,
+        ],
+      });
+    },
+    onError: (err) => {
+      console.error(err.message);
+    },
+  });
+};
 
 const finaliseUploadImage = async (body: MediaId) => {
-    console.log(body);
-    const response: AxiosResponse = await api.post('/media/application/finalize', body);
-    return response.data;
+  console.log(body);
+  const response: AxiosResponse = await api.post(
+    '/media/application/finalize',
+    body
+  );
+  return response.data;
 };
 
 export const useFinaliseUploadImage = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: async (body: MediaId) => finaliseUploadImage(body),
-        onSuccess: () => {
-            setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_USERS });
-            }, 2000);
-        }
-    });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: MediaId) => finaliseUploadImage(body),
+    onSuccess: () => {
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_USERS,
+        });
+      }, 2000);
+    },
+  });
 };
 
 const createCouponAction = async (body: CreateCouponRequest) => {
-    const response : AxiosResponse = await api.post("/admin/create/coupon",body);
-    return response.data;
-}
+  const response: AxiosResponse = await api.post('/admin/create/coupon', body);
+  return response.data;
+};
 
 export const useCreateCoupon = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (body: CreateCouponRequest) => createCouponAction(body),
-        onError: (err) => {
-            console.error(err.message)
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_COUPONS });
-        }
-    })
-}
-
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateCouponRequest) => createCouponAction(body),
+    onError: (err) => {
+      console.error(err.message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_COUPONS,
+      });
+    },
+  });
+};
 
 export const useFinaliseApplicationDocument = () => {
   return useMutation({
     mutationFn: async ({ userId, documentType, uploadId }: any) => {
-      const response = await api.put(`/admin/application/documents/${userId}/finalize`, {
-        documentType,
-        uploadId
-      });
+      const response = await api.put(
+        `/admin/application/documents/${userId}/finalize`,
+        {
+          documentType,
+          uploadId,
+        }
+      );
       return response.data;
-    }
+    },
   });
 };
 
@@ -175,6 +187,319 @@ export const useUploadApplicationDocument = () => {
         }
       );
       return response.data;
+    },
+  });
+};
+
+// ==================== LAUNDRY MANAGEMENT MUTATIONS ====================
+
+export const useEditLaundry = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      laundryId,
+      data,
+    }: {
+      laundryId: string;
+      data: any;
+    }) => {
+      const response = await api.patch(
+        `/v1/admin/laundry/${laundryId}/edit`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_LAUNDRIES],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_BY_ID],
+      });
+    },
+  });
+};
+
+export const useDeleteLaundry = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (laundryId: string) => {
+      const response = await api.delete(
+        `/v1/admin/laundry/${laundryId}/delete`
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_LAUNDRIES],
+      });
+    },
+  });
+};
+
+// Service Management Hooks
+
+export const useCreateLaundryService = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      laundryId,
+      data,
+    }: {
+      laundryId: string;
+      data: any;
+    }) => {
+      const response = await api.post(
+        `/v1/admin/laundry/${laundryId}/service/create`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICES,
+          variables.laundryId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_LAUNDRIES],
+      });
+    },
+  });
+};
+
+export const useEditLaundryService = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      laundryId,
+      serviceId,
+      data,
+    }: {
+      laundryId: string;
+      serviceId: string;
+      data: any;
+    }) => {
+      const response = await api.patch(
+        `/v1/admin/laundry/${laundryId}/service/${serviceId}/edit`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICES,
+          variables.laundryId,
+        ],
+      });
+    },
+  });
+};
+
+export const useDeleteLaundryService = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      laundryId,
+      serviceId,
+    }: {
+      laundryId: string;
+      serviceId: string;
+    }) => {
+      const response = await api.delete(
+        `/v1/admin/laundry/${laundryId}/service/${serviceId}/delete`
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICES,
+          variables.laundryId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_LAUNDRIES],
+      });
+    },
+  });
+};
+
+// Service Item Management Hooks
+
+export const useCreateLaundryServiceItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      laundryId,
+      serviceId,
+      data,
+    }: {
+      laundryId: string;
+      serviceId: string;
+      data: any;
+    }) => {
+      const response = await api.post(
+        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICE_ITEMS,
+          variables.laundryId,
+          variables.serviceId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICES,
+          variables.laundryId,
+        ],
+      });
+    },
+  });
+};
+
+export const useEditLaundryServiceItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      laundryId,
+      serviceId,
+      itemId,
+      data,
+    }: {
+      laundryId: string;
+      serviceId: string;
+      itemId: string;
+      data: any;
+    }) => {
+      const response = await api.patch(
+        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/edit`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICE_ITEMS,
+          variables.laundryId,
+          variables.serviceId,
+        ],
+      });
+    },
+  });
+};
+
+export const useDeleteLaundryServiceItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      laundryId,
+      serviceId,
+      itemId,
+    }: {
+      laundryId: string;
+      serviceId: string;
+      itemId: string;
+    }) => {
+      const response = await api.delete(
+        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/delete`
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICE_ITEMS,
+          variables.laundryId,
+          variables.serviceId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICES,
+          variables.laundryId,
+        ],
+      });
+    },
+  });
+};
+
+// Category Management Hooks
+
+export const useCreateCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await api.post('/v1/admin/category/create', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
+      });
+    },
+  });
+};
+
+export const useEditCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      categoryId,
+      data,
+    }: {
+      categoryId: string;
+      data: any;
+    }) => {
+      const response = await api.patch(
+        `/v1/admin/category/${categoryId}/edit`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORY_BY_ID],
+      });
+    },
+  });
+};
+
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (categoryId: string) => {
+      const response = await api.delete(
+        `/v1/admin/category/${categoryId}/delete`
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
+      });
     },
   });
 };

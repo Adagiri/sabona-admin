@@ -1,4 +1,4 @@
-import React, { useState, useCallback, } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -62,12 +62,6 @@ const ApplicationDetails = () => {
   const validateForm = (): boolean => {
     const errors: ApprovalFormErrors = {};
 
-    if (user?.type === 'VENDOR') {
-      if (!selectedMainVendor) {
-        errors.mainVendorId = 'Main vendor selection is required';
-      }
-    }
-
     if (!formData.address.trim()) {
       errors.address = 'Address is required';
     }
@@ -85,12 +79,16 @@ const ApplicationDetails = () => {
 
     setIsApproving(true);
     try {
-      await approveApplication({
+      const payload:any = {
         userId,
-        mainVendorId: selectedMainVendor?.id || formData.mainVendorId,
         address: formData.address,
         contactPhone: formData.contactPhone,
-      });
+      };
+
+      if (selectedMainVendor?.id) {
+        payload.mainVendorId = selectedMainVendor?.id;
+      }
+      await approveApplication(payload);
       toast.success('Application approved successfully');
       navigate('/application/1');
     } catch (error: any) {
@@ -299,7 +297,7 @@ const ApplicationDetails = () => {
               }}
               selectedVendor={selectedMainVendor}
               error={formErrors.mainVendorId}
-              required={true}
+              required={false}
             />
           )}
 

@@ -1,12 +1,32 @@
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper, Pagination, CircularProgress, Alert } from "@mui/material";
-import { useFetchAllUsers } from "../hooks/Admin/query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { USER_TYPES } from "../hooks/Admin/interface";
-import { toast, ToastContainer } from "react-toastify";
-import { useNavigate, useParams } from "react-router-dom";
-import ImageUpload from "../components/upload/ImageUpload";
-import { useFinaliseUploadImage, useUploadImage } from "../hooks/Admin/mutation";
-import uploadAndFinalizeImage from "../utils/uploadAndFinalizeImage";
+// File: src/pages/Vendor.tsx
+
+import {
+  Box,
+  Typography,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper,
+  Pagination,
+  CircularProgress,
+  Alert,
+  Stack,
+  Chip,
+} from '@mui/material';
+import { Business, LocalLaundryService } from '@mui/icons-material';
+import { useFetchAllUsers, useFetchAllLaundries } from '../hooks/Admin/query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { USER_TYPES } from '../hooks/Admin/interface';
+import { toast, ToastContainer } from 'react-toastify';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  useFinaliseUploadImage,
+  useUploadImage,
+} from '../hooks/Admin/mutation';
+import uploadAndFinalizeImage from '../utils/uploadAndFinalizeImage';
+import EnhancedVendorTableRow from '../components/EnhancedVendorTableRow';
 
 const Vendor = () => {
   const { pageNumber } = useParams<{ pageNumber: string }>();
@@ -19,28 +39,42 @@ const Vendor = () => {
 
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRefs = useRef<Record<string | number, HTMLInputElement>>({});
-  const { data: vendors, isLoading, error, isError , refetch : refetchVendor } = useFetchAllUsers({
+
+  const {
+    data: vendors,
+    isLoading,
+    error,
+    isError,
+    refetch: refetchVendor,
+  } = useFetchAllUsers({
     type: USER_TYPES.VENDOR,
     page,
     limit,
   });
 
+  const { data: allLaundries } = useFetchAllLaundries();
+
   const showError = useCallback((errorMessage: string) => {
-    toast(errorMessage, { type: "error" });
+    toast(errorMessage, { type: 'error' });
   }, []);
 
   const showSuccess = useCallback((errorMessage: string) => {
-    toast(errorMessage, { type: "success" });
+    toast(errorMessage, { type: 'success' });
   }, []);
 
   useEffect(() => {
     if (error) {
-      showError((error?.response?.data as { message: string })?.message || 'Unknown error');
+      showError(
+        (error?.response?.data as { message: string })?.message ||
+          'Unknown error'
+      );
     }
   }, [error, showError]);
 
-
-  const totalPages = useMemo(() => Math.ceil((vendors?.count ?? 0) / limit), [vendors, limit]);
+  const totalPages = useMemo(
+    () => Math.ceil((vendors?.count ?? 0) / limit),
+    [vendors, limit]
+  );
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -51,132 +85,187 @@ const Vendor = () => {
     }
   }, [pageNumber, navigate]);
 
-  const handleImageClick = useCallback((vendorId: string) => () => {
-    if (vendorId) {
-      fileInputRefs.current[vendorId]?.click();
-      setUploadId(vendorId);
-    }
-  }, []);
+  const handleImageClick = useCallback(
+    (vendorId: string) => () => {
+      if (vendorId) {
+        fileInputRefs.current[vendorId]?.click();
+        setUploadId(vendorId);
+      }
+    },
+    []
+  );
 
   const handleImageChange = useCallback(
     (vendorId: string) => async (e: React.ChangeEvent<HTMLInputElement>) => {
-      console.log("ASDASDASD", vendorId);
       const file = e.target.files?.[0];
-      let media = null;
-      const isPublic = false
-      if (file) {
+      if (file && vendorId) {
         setIsUploading(true);
         try {
-          const mediaId = await uploadAndFinalizeImage(
+          await uploadAndFinalizeImage(
             file,
             uploadVendorDoc,
             finaliseVendorDoc,
             vendorId,
-            isPublic
+            showSuccess,
+            showError
           );
-          media = mediaId;
-          if(media) {
-            showSuccess('Document uploaded successfully');
-        }
-
-        }
-        catch (err) {
-          console.log("ERROR", err);
-        }
-        finally {
+          await refetchVendor();
+        } catch (err) {
+          console.error('Upload failed:', err);
+        } finally {
           setIsUploading(false);
-          refetchVendor();
         }
       }
     },
-    [finaliseVendorDoc, uploadVendorDoc]
+    [uploadVendorDoc, finaliseVendorDoc, refetchVendor, showSuccess, showError]
   );
 
-  const handlePageChange = useCallback(
-    (_: any, value: number) => {
-      setPage(value);
-      navigate(`/vendor/${value}`);
-    },
-    [navigate]
-  );
-  const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
-  const currentEnd = useMemo(() => Math.min(page * limit, vendors?.count || 0), [page, limit, vendors?.count]);
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+    navigate(`/vendor/${value}`);
+  };
+
+  // Calculate laundry stats
+  const totalLaundries = allLaundries?.data?.length || 0;
+  const vendorsWithLaundries =
+    vendors?.data?.filter((vendor: any) =>
+      allLaundries?.data?.some((laundry: any) => laundry.vendorId === vendor.id)
+    ).length || 0;
+
+  if (isLoading) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight='60vh'
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Box p={3}>
+        <Alert severity='error'>
+          Failed to load vendors. Please try again later.
+        </Alert>
+      </Box>
+    );
+  }
+
   return (
-    <Box pr={5}>
+    <Box sx={{ p: 3 }}>
       <ToastContainer />
-      <Typography variant="h4" gutterBottom mb={5}>
-        Vendor
+
+      {/* Header */}
+      <Typography variant='h4' fontWeight='bold' gutterBottom>
+        Vendor Management
       </Typography>
-      {isLoading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-          <CircularProgress />
-        </Box>
-      ) : isError ? (
-        <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-          <Alert severity="error">Failed to load vendors. Please try again later.</Alert>
-        </Box>
-      ) : (
-        <Paper>
-          <Table>
-            <TableHead>
-              <TableRow hover selected>
-                {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At"].map((col) => (
-                  <TableCell style={{ fontWeight: 'bold' }} key={col}>{col}</TableCell>
-                ))}
+
+      {/* Stats */}
+      <Stack direction='row' spacing={2} mb={3}>
+        <Chip
+          icon={<Business />}
+          label={`Total Vendors: ${vendors?.count || 0}`}
+          color='primary'
+          variant='outlined'
+        />
+        <Chip
+          icon={<LocalLaundryService />}
+          label={`Total Laundries: ${totalLaundries}`}
+          color='secondary'
+          variant='outlined'
+        />
+        <Chip
+          icon={<Business />}
+          label={`Vendors with Laundries: ${vendorsWithLaundries}`}
+          color='success'
+          variant='outlined'
+        />
+      </Stack>
+
+      {/* Vendors Table */}
+      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell width={50}></TableCell>
+              <TableCell>
+                <strong>Vendor Details</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Phone</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Status</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Laundries</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Created</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Actions</strong>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {vendors?.data?.length > 0 ? (
+              vendors.data.map((vendor: any) => (
+                <EnhancedVendorTableRow
+                  key={vendor.id}
+                  vendor={vendor}
+                  handleImageClick={handleImageClick}
+                  handleImageChange={handleImageChange}
+                  fileInputRefs={fileInputRefs}
+                />
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} align='center'>
+                  <Typography variant='body1' color='text.secondary' py={4}>
+                    No vendors found.
+                  </Typography>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {vendors?.data && vendors?.data?.length > 0 ? (
-                vendors?.data?.map((row, index) => (
-                  <TableRow key={index} onClick={() => navigate(`/user-details/${row?.id}`)} sx={{ cursor: 'pointer' }}>
-                    <TableCell>{row.firstName ?? 'N/A'}</TableCell>
-                    <TableCell>{row.lastName ?? 'N/A'}</TableCell>
-                    <TableCell>{row.type}</TableCell>
-                    <TableCell>{row.phone}</TableCell>
-                    <TableCell>{row.email ?? 'N/A'}</TableCell>
-                    <TableCell style={row.status === 'INACTIVE' ? { color: 'red' } : { color: 'green' }}>
-                      {row.status}
-                    </TableCell>
-                    <TableCell>{row.createdAt}</TableCell>
-                    {/* <TableCell onClick={(e) => e.stopPropagation()}>
-                      <ImageUpload
-                        isLoading={isUploading && row.id === uploadId ? true : false}
-                        variant="base"
-                        selectedImage={row?.medias?.length > 0 ? true : false}
-                        handleImageClick={handleImageClick(row.id)}
-                        fileInputRef={(el: HTMLInputElement | null) => {
-                          if (el) {
-                            fileInputRefs.current[row.id] = el;
-                          }
-                        }}
-                        handleImageChange={handleImageChange(row.id)}
-                      />
-                    </TableCell> */}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">No vendors available</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} py={2} px={2}>
-            <Box flex="1" display="flex" justifyContent="center" marginLeft={20}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-              />
-            </Box>
-            {vendors && (
-              <Typography variant="body2" sx={{ ml: 3 }}>
-                Showing {vendors?.data?.length > 0 ? `${currentStart}-${currentEnd}` : 0} of {vendors?.count || 0} items
-              </Typography>
             )}
-          </Box>
-        </Paper>
+          </TableBody>
+        </Table>
+      </Paper>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={3}>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={handlePageChange}
+            color='primary'
+          />
+        </Box>
+      )}
+
+      {isUploading && (
+        <Box
+          position='fixed'
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bgcolor='rgba(0,0,0,0.5)'
+          display='flex'
+          alignItems='center'
+          justifyContent='center'
+          zIndex={9999}
+        >
+          <CircularProgress />
+          <Typography ml={2} color='white'>
+            Uploading image...
+          </Typography>
+        </Box>
       )}
     </Box>
   );

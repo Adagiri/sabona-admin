@@ -88,7 +88,7 @@ const MainVendorSearch: React.FC<MainVendorSearchProps> = ({
             placeholder='Type laundry name to search...'
             fullWidth
             margin='normal'
-            required={required}
+            // required={required}
             error={!!error}
             InputProps={{
               ...params.InputProps,

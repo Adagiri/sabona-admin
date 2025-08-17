@@ -1,24 +1,39 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { Box, CssBaseline, Toolbar } from "@mui/material";
-import Sidebar from "./components/Sidebar";
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Customer from "./pages/Customer";
-import Vendor from "./pages/Vendor";
-import Driver from "./pages/Driver";
-import Application from "./pages/Application";
-import Order from "./pages/Order";
-import OrderDetails from "./pages/OrderDetails";
-import ProtectedRoute from "./pages/ProtectedRoute";
-import Login from "./pages/Login";
-import MapStats from "./pages/MapStats";
-import UserDetails from "./pages/UserDetails";
-import CreateVoucher from "./pages/CreateVoucher";
-import Voucher from "./pages/Voucher";
-import VoucherUsage from "./pages/VoucherUsage";
-import Tip from "./pages/Tip";
-import ApplicationDetails from "./pages/ApplicationDetails";
+// File: src/App.tsx
+
+import React from 'react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
+import { Box, CssBaseline, Toolbar } from '@mui/material';
+import Sidebar from './components/Sidebar';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Customer from './pages/Customer';
+import Vendor from './pages/Vendor';
+import Driver from './pages/Driver';
+import Application from './pages/Application';
+import Order from './pages/Order';
+import OrderDetails from './pages/OrderDetails';
+import ProtectedRoute from './pages/ProtectedRoute';
+import Login from './pages/Login';
+import MapStats from './pages/MapStats';
+import UserDetails from './pages/UserDetails';
+import CreateVoucher from './pages/CreateVoucher';
+import Voucher from './pages/Voucher';
+import VoucherUsage from './pages/VoucherUsage';
+import Tip from './pages/Tip';
+import ApplicationDetails from './pages/ApplicationDetails';
+
+// Import new laundry management pages
+import Laundry from './pages/Laundry';
+import LaundryServices from './pages/LaundryServices';
+import LaundryServiceItems from './pages/LaundryServiceItems';
+import Categories from './pages/Categories';
+import EditLaundry from './pages/EditLaundry';
 
 const App: React.FC = () => {
   return (
@@ -30,7 +45,7 @@ const App: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const isAuthPage = location.pathname === "/login";
+  const isAuthPage = location.pathname === '/login';
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', minWidth: '100vw' }}>
@@ -56,6 +71,20 @@ const AppContent: React.FC = () => {
             <Route path='/' element={<Home />} />
             <Route path='/customer/:pageNumber?' element={<Customer />} />
             <Route path='/vendor/:pageNumber?' element={<Vendor />} />
+
+            {/* Laundry Management Routes */}
+            <Route path='/laundry' element={<Laundry />} />
+            <Route path='/laundry/categories' element={<Categories />} />
+            <Route path='/laundry/:laundryId/edit' element={<EditLaundry />} />
+            <Route
+              path='/laundry/:laundryId/services'
+              element={<LaundryServices />}
+            />
+            <Route
+              path='/laundry/:laundryId/service/:serviceId/items'
+              element={<LaundryServiceItems />}
+            />
+
             <Route path='/driver/:pageNumber?' element={<Driver />} />
             <Route path='/voucher/:pageNumber?' element={<Voucher />} />
             <Route path='/createVoucher' element={<CreateVoucher />} />
@@ -77,8 +106,6 @@ const AppContent: React.FC = () => {
               element={<ApplicationDetails />}
             />
           </Route>
-          {/* Default Redirect to Login */}
-          <Route path='*' element={<Navigate to='/login' replace />} />
         </Routes>
       </Box>
     </Box>
