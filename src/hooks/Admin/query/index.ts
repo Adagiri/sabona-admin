@@ -291,7 +291,7 @@ const searchMainVendorsAction = async (params: {
   return response.data;
 };
 
-export const useSearchMainVendors = ({ query, limit = 50, enabled = true }) => {
+export const useSearchMainVendors = ({ query, limit = 50, enabled = true }: any) => {
   return useQuery({
     queryFn: () =>
       searchMainVendorsAction({

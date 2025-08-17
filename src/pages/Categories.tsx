@@ -33,10 +33,12 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import { useForm, Controller } from 'react-hook-form';
+import { useFetchCategories } from '../hooks/Admin/query';
 import {
-  useFetchCategories,
-} from '../hooks/Admin/query';
-import { useCreateCategory, useDeleteCategory, useEditCategory } from '../hooks/Admin/mutation';
+  useCreateCategory,
+  useDeleteCategory,
+  useEditCategory,
+} from '../hooks/Admin/mutation';
 
 interface CategoryData {
   id: string;
@@ -275,6 +277,8 @@ const Categories: React.FC = () => {
                         disabled={
                           category._count?.laundryServiceItem &&
                           category._count.laundryServiceItem > 0
+                            ? true
+                            : false
                         }
                       >
                         <Delete />

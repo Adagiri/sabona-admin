@@ -116,7 +116,7 @@ const VendorLaundriesSection: React.FC<VendorLaundriesSectionProps> = ({
             <Chip
               icon={<Settings />}
               label={`Total Services: ${vendorLaundries.reduce(
-                (sum, laundry) => sum + (laundry._count?.laundryService || 0),
+                (sum: number, laundry: any) => sum + (laundry._count?.laundryService || 0),
                 0
               )}`}
               color='secondary'

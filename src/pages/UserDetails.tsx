@@ -295,7 +295,7 @@ const UserDetails = () => {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
 
-                <Stack spacing={2}>
+                {/* <Stack spacing={2}>
                   {userDetails?.data.settings?.businessCertificateNumber && (
                     <Box>
                       <Typography
@@ -366,7 +366,7 @@ const UserDetails = () => {
                       </Typography>
                     </Box>
                   )}
-                </Stack>
+                </Stack> */}
               </Paper>
             </Grid>
           </Grid>

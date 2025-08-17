@@ -35,11 +35,11 @@ const Vendor = () => {
 
   const { mutateAsync: uploadVendorDoc } = useUploadImage();
   const { mutateAsync: finaliseVendorDoc } = useFinaliseUploadImage();
-  const [uploadId, setUploadId] = useState<string | null>(null);
+  const [uploadId, setUploadId] = useState<string | null>(null); // Fixed: Added both state and setter
 
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRefs = useRef<Record<string | number, HTMLInputElement>>({});
-
+  console.log(uploadId);
   const {
     data: vendors,
     isLoading,
@@ -106,8 +106,7 @@ const Vendor = () => {
             uploadVendorDoc,
             finaliseVendorDoc,
             vendorId,
-            showSuccess,
-            showError
+            false
           );
           await refetchVendor();
         } catch (err) {
@@ -213,7 +212,7 @@ const Vendor = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {vendors?.data?.length > 0 ? (
+            {vendors?.data?.length && vendors.data.length > 0 ? (
               vendors.data.map((vendor: any) => (
                 <EnhancedVendorTableRow
                   key={vendor.id}

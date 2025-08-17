@@ -6,12 +6,12 @@ import {
 } from "@mui/material";
 import { PictureAsPdf, OpenInNew, Delete } from "@mui/icons-material";
 import { useDeleteMedia } from "../hooks/Admin/mutation";
-import { MediaFile } from "../hooks/Admin/interface";
+import { Media } from "../hooks/Admin/interface";
 import { useNavigate } from "react-router-dom";
 
 const isPDF = (url: string) => url.toLowerCase().includes('.pdf');
 
-const MediaItem = ({ file }: { file: MediaFile }) => {
+const MediaItem = ({ file }: { file: Media }) => {
     const navigate = useNavigate();   
     const handlePDFClick = () => {
         window.open(file.location, '_blank');
@@ -43,7 +43,7 @@ const MediaItem = ({ file }: { file: MediaFile }) => {
                 }
             }}
         >
-            {isPDF(file.location) ? (
+            {file.location && isPDF(file.location) ? (
                 <Box
                     sx={{
                         height: '100%',

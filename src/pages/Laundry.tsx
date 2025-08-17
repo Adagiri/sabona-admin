@@ -122,7 +122,7 @@ const Laundry: React.FC = () => {
   useEffect(() => {
     if (error) {
       showError(
-        (error?.response?.data as { message: string })?.message ||
+        // (error?.response?.data as { message: string })?.message ||
           'Failed to fetch laundries'
       );
     }

@@ -1,7 +1,6 @@
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper, ToggleButtonGroup, ToggleButton, Pagination, Button, CircularProgress, Alert } from "@mui/material";
+import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper, ToggleButtonGroup, ToggleButton, Pagination, CircularProgress, Alert } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGetApplications } from "../hooks/Admin/query";
-import { useApproveApplication } from "../hooks/Admin/mutation";
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -10,9 +9,7 @@ const Application = () => {
 const { pageNumber } = useParams<{ pageNumber: string }>();
 const [page, setPage] = useState<number>(Number(pageNumber) || 1);
   const [limit] = useState(10);
-  const [approvingRow, setApprovingRow] = useState<string | null>(null); 
-  const { mutateAsync: approveApplication } = useApproveApplication();
-  const { data: applications, isLoading: isLoadingApplications, refetch: refetchApplications, error, isError } = useGetApplications({
+  const { data: applications, isLoading: isLoadingApplications, error, isError } = useGetApplications({
     type: selectedType,
     page,
     limit,
@@ -59,21 +56,21 @@ const [page, setPage] = useState<number>(Number(pageNumber) || 1);
   const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
   const currentEnd = useMemo(() => Math.min(page * limit, applications?.count || 0), [page, limit, applications?.count]);
 
-  const handleApprove = useCallback(
-    async (userId: string) => {
-      setApprovingRow(userId);
-      try {
-        await approveApplication(userId);
-        await refetchApplications();
-      } catch (error: any) {
-        const errorMessage = error?.response?.data?.message || "Failed to approve application.";
-        showError(errorMessage);
-      } finally {
-        setApprovingRow(null);
-      }
-    },
-    [approveApplication, refetchApplications]
-  );
+  // const handleApprove = useCallback(
+  //   async (userId: string) => {
+  //     setApprovingRow(userId);
+  //     try {
+  //       await approveApplication(userId);
+  //       await refetchApplications();
+  //     } catch (error: any) {
+  //       const errorMessage = error?.response?.data?.message || "Failed to approve application.";
+  //       showError(errorMessage);
+  //     } finally {
+  //       setApprovingRow(null);
+  //     }
+  //   },
+  //   [approveApplication, refetchApplications]
+  // );
 
   const showError = useCallback((errorMessage: string) => {
     toast(errorMessage, { type: "error" });

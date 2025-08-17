@@ -39,6 +39,8 @@ const EditLaundry: React.FC = () => {
     control,
     handleSubmit,
     watch,
+    setValue, // Added setValue
+    trigger, // Added trigger
     formState: { errors, isDirty },
   } = useForm<LaundryFormData>({
     defaultValues: {
@@ -84,10 +86,11 @@ const EditLaundry: React.FC = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          // Update form values
-          control._formValues.lat = latitude;
-          control._formValues.long = longitude;
-          control._trigger(['lat', 'long']);
+          // Update form values using setValue
+          setValue('lat', latitude);
+          setValue('long', longitude);
+          // Trigger validation for these fields
+          trigger(['lat', 'long']);
           toast.success('Location updated to current position');
         },
         (error) => {
