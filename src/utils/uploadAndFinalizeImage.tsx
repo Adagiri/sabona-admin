@@ -6,7 +6,8 @@ const uploadAndFinalizeImage = async (
   img: any,
   uploadImage: any,
   finaliseUploadImage: any,
-  userId : string 
+  userId : string ,
+  isPublic: boolean
 ) => {
   let media = null;
   const fileType = img.type === 'application/pdf' ? 'DOCUMENT' : upperCase(img.type.split('/')[0]);
@@ -14,7 +15,7 @@ const uploadAndFinalizeImage = async (
     name: img.name,
     size: img.size / 1024,
     type: fileType,
-    public: true,
+    public: isPublic ,
     userId 
   });
 

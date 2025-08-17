@@ -188,3 +188,40 @@ export const useFetchAllTips = (params: FetchCouponParams) => {
 }
 
 
+
+const getApplicationDocumentsAction = async (userId: string) => {
+  const response = await api.get(`/admin/application/documents/${userId}`);
+
+  console.log(response.data)
+  return response.data;
+};
+
+export const useGetApplicationDocuments = (userId: string) => {
+  return useQuery({
+    queryFn: () => getApplicationDocumentsAction(userId),
+    queryKey: ['APPLICATION_DOCUMENTS', userId],
+    enabled: !!userId,
+  });
+};
+
+
+const searchMainVendorsAction = async (params: {
+  laundryName: string;
+  limit?: number;
+}) => {
+  const response = await api.get('/admin/main-vendors/search', { params });
+  return response.data;
+};
+
+export const useSearchMainVendors = ({ query, limit = 50, enabled = true }) => {
+  return useQuery({
+    queryFn: () =>
+      searchMainVendorsAction({
+        laundryName: query,
+        limit,
+      }),
+    queryKey: ['SEARCH_MAIN_VENDORS', query, limit],
+    enabled: enabled && query.length >= 3, // Require 3+ characters
+    staleTime: 30000, // Cache for 30 seconds
+  });
+};

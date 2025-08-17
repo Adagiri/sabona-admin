@@ -74,24 +74,14 @@ export enum LEVELS {
     ELITE = "ELITE",
 }
 
-export type User = {
-    id: string,
-    firstName: string,
-    lastName: string,
-    type: keyof typeof USER_TYPES,
-    email: string,
-    phone: string,
-    status: keyof typeof STATUSES;
-    createdAt: string,
-    level: LEVELS,
-    medias: MediaFile[],
-}
 
-export type MediaFile = {
-    id: number;
-    location: string;
-    status: string;
-}
+
+
+// export type MediaFile = {
+//     id: number;
+//     location: string;
+//     status: string;
+// }
 
 export type UserResponse = {
     data: User[],
@@ -251,3 +241,84 @@ export interface getRiderTipsParams {
     endDate: string;
 }
 
+// Based on your Prisma schema and backend responses
+export interface Media {
+  id: number;
+  name: string;
+  extension: string;
+  type: MediaType;
+  access: MediaAccess;
+  size?: number;
+  location?: string;
+  path: string;
+  thumbPath?: string;
+  status: MediaStatus;
+  meta?: any;
+  userId?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+//   user?: UserData;
+}
+
+// Enums from your Prisma schema
+export enum MediaType {
+  IMAGE = 'IMAGE',
+  VIDEO = 'VIDEO',
+  DOCUMENT = 'DOCUMENT',
+  ARCHIVE = 'ARCHIVE',
+  OTHER = 'OTHER'
+}
+
+export enum MediaAccess {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE'
+}
+
+export enum MediaStatus {
+  UPLOADING = 'UPLOADING',
+  READY = 'READY',
+  STALE = 'STALE'
+}
+
+// Simplified version for lists (what you currently have)
+export type MediaFile = {
+  id: number;
+  location: string;
+  status: string;
+}
+
+export type User = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  type: keyof typeof USER_TYPES;
+  email: string;
+  phone: string;
+  status: keyof typeof STATUSES;
+  createdAt: string;
+  level: LEVELS;
+  medias: Media[]; // Use the full Media interface instead of MediaFile
+  settings?: UserSettings;
+};
+
+export interface UserSettings {
+  laundryName?: string;
+  lat?: number;
+  long?: number;
+  contactPhone?: string;
+  isOnboardingCompleted?: boolean;
+}
+
+// interface ApplicationDocument {
+//   id: number;
+//   name: string;
+//   path: string;
+//   type: string;
+//   createdAt: string;
+// }
+
+// interface ApplicationDocumentsResponse {
+//   vatNumberDoc?: ApplicationDocument;
+//   businessCertDoc?: ApplicationDocument;
+// }

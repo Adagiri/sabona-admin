@@ -39,6 +39,7 @@ const Driver = () => {
         (vendorId: string) => async (e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             let media = null;
+            const isPublic = false
             if (file) {
                 setIsUploading(true);
                 try {
@@ -46,7 +47,8 @@ const Driver = () => {
                         file,
                         uploadVendorDoc,
                         finaliseVendorDoc,
-                        vendorId
+                        vendorId,
+                        isPublic
                     );
                     media = mediaId;
                     if(media) {

@@ -22,20 +22,20 @@ export const useLoginUser = () => {
     })
 }
 
-const approveApplicationAction = async (userId: string) => {
-    const response: AxiosResponse = await api.post(`/admin/application/approve/${userId}`);
-    return response.data;
-}
+// const approveApplicationAction = async (userId: string) => {
+//     const response: AxiosResponse = await api.post(`/admin/application/approve/${userId}`);
+//     return response.data;
+// }
 
-export const useApproveApplication = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (userId: string) => approveApplicationAction(userId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_APPLICATIONS });
-        }
-    })
-}
+// export const useApproveApplication = () => {
+//     const queryClient = useQueryClient();
+//     return useMutation({
+//         mutationFn: (userId: string) => approveApplicationAction(userId),
+//         onSuccess: () => {
+//             queryClient.invalidateQueries({ queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_APPLICATIONS });
+//         }
+//     })
+// }
 
 const uploadImage = async (body: UploadImage) => {
     const response: AxiosResponse = await api.post(`/media/application/init`, body);
@@ -100,3 +100,81 @@ export const useCreateCoupon = () => {
         }
     })
 }
+
+
+export const useFinaliseApplicationDocument = () => {
+  return useMutation({
+    mutationFn: async ({ userId, documentType, uploadId }: any) => {
+      const response = await api.put(`/admin/application/documents/${userId}/finalize`, {
+        documentType,
+        uploadId
+      });
+      return response.data;
+    }
+  });
+};
+
+export const useApproveApplication = () => {
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      mainVendorId,
+      address,
+      contactPhone,
+    }: {
+      userId: string;
+      mainVendorId: string;
+      address: string;
+      contactPhone: string;
+    }) => {
+      const response = await api.post(`/admin/application/approve/${userId}`, {
+        mainVendorId,
+        address,
+        contactPhone,
+      });
+      return response.data;
+    },
+  });
+};
+
+// Corrected rejection mutation
+export const useRejectApplication = () => {
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      rejectionReason,
+    }: {
+      userId: string;
+      rejectionReason: string;
+    }) => {
+      const response = await api.post(`/admin/application/reject/${userId}`, {
+        rejectionReason, // Backend expects this field name
+      });
+      return response.data;
+    },
+  });
+};
+
+// Document upload mutation (submits media IDs)
+export const useUploadApplicationDocument = () => {
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      vatNumberDocId,
+      businessCertDocId,
+    }: {
+      userId: string;
+      vatNumberDocId: string;
+      businessCertDocId: string;
+    }) => {
+      const response = await api.post(
+        `/admin/application/documents/${userId}`,
+        {
+          vatNumberDocId,
+          businessCertDocId,
+        }
+      );
+      return response.data;
+    },
+  });
+};

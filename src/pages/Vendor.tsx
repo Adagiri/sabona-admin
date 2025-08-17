@@ -63,6 +63,7 @@ const Vendor = () => {
       console.log("ASDASDASD", vendorId);
       const file = e.target.files?.[0];
       let media = null;
+      const isPublic = false
       if (file) {
         setIsUploading(true);
         try {
@@ -70,7 +71,8 @@ const Vendor = () => {
             file,
             uploadVendorDoc,
             finaliseVendorDoc,
-            vendorId
+            vendorId,
+            isPublic
           );
           media = mediaId;
           if(media) {
@@ -118,7 +120,7 @@ const Vendor = () => {
           <Table>
             <TableHead>
               <TableRow hover selected>
-                {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At", "Document"].map((col) => (
+                {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At"].map((col) => (
                   <TableCell style={{ fontWeight: 'bold' }} key={col}>{col}</TableCell>
                 ))}
               </TableRow>
@@ -136,7 +138,7 @@ const Vendor = () => {
                       {row.status}
                     </TableCell>
                     <TableCell>{row.createdAt}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
+                    {/* <TableCell onClick={(e) => e.stopPropagation()}>
                       <ImageUpload
                         isLoading={isUploading && row.id === uploadId ? true : false}
                         variant="base"
@@ -149,7 +151,7 @@ const Vendor = () => {
                         }}
                         handleImageChange={handleImageChange(row.id)}
                       />
-                    </TableCell>
+                    </TableCell> */}
                   </TableRow>
                 ))
               ) : (
