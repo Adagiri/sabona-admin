@@ -1,206 +1,315 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
-  Button,
-  TextField,
-  Modal,
-  Grid,
   Card,
   CardContent,
+  Grid,
+  Button,
   Divider,
-  CircularProgress,
+  TextField,
   Alert,
+  Chip,
+  Stack,
+  Paper,
+  CircularProgress,
+  Autocomplete,
 } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import { useGetUserDetails } from '../hooks/Admin/query';
+import {
+  ArrowBack,
+  Person,
+  Business,
+  LocationOn,
+  CheckCircle,
+  Cancel,
+  Search,
+} from '@mui/icons-material';
+import { toast } from 'react-toastify';
+import { useGetUserDetails, useSearchMainVendors } from '../hooks/Admin/query';
 import {
   useApproveApplication,
   useRejectApplication,
 } from '../hooks/Admin/mutation';
 import VendorLocationMap from '../components/VendorLocationMap';
-import DocumentUploadSection from '../components/DocumentUploadSection';
-import MainVendorSearch from '../components/MainVendorSearch';
-
-interface ApprovalFormData {
-  mainVendorId: string;
-  address: string;
-  contactPhone: string;
-}
-
-interface ApprovalFormErrors {
-  mainVendorId?: string;
-  address?: string;
-  contactPhone?: string;
-}
+import DynamicDocumentSection from '../components/DynamicDocumentSection';
+import VendorLaundriesSection from '../components/VendorLaundriesSection';
 
 const ApplicationDetails = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedMainVendor, setSelectedMainVendor] = useState<any>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [isApproving, setIsApproving] = useState(false);
-  const [isRejecting, setIsRejecting] = useState(false);
 
-  // Form data for approval
-  const [formData, setFormData] = useState<ApprovalFormData>({
-    mainVendorId: '',
+  const [rejectReason, setRejectReason] = useState('');
+  const [selectedMainVendor, setSelectedMainVendor] = useState<any>(null);
+  const [vendorDetails, setVendorDetails] = useState({
     address: '',
     contactPhone: '',
   });
+  const [mainVendorSearchTerm, setMainVendorSearchTerm] = useState('');
 
-  const [formErrors, setFormErrors] = useState<ApprovalFormErrors>({});
+  // Query hooks
+  const {
+    data: userDetails,
+    isLoading,
+    error,
+    refetch,
+  } = useGetUserDetails(userId!);
 
-  const { data: userDetails, isLoading, error } = useGetUserDetails(userId!);
-  const { mutateAsync: approveApplication } = useApproveApplication();
-  const { mutateAsync: rejectApplication } = useRejectApplication();
+  // Search for main vendors - always enabled for vendor applications
+  const { data: searchResults, isLoading: isSearching } = useSearchMainVendors({
+    query: mainVendorSearchTerm,
+    limit: 20,
+    enabled:
+      userDetails?.data?.type === 'VENDOR' && mainVendorSearchTerm.length >= 2,
+  });
 
-  const user = userDetails?.data;
+  // Mutation hooks
+  const { mutateAsync: approveApplication, isPending: isApproving } =
+    useApproveApplication();
+  const { mutateAsync: rejectApplication, isPending: isRejecting } =
+    useRejectApplication();
 
-  const validateForm = (): boolean => {
-    const errors: ApprovalFormErrors = {};
-
-    if (!formData.address.trim()) {
-      errors.address = 'Address is required';
+  useEffect(() => {
+    if (userDetails?.data) {
+      setVendorDetails({
+        address: userDetails.data.settings?.address || '',
+        contactPhone: userDetails.data.phone || '',
+      });
+      // Auto-populate search term with laundry name
+      if (userDetails.data.settings?.laundryName) {
+        setMainVendorSearchTerm(userDetails.data.settings.laundryName);
+      }
     }
+  }, [userDetails]);
 
-    if (!formData.contactPhone.trim()) {
-      errors.contactPhone = 'Contact phone is required';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const handleBack = () => {
+    navigate('/applications');
   };
 
-  const handleApprove = useCallback(async () => {
-    if (!userId || !validateForm()) return;
+  const handleApprove = async () => {
+    if (!userId) return;
 
-    setIsApproving(true);
     try {
-      const payload:any = {
-        userId,
-        address: formData.address,
-        contactPhone: formData.contactPhone,
-      };
+      // For vendors, we need mainVendorId, address, and contactPhone
+      if (userDetails?.data?.type === 'VENDOR') {
+        if (!vendorDetails.address || !vendorDetails.contactPhone) {
+          toast.error('Please provide all required vendor details');
+          return;
+        }
 
-      if (selectedMainVendor?.id) {
-        payload.mainVendorId = selectedMainVendor?.id;
+        await approveApplication({
+          userId,
+          mainVendorId: selectedMainVendor?.id || '',
+          address: vendorDetails.address,
+          contactPhone: vendorDetails.contactPhone,
+        });
+      } else {
+        // For riders, we might not need additional details
+        await approveApplication({
+          userId,
+          mainVendorId: '', // Not applicable for riders
+          address: '',
+          contactPhone: userDetails?.data?.phone || '',
+        });
       }
-      await approveApplication(payload);
-      toast.success('Application approved successfully');
-      navigate('/application/1');
+
+      toast.success(
+        `${userDetails?.data?.type?.toLowerCase()} application approved successfully`
+      );
+      refetch();
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message || 'Failed to approve application'
       );
-    } finally {
-      setIsApproving(false);
-      setModalOpen(false);
     }
-  }, [userId, selectedMainVendor, formData, approveApplication, navigate]);
+  };
 
-  const handleReject = useCallback(async () => {
-    if (!userId || !rejectReason.trim()) return;
+  const handleReject = async () => {
+    if (!userId || !rejectReason.trim()) {
+      toast.error('Please provide a rejection reason');
+      return;
+    }
 
-    setIsRejecting(true);
     try {
       await rejectApplication({
         userId,
-        rejectionReason: rejectReason, // Backend expects 'rejectionReason'
+        rejectionReason: rejectReason,
       });
-      toast.success('Application rejected');
-      navigate('/application/1');
+
+      toast.success(
+        `${userDetails?.data?.type?.toLowerCase()} application rejected`
+      );
+      refetch();
+      setRejectReason('');
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message || 'Failed to reject application'
       );
-    } finally {
-      setIsRejecting(false);
     }
-  }, [userId, rejectReason, rejectApplication, navigate]);
-
-  const handleOpenApprovalModal = () => {
-    setFormData({
-      mainVendorId: '',
-      address: '',
-      contactPhone: '',
-    });
-    setSelectedMainVendor(null);
-    setFormErrors({});
-    setModalOpen(true);
   };
 
-  if (isLoading) return <CircularProgress />;
-  if (error || !user)
-    return <Alert severity='error'>Failed to load application details</Alert>;
+  const getStatusChip = (status: string) => {
+    const statusMap = {
+      ACTIVE: {
+        color: 'success' as const,
+        icon: <CheckCircle />,
+        label: 'Approved',
+      },
+      INACTIVE: {
+        color: 'warning' as const,
+        icon: <Cancel />,
+        label: 'Pending',
+      },
+      REJECTED: {
+        color: 'error' as const,
+        icon: <Cancel />,
+        label: 'Rejected',
+      },
+    };
+
+    const config =
+      statusMap[status as keyof typeof statusMap] || statusMap.INACTIVE;
+    return (
+      <Chip icon={config.icon} label={config.label} color={config.color} />
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight={400}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !userDetails?.data) {
+    return (
+      <Alert severity='error' sx={{ m: 2 }}>
+        Error loading application details. Please try again.
+      </Alert>
+    );
+  }
+
+  const user = userDetails.data;
 
   return (
     <Box p={3}>
-      <ToastContainer />
-
       {/* Header */}
-      <Box
-        display='flex'
-        justifyContent='space-between'
-        alignItems='center'
-        mb={3}
-      >
-        <Typography variant='h4'>{user.type} Application Details</Typography>
-        <Button variant='outlined' onClick={() => navigate('/application/1')}>
+      <Box display='flex' alignItems='center' mb={3}>
+        <Button startIcon={<ArrowBack />} onClick={handleBack} sx={{ mr: 2 }}>
           Back to Applications
         </Button>
+        <Typography variant='h4' fontWeight='bold'>
+          {user.type} Application Details
+        </Typography>
+        <Box ml='auto'>{getStatusChip(user.status)}</Box>
       </Box>
 
       <Grid container spacing={3}>
-        {/* User Information */}
+        {/* Basic Information */}
         <Grid item xs={12} md={6}>
-          <Card>
+          <Card elevation={3}>
             <CardContent>
               <Typography variant='h6' gutterBottom>
-                Personal Information
+                <Person sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Basic Information
               </Typography>
               <Divider sx={{ mb: 2 }} />
 
-              <Typography>
-                <strong>Name:</strong> {user.firstName} {user.lastName}
-              </Typography>
-              <Typography>
-                <strong>Email:</strong> {user.email}
-              </Typography>
-              <Typography>
-                <strong>Phone:</strong> {user.phone}
-              </Typography>
-              <Typography>
-                <strong>Type:</strong> {user.type}
-              </Typography>
-              <Typography>
-                <strong>Status:</strong> {user.status}
-              </Typography>
-              <Typography>
-                <strong>Applied:</strong>{' '}
-                {new Date(user.createdAt).toLocaleDateString()}
-              </Typography>
-
-              {user.type === 'VENDOR' && user.settings?.laundryName && (
+              <Stack spacing={1}>
                 <Typography>
-                  <strong>Laundry Name:</strong> {user.settings.laundryName}
+                  <strong>Name:</strong> {user.firstName} {user.lastName}
                 </Typography>
-              )}
+                <Typography>
+                  <strong>Email:</strong> {user.email || 'Not provided'}
+                </Typography>
+                <Typography>
+                  <strong>Phone:</strong> {user.phone || 'Not provided'}
+                </Typography>
+                <Typography>
+                  <strong>Type:</strong> {user.type}
+                </Typography>
+                <Typography>
+                  <strong>Status:</strong> {user.status}
+                </Typography>
+                <Typography>
+                  <strong>Applied:</strong>{' '}
+                  {new Date(user.createdAt).toLocaleDateString()}
+                </Typography>
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
+
+        {/* Type-Specific Information */}
+        {user.type === 'VENDOR' && user.settings?.laundryName && (
+          <Grid item xs={12} md={6}>
+            <Card elevation={3}>
+              <CardContent>
+                <Typography variant='h6' gutterBottom>
+                  <Business sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Vendor Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+
+                <Stack spacing={1}>
+                  <Typography>
+                    <strong>Laundry Name:</strong> {user.settings.laundryName}
+                  </Typography>
+                  {user.settings.address && (
+                    <Typography>
+                      <strong>Address:</strong> {user.settings.address}
+                    </Typography>
+                  )}
+                  {user.settings.lat && user.settings.long && (
+                    <Typography>
+                      <strong>Location:</strong> Provided
+                    </Typography>
+                  )}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {user.type === 'RIDER' && (
+          <Grid item xs={12} md={6}>
+            <Card elevation={3}>
+              <CardContent>
+                <Typography variant='h6' gutterBottom>
+                  🚗 Rider Information
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+
+                <Stack spacing={1}>
+                  <Typography>
+                    <strong>Level:</strong> {user.level || 'BASIC'}
+                  </Typography>
+                  <Typography>
+                    <strong>Documents Uploaded:</strong>{' '}
+                    {user.settings?.isDocumentsUploaded ? '✅ Yes' : '❌ No'}
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
 
         {/* Location Map for Vendors */}
         {user.type === 'VENDOR' &&
           user.settings?.lat &&
           user.settings?.long && (
-            <Grid item xs={12} md={6}>
-              <Card>
+            <Grid item xs={12}>
+              <Card elevation={3}>
                 <CardContent>
                   <Typography variant='h6' gutterBottom>
-                    Pinned Location
+                    <LocationOn sx={{ mr: 1, verticalAlign: 'middle' }} />
+                    Business Location
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
                   <VendorLocationMap
@@ -213,28 +322,189 @@ const ApplicationDetails = () => {
             </Grid>
           )}
 
-        {/* Document Management (Independent of Approval) */}
+        {/* Vendor Laundries Section (Vendors only) */}
+        {user.type === 'VENDOR' && user.status === 'ACTIVE' && (
+          <Grid item xs={12}>
+            <VendorLaundriesSection vendorId={user.id} />
+          </Grid>
+        )}
+
+        {/* Dynamic Document Management */}
         <Grid item xs={12}>
-          <DocumentUploadSection userId={userId!} />
+          <Paper elevation={3} sx={{ p: 3 }}>
+            <DynamicDocumentSection
+              userId={user.id}
+              userType={user.type as 'VENDOR' | 'RIDER' | 'USER' | 'ADMIN'}
+            />
+          </Paper>
         </Grid>
 
         {/* Approval Actions */}
         {user.status === 'INACTIVE' && (
           <Grid item xs={12}>
-            <Card>
+            <Card elevation={3}>
               <CardContent>
                 <Typography variant='h6' gutterBottom>
                   Approval Actions
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
 
-                <Box display='flex' gap={2} alignItems='center'>
+                {/* Vendor-specific approval fields */}
+                {user.type === 'VENDOR' && (
+                  <Box mb={3}>
+                    <Typography variant='subtitle2' gutterBottom>
+                      Vendor Details (Required for Approval)
+                    </Typography>
+                    <Grid container spacing={2} mb={3}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label='Business Address'
+                          value={vendorDetails.address}
+                          onChange={(e) =>
+                            setVendorDetails((prev) => ({
+                              ...prev,
+                              address: e.target.value,
+                            }))
+                          }
+                          size='small'
+                          required
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          fullWidth
+                          label='Contact Phone'
+                          value={vendorDetails.contactPhone}
+                          onChange={(e) =>
+                            setVendorDetails((prev) => ({
+                              ...prev,
+                              contactPhone: e.target.value,
+                            }))
+                          }
+                          size='small'
+                          required
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {/* Main Vendor Search Section */}
+                    <Box mb={3}>
+                      <Typography variant='subtitle2' gutterBottom>
+                        <Search sx={{ mr: 1, verticalAlign: 'middle' }} />
+                        Link to Main Vendor (Optional)
+                      </Typography>
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        display='block'
+                        mb={2}
+                      >
+                        Search and select an existing main vendor to link this
+                        application as a branch
+                      </Typography>
+
+                      <Autocomplete
+                        options={searchResults || []}
+                        getOptionLabel={(option) =>
+                          `${option.laundryName} - ${option.phone} (${
+                            option.branchCount || 0
+                          } branches)`
+                        }
+                        value={selectedMainVendor}
+                        onChange={(_, newValue) =>
+                          setSelectedMainVendor(newValue)
+                        }
+                        onInputChange={(_, newInputValue) =>
+                          setMainVendorSearchTerm(newInputValue)
+                        }
+                        loading={isSearching}
+                        loadingText='Searching vendors...'
+                        noOptionsText={
+                          mainVendorSearchTerm.length < 2
+                            ? 'Type at least 2 characters to search'
+                            : 'No vendors found'
+                        }
+                        filterOptions={(x) => x} // Disable client-side filtering
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label='Search Main Vendors'
+                            placeholder='Type laundry name to search...'
+                            size='small'
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {isSearching ? (
+                                    <CircularProgress
+                                      color='inherit'
+                                      size={20}
+                                    />
+                                  ) : null}
+                                  {params.InputProps.endAdornment}
+                                </>
+                              ),
+                            }}
+                          />
+                        )}
+                        renderOption={(props, option) => (
+                          <Box component='li' {...props}>
+                            <Box>
+                              <Typography variant='body2' fontWeight='bold'>
+                                {option.laundryName}
+                              </Typography>
+                              <Typography
+                                variant='caption'
+                                color='text.secondary'
+                              >
+                                {option.phone} • {option.branchCount || 0}{' '}
+                                branches
+                              </Typography>
+                            </Box>
+                          </Box>
+                        )}
+                        sx={{ mb: 2 }}
+                      />
+
+                      {selectedMainVendor && (
+                        <Alert severity='info' sx={{ mt: 2 }}>
+                          Selected:{' '}
+                          <strong>{selectedMainVendor.laundryName}</strong> as
+                          main vendor. This vendor will be linked as a branch.
+                        </Alert>
+                      )}
+
+                      {searchResults && searchResults.length >= 20 && (
+                        <Alert severity='warning' sx={{ mt: 1 }}>
+                          Showing first 20 results. Be more specific to narrow
+                          down results.
+                        </Alert>
+                      )}
+                    </Box>
+                  </Box>
+                )}
+
+                <Stack
+                  direction='row'
+                  spacing={2}
+                  alignItems='center'
+                  flexWrap='wrap'
+                >
                   <Button
                     variant='contained'
                     color='primary'
-                    onClick={handleOpenApprovalModal}
+                    onClick={handleApprove}
+                    disabled={isApproving}
+                    startIcon={
+                      isApproving ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <CheckCircle />
+                      )
+                    }
                   >
-                    Approve Application
+                    {isApproving ? 'Approving...' : `Approve ${user.type}`}
                   </Button>
 
                   <TextField
@@ -242,113 +512,38 @@ const ApplicationDetails = () => {
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
                     size='small'
-                    sx={{ minWidth: 250 }}
+                    sx={{ minWidth: 300 }}
                     multiline
                     rows={2}
                   />
+
                   <Button
                     variant='contained'
                     color='error'
                     onClick={handleReject}
                     disabled={!rejectReason.trim() || isRejecting}
+                    startIcon={
+                      isRejecting ? <CircularProgress size={20} /> : <Cancel />
+                    }
                   >
-                    {isRejecting ? (
-                      <CircularProgress size={20} color='inherit' />
-                    ) : (
-                      'Reject'
-                    )}
+                    {isRejecting ? 'Rejecting...' : 'Reject'}
                   </Button>
-                </Box>
+                </Stack>
               </CardContent>
             </Card>
           </Grid>
         )}
+
+        {/* Status Message */}
+        {user.status === 'ACTIVE' && (
+          <Grid item xs={12}>
+            <Alert severity='success'>
+              This {user.type.toLowerCase()} application has been approved and
+              is active.
+            </Alert>
+          </Grid>
+        )}
       </Grid>
-
-      {/* Approval Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 700,
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-            borderRadius: 2,
-            maxHeight: '90vh',
-            overflow: 'auto',
-          }}
-        >
-          <Typography variant='h6' gutterBottom>
-            Approve Application
-          </Typography>
-
-          {user.type === 'VENDOR' && (
-            <MainVendorSearch
-              onVendorSelect={(vendor) => {
-                setSelectedMainVendor(vendor);
-                setFormData((prev) => ({
-                  ...prev,
-                  mainVendorId: vendor?.id || '',
-                }));
-              }}
-              selectedVendor={selectedMainVendor}
-              error={formErrors.mainVendorId}
-              required={false}
-            />
-          )}
-
-          <TextField
-            fullWidth
-            label='Address *'
-            value={formData.address}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, address: e.target.value }))
-            }
-            margin='normal'
-            placeholder='Enter complete address'
-            required
-            error={!!formErrors.address}
-            helperText={
-              formErrors.address || 'Full address where the business operates'
-            }
-            multiline
-            rows={3}
-          />
-
-          <TextField
-            fullWidth
-            label='Contact Phone *'
-            value={formData.contactPhone}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, contactPhone: e.target.value }))
-            }
-            margin='normal'
-            placeholder='+92xxxxxxxxxx'
-            required
-            error={!!formErrors.contactPhone}
-            helperText={formErrors.contactPhone || 'Customer care phone number'}
-          />
-
-          <Box display='flex' justifyContent='end' gap={2} mt={3}>
-            <Button onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button
-              variant='contained'
-              onClick={handleApprove}
-              disabled={isApproving}
-            >
-              {isApproving ? (
-                <CircularProgress size={20} />
-              ) : (
-                'Approve Application'
-              )}
-            </Button>
-          </Box>
-        </Box>
-      </Modal>
     </Box>
   );
 };

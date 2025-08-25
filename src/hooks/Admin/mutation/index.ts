@@ -503,3 +503,35 @@ export const useDeleteCategory = () => {
     },
   });
 };
+
+export const useUploadRiderDocument = () => {
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      driverLicenseDocId,
+    }: {
+      userId: string;
+      driverLicenseDocId: string;
+    }) => {
+      const response = await api.post(`/admin/rider/documents/${userId}`, {
+        driverLicenseDocId,
+      });
+      return response.data;
+    },
+  });
+};
+
+export const useFinaliseRiderDocument = () => {
+  return useMutation({
+    mutationFn: async ({ userId, documentType, uploadId }: any) => {
+      const response = await api.put(
+        `/admin/rider/documents/${userId}/finalize`,
+        {
+          documentType,
+          uploadId,
+        }
+      );
+      return response.data;
+    },
+  });
+};

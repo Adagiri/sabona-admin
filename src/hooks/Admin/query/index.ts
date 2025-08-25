@@ -283,6 +283,7 @@ export const useGetApplicationDocuments = (userId: string) => {
   });
 };
 
+
 const searchMainVendorsAction = async (params: {
   laundryName: string;
   limit?: number;
@@ -291,16 +292,30 @@ const searchMainVendorsAction = async (params: {
   return response.data;
 };
 
-export const useSearchMainVendors = ({ query, limit = 50, enabled = true }: any) => {
+export const useSearchMainVendors = ({
+  query,
+  laundryName,
+  limit = 50,
+  enabled = true,
+}: {
+  query?: string;
+  laundryName?: string;
+  limit?: number;
+  enabled?: boolean;
+}) => {
+  // Use either query or laundryName parameter (for backward compatibility)
+  const searchTerm = query || laundryName || '';
+
   return useQuery({
     queryFn: () =>
       searchMainVendorsAction({
-        laundryName: query,
+        laundryName: searchTerm,
         limit,
       }),
-    queryKey: ['SEARCH_MAIN_VENDORS', query, limit],
-    enabled: enabled && query.length >= 3, // Require 3+ characters
+    queryKey: ['SEARCH_MAIN_VENDORS', searchTerm, limit],
+    enabled: enabled && searchTerm.length >= 3, // Safe length check
     staleTime: 30000, // Cache for 30 seconds
+    gcTime: 10 * 60 * 1000, // 10 minutes (fixed from cacheTime)
   });
 };
 
@@ -376,5 +391,20 @@ export const useFetchCategoryById = (categoryId: string) => {
       return response.data;
     },
     enabled: !!categoryId,
+  });
+};
+
+const getRiderDocumentsAction = async (userId: string) => {
+  const response = await api.get(`/admin/rider/documents/${userId}`);
+  return response.data;
+};
+
+export const useGetRiderDocuments = (userId: string) => {
+  return useQuery({
+    queryFn: () => getRiderDocumentsAction(userId),
+    queryKey: ['RIDER_DOCUMENTS', userId],
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };

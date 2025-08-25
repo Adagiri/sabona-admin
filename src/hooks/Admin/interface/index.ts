@@ -310,6 +310,45 @@ export interface UserSettings {
   isOnboardingCompleted?: boolean;
 }
 
+export interface RiderDocumentDTO {
+  id: number;
+  name: string;
+  status: string;
+  uploadedAt: string;
+  viewUrl: string | null;
+}
+
+export interface RiderDocumentsResponse {
+  driverLicense: RiderDocumentDTO | null;
+  hasAllDocuments: boolean;
+  totalDocuments: number;
+}
+
+export interface UploadRiderDocumentRequest {
+  driverLicenseDocId: string;
+}
+
+export interface FinalizeRiderDocumentRequest {
+  documentType: string;
+  uploadId: string;
+}
+
+export interface UploadRiderDocumentResponse {
+  success: boolean;
+  message: string;
+  riderId: string;
+}
+
+export interface FinalizeRiderDocumentResponse {
+  success: boolean;
+  message: string;
+  document: {
+    id: number;
+    type: string;
+    status: string;
+    path: string;
+  };
+}
 // interface ApplicationDocument {
 //   id: number;
 //   name: string;

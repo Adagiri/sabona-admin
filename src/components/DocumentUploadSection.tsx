@@ -9,8 +9,15 @@ import {
   Alert,
   Divider,
   Grid,
+  CircularProgress,
 } from '@mui/material';
-import { CloudUpload, Visibility, Description } from '@mui/icons-material';
+import {
+  CloudUpload,
+  Visibility,
+  Description,
+  CheckCircle,
+  Refresh,
+} from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import {
   useUploadApplicationDocument,
@@ -35,6 +42,8 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
     business: false,
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [documents, setDocuments] = useState<{
     vatNumberDocId?: string;
     businessCertDocId?: string;
@@ -52,7 +61,8 @@ const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
 
   const handleFileUpload = async (file: File, type: 'vat' | 'business') => {
     setUploading((prev) => ({ ...prev, [type]: true }));
-const isPublic = false
+    const isPublic = false;
+
     try {
       const mediaId = await uploadAndFinalizeImage(
         file,
@@ -65,37 +75,82 @@ const isPublic = false
       setDocuments((prev) => ({
         ...prev,
         [type === 'vat' ? 'vatNumberDocId' : 'businessCertDocId']:
-          mediaId.toString(),
+          mediaId,
       }));
 
       toast.success(`${type.toUpperCase()} document uploaded successfully`);
-    } catch (error) {
-      toast.error(`Failed to upload ${type} document`);
+    } catch (error: any) {
+      console.error(`Upload error for ${type}:`, error);
+      toast.error(
+        `Failed to upload ${type} document: ${
+          error?.message || 'Unknown error'
+        }`
+      );
     } finally {
       setUploading((prev) => ({ ...prev, [type]: false }));
     }
   };
 
   const handleSubmitDocuments = async () => {
-    if (!documents.vatNumberDocId || !documents.businessCertDocId) {
-      toast.error('Please upload both VAT and business documents first');
+    // IMPROVED LOGIC: Use new document IDs where available, fall back to existing ones
+    const finalVatId =
+      documents.vatNumberDocId ||
+      applicationDocuments?.vatNumberDoc?.id?.toString();
+    const finalBusinessId =
+      documents.businessCertDocId ||
+      applicationDocuments?.businessCertDoc?.id?.toString();
+
+    if (!finalVatId || !finalBusinessId) {
+      toast.error(
+        'Please ensure both VAT and business documents are available'
+      );
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       await uploadApplicationDocuments({
         userId,
-        vatNumberDocId: documents.vatNumberDocId,
-        businessCertDocId: documents.businessCertDocId,
+        vatNumberDocId: finalVatId,
+        businessCertDocId: finalBusinessId,
       });
 
       await refetchDocs();
-      toast.success('Documents submitted successfully');
-      setDocuments({});
+
+      // Determine what was updated
+      const updatedVat = documents.vatNumberDocId;
+      const updatedBusiness = documents.businessCertDocId;
+      const hasExisting =
+        applicationDocuments?.vatNumberDoc &&
+        applicationDocuments?.businessCertDoc;
+
+      let message = '';
+      if (hasExisting) {
+        if (updatedVat && updatedBusiness) {
+          message = 'Both documents updated successfully!';
+        } else if (updatedVat) {
+          message = 'VAT document updated successfully!';
+        } else if (updatedBusiness) {
+          message = 'Business document updated successfully!';
+        } else {
+          message = 'Documents resubmitted successfully!';
+        }
+      } else {
+        message = 'Documents submitted successfully!';
+      }
+
+      toast.success(`${message} They are now available for review.`);
+      setDocuments({}); // Clear local state
     } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message || 'Failed to submit documents'
-      );
+      console.error('Submit documents error:', error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to submit documents';
+      toast.error(`Submission failed: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -103,15 +158,56 @@ const isPublic = false
     (type: 'vat' | 'business') => (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
+        // Validate file type
+        const allowedTypes = [
+          'application/pdf',
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+        ];
+        if (!allowedTypes.includes(file.type)) {
+          toast.error('Please upload a valid PDF, JPG, or PNG file');
+          return;
+        }
+
+        // Validate file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+          toast.error('File size must be less than 10MB');
+          return;
+        }
+
         handleFileUpload(file, type);
       }
+      // Clear the input value to allow re-uploading the same file
+      e.target.value = '';
     };
 
   const viewDocument = (doc: any) => {
-    console.log(doc)
-    const viewUrl = doc.url;
-    window.open(viewUrl, '_blank');
+    console.log('Viewing document:', doc);
+    if (doc?.url) {
+      window.open(doc.url, '_blank');
+    } else {
+      toast.error('Document preview is not available');
+    }
   };
+
+  // Check what documents are available
+  const hasSubmittedDocuments =
+    applicationDocuments?.vatNumberDoc && applicationDocuments?.businessCertDoc;
+  const hasNewDocuments =
+    documents.vatNumberDocId || documents.businessCertDocId;
+
+  // IMPROVED LOGIC: Show submit button if:
+  // 1. Both documents are newly uploaded (first time)
+  // 2. OR at least one document is newly uploaded AND existing documents can fill the gaps
+  const canSubmitFirstTime =
+    documents.vatNumberDocId && documents.businessCertDocId;
+  const canSubmitReplacement = hasNewDocuments && hasSubmittedDocuments;
+  const canSubmit = canSubmitFirstTime || canSubmitReplacement;
+
+  // Determine if this would be a replacement or new submission
+  const isReplacement = hasSubmittedDocuments && hasNewDocuments;
 
   return (
     <Card
@@ -131,6 +227,27 @@ const isPublic = false
           Upload and manage VAT and business certificate documents
         </Typography>
         <Divider sx={{ mb: 3 }} />
+
+        {/* Success Alert for Submitted Documents */}
+        {hasSubmittedDocuments && !hasNewDocuments && (
+          <Alert severity='success' sx={{ mb: 3 }} icon={<CheckCircle />}>
+            All required documents have been submitted and are available for
+            review. You can upload new documents to replace individual files if
+            needed.
+          </Alert>
+        )}
+
+        {/* Alert for pending replacements */}
+        {isReplacement && (
+          <Alert severity='info' sx={{ mb: 3 }} icon={<Refresh />}>
+            {documents.vatNumberDocId && documents.businessCertDocId
+              ? 'Both documents have been updated and are ready to replace existing ones.'
+              : documents.vatNumberDocId
+              ? 'New VAT document uploaded and ready to replace existing one.'
+              : 'New business document uploaded and ready to replace existing one.'}{' '}
+            Click "Update Documents" to submit the changes.
+          </Alert>
+        )}
 
         <Grid container spacing={3}>
           {/* VAT Document */}
@@ -154,13 +271,23 @@ const isPublic = false
               <Box display='flex' gap={1} mb={2}>
                 <Button
                   variant='outlined'
-                  startIcon={<CloudUpload />}
+                  startIcon={
+                    uploading.vat ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <CloudUpload />
+                    )
+                  }
                   onClick={() => vatFileRef.current?.click()}
-                  disabled={uploading.vat}
+                  disabled={uploading.vat || isSubmitting}
                   size='small'
                   fullWidth
                 >
-                  {uploading.vat ? 'Uploading...' : 'Upload VAT'}
+                  {uploading.vat
+                    ? 'Uploading...'
+                    : applicationDocuments?.vatNumberDoc
+                    ? 'Replace VAT'
+                    : 'Upload VAT'}
                 </Button>
 
                 {applicationDocuments?.vatNumberDoc && (
@@ -182,9 +309,18 @@ const isPublic = false
 
               {documents.vatNumberDocId && (
                 <Alert severity='success' sx={{ mb: 1 }}>
-                  VAT document ready for submission
+                  {applicationDocuments?.vatNumberDoc
+                    ? 'New VAT document ready to replace existing'
+                    : 'VAT document ready for submission'}
                 </Alert>
               )}
+
+              {applicationDocuments?.vatNumberDoc &&
+                !documents.vatNumberDocId && (
+                  <Alert severity='info' sx={{ mb: 1 }}>
+                    Current VAT document will be used
+                  </Alert>
+                )}
 
               {applicationDocuments?.vatNumberDoc && (
                 <Typography
@@ -192,7 +328,7 @@ const isPublic = false
                   display='block'
                   color='text.secondary'
                 >
-                  Last uploaded:{' '}
+                  Current document uploaded:{' '}
                   {new Date(
                     applicationDocuments.vatNumberDoc.updatedAt
                   ).toLocaleDateString()}
@@ -222,13 +358,23 @@ const isPublic = false
               <Box display='flex' gap={1} mb={2}>
                 <Button
                   variant='outlined'
-                  startIcon={<CloudUpload />}
+                  startIcon={
+                    uploading.business ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <CloudUpload />
+                    )
+                  }
                   onClick={() => businessFileRef.current?.click()}
-                  disabled={uploading.business}
+                  disabled={uploading.business || isSubmitting}
                   size='small'
                   fullWidth
                 >
-                  {uploading.business ? 'Uploading...' : 'Upload Business'}
+                  {uploading.business
+                    ? 'Uploading...'
+                    : applicationDocuments?.businessCertDoc
+                    ? 'Replace Business'
+                    : 'Upload Business'}
                 </Button>
 
                 {applicationDocuments?.businessCertDoc && (
@@ -250,9 +396,18 @@ const isPublic = false
 
               {documents.businessCertDocId && (
                 <Alert severity='success' sx={{ mb: 1 }}>
-                  Business document ready for submission
+                  {applicationDocuments?.businessCertDoc
+                    ? 'New business document ready to replace existing'
+                    : 'Business document ready for submission'}
                 </Alert>
               )}
+
+              {applicationDocuments?.businessCertDoc &&
+                !documents.businessCertDocId && (
+                  <Alert severity='info' sx={{ mb: 1 }}>
+                    Current business document will be used
+                  </Alert>
+                )}
 
               {applicationDocuments?.businessCertDoc && (
                 <Typography
@@ -260,7 +415,7 @@ const isPublic = false
                   display='block'
                   color='text.secondary'
                 >
-                  Last uploaded:{' '}
+                  Current document uploaded:{' '}
                   {new Date(
                     applicationDocuments.businessCertDoc.updatedAt
                   ).toLocaleDateString()}
@@ -269,23 +424,66 @@ const isPublic = false
             </Card>
           </Grid>
 
-          {/* Submit Button */}
-          {documents.vatNumberDocId && documents.businessCertDocId && (
+          {/* Submit Button - Now shows for single document updates too */}
+          {canSubmit && (
             <Grid item xs={12}>
               <Box display='flex' justifyContent='center' mt={2}>
                 <Button
                   variant='contained'
-                  color='primary'
+                  color={isReplacement ? 'warning' : 'primary'}
                   onClick={handleSubmitDocuments}
                   size='large'
-                  startIcon={<CloudUpload />}
+                  disabled={isSubmitting}
+                  startIcon={
+                    isSubmitting ? (
+                      <CircularProgress size={20} color='inherit' />
+                    ) : isReplacement ? (
+                      <Refresh />
+                    ) : (
+                      <CloudUpload />
+                    )
+                  }
                 >
-                  Submit Documents
+                  {isSubmitting
+                    ? isReplacement
+                      ? 'Updating Documents...'
+                      : 'Submitting Documents...'
+                    : isReplacement
+                    ? 'Update Documents'
+                    : 'Submit Documents'}
                 </Button>
               </Box>
             </Grid>
           )}
+
+          {/* Submission Progress */}
+          {isSubmitting && (
+            <Grid item xs={12}>
+              <Box mt={2}>
+                <LinearProgress />
+                <Typography
+                  variant='caption'
+                  display='block'
+                  textAlign='center'
+                  mt={1}
+                >
+                  {isReplacement
+                    ? 'Processing document updates...'
+                    : 'Processing document submission...'}
+                </Typography>
+              </Box>
+            </Grid>
+          )}
         </Grid>
+
+        {/* Help Text */}
+        <Box mt={3}>
+          <Typography variant='caption' color='text.secondary'>
+            Supported formats: PDF, JPG, PNG • Maximum file size: 10MB each
+            {hasSubmittedDocuments &&
+              ' • Upload individual files to replace them, or both to update all documents'}
+          </Typography>
+        </Box>
       </CardContent>
     </Card>
   );

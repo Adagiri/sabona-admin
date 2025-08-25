@@ -1,211 +1,168 @@
+// File: src/pages/UserDetails.tsx
+// Replace the Document Management Section with this updated version:
+
+import React, { useState } from 'react';
 import {
   Box,
   Typography,
   Paper,
+  Stack,
   Chip,
   Divider,
-  Stack,
-  Grid2,
-  Button,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   Grid,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
-import { CheckCircle, Home, Phone, Email } from '@mui/icons-material';
-import { getDriverTipsAction, useGetUserDetails } from '../hooks/Admin/query';
-import { useNavigate, useParams } from 'react-router-dom';
-import MediaItem from '../components/MediaItem';
-import { StringUtil } from '../utils/stringUtil';
-import { useForm, Controller } from 'react-hook-form';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs, { Dayjs } from 'dayjs';
-import { useCallback, useState } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
-import DocumentUploadSection from '../components/DocumentUploadSection';
-import VendorLocationMap from '../components/VendorLocationMap';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { Controller, useForm } from 'react-hook-form';
+import { useParams } from 'react-router-dom';
+import {  getDriverTipsAction, useGetUserDetails } from '../hooks/Admin/query';
 import VendorLaundriesSection from '../components/VendorLaundriesSection';
+import DynamicDocumentSection from '../components/DynamicDocumentSection'; // New import
+import MediaItem from '../components/MediaItem';
+import VendorLocationMap from '../components/VendorLocationMap';
+import dayjs, { Dayjs } from 'dayjs';
+import { toast } from 'react-toastify';
+import { Grid2 } from '@mui/material';
 
-interface DateRangeFormData {
+interface DateRangeForm {
   dateFrom: Dayjs | null;
   dateTo: Dayjs | null;
 }
 
-interface Tip {
-  id: string;
-  amount: number;
-  orderId: string;
-  createdAt: string;
-}
-
-interface DriverTips {
-  id: string;
-  receivedTips: Tip[];
-}
-
 const UserDetails = () => {
-  const params = useParams();
-  const navigate = useNavigate();
-  const { data: userDetails } = useGetUserDetails(params.userId as string);
-  const [driverTips, setDriverTips] = useState<DriverTips>();
+  const { userId } = useParams<{ userId: string }>();
+  const [driverTips, setDriverTips] = useState<any>(null);
+  const [tipsLoading, setTipsLoading] = useState(false);
+
+  const { data: userDetails, isLoading, error } = useGetUserDetails(userId!);
 
   const {
     control: dateControl,
     handleSubmit: handleDateSubmit,
-    watch,
-  } = useForm<DateRangeFormData>({
+    formState: { errors: dateErrors },
+  } = useForm<DateRangeForm>({
     defaultValues: {
-      dateFrom: null,
-      dateTo: null,
+      dateFrom: dayjs().subtract(30, 'day'),
+      dateTo: dayjs(),
     },
   });
 
-  const onDateRangeSubmit = useCallback(
-    async (data: DateRangeFormData) => {
-      try {
-        const res = await getDriverTipsAction(params.userId as string, {
-          startDate: data.dateFrom?.format('YYYY-MM-DD') ?? '',
-          endDate: data.dateTo?.endOf('day').toISOString() ?? '',
-        });
-        setDriverTips(res);
-      } catch (error: any) {
-        showError(error.message);
-      }
-    },
-    [params.userId]
-  );
-
-  const showError = useCallback((errorMessage: string) => {
-    toast(errorMessage, { type: 'error' });
-  }, []);
-
   const validateNotFuture = (value: Dayjs | null) => {
-    if (value && value.isAfter(dayjs(), 'day')) {
-      return 'Please select a date on or before today.';
-    }
+    if (!value) return 'Date is required';
+    if (value.isAfter(dayjs(), 'day')) return 'Date cannot be in the future';
     return true;
   };
 
-  const dateFrom = watch('dateFrom');
-  const dateTo = watch('dateTo');
-  const isIncomplete = !dateFrom || !dateTo;
+  const onDateRangeSubmit = async (data: DateRangeForm) => {
+    if (!data.dateFrom || !data.dateTo || !userId) return;
 
-  const validateDateTo = (value: Dayjs | null) => {
-    if (value && value.isAfter(dayjs(), 'day')) {
-      return 'Please select a date on or before today.';
+    if (data.dateFrom.isAfter(data.dateTo)) {
+      toast.error('Start date must be before end date');
+      return;
     }
 
-    if (dateFrom && value && value.isBefore(dateFrom, 'day')) {
-      return 'End date should be on or after the start date.';
+    setTipsLoading(true);
+    try {
+      const tips = await getDriverTipsAction(userId, {
+        startDate: data.dateFrom.format('YYYY-MM-DD'),
+        endDate: data.dateTo.format('YYYY-MM-DD'),
+      });
+      setDriverTips(tips);
+    } catch (error) {
+      console.log(error)
+      toast.error('Failed to fetch driver tips');
+    } finally {
+      setTipsLoading(false);
     }
-    return true;
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'success';
+      case 'INACTIVE':
+        return 'warning';
+      case 'REJECTED':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight={400}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error || !userDetails?.data) {
+    return (
+      <Alert severity='error' sx={{ m: 2 }}>
+        Error loading user details. Please try again.
+      </Alert>
+    );
+  }
 
   return (
-    <Box p={4}>
-      <ToastContainer />
-
-      {/* Header */}
+    <Box p={3}>
+      {/* User Information Section */}
       <Typography variant='h4' gutterBottom fontWeight='bold'>
-        {StringUtil.convertToPascalCase(
-          userDetails?.data.type === 'RIDER'
-            ? 'driver'
-            : userDetails?.data.type ?? 'User'
-        )}{' '}
-        Details
+        User Details
       </Typography>
+      <Divider sx={{ mb: 3 }} />
 
-      {/* Basic User Information */}
       <Paper
         elevation={6}
         sx={{
-          mb: 4,
           borderRadius: 3,
-          p: 4,
+          p: 3,
+          mb: 4,
           bgcolor: 'white',
           boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)',
         }}
       >
         <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          sx={{ justifyContent: 'space-between' }}
-          spacing={4}
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={3}
+          alignItems='flex-start'
         >
-          <Box>
-            <Typography
-              variant='h6'
-              fontWeight='bold'
-              color='#333'
-              sx={{ display: 'flex', alignItems: 'center' }}
-            >
-              <Home fontSize='small' sx={{ mr: 1, color: '#00796b' }} />
-              User Name
+          <Box flex={1}>
+            <Typography variant='h6' fontWeight='bold' gutterBottom>
+              {userDetails.data.firstName} {userDetails.data.lastName}
             </Typography>
-            <Typography variant='body1' color='#555' sx={{ ml: 3.5 }}>
-              {userDetails?.data.firstName} {userDetails?.data.lastName}
+            <Typography variant='body2' color='text.secondary' gutterBottom>
+              {userDetails.data.email}
             </Typography>
-          </Box>
-
-          <Box>
-            <Typography
-              variant='h6'
-              fontWeight='bold'
-              color='#333'
-              sx={{ display: 'flex', alignItems: 'center' }}
-            >
-              <Phone fontSize='small' sx={{ mr: 1, color: '#00796b' }} />
-              Phone number
+            <Typography variant='body2' color='text.secondary' gutterBottom>
+              {userDetails.data.phone}
             </Typography>
-            <Typography variant='body1' color='#555' sx={{ ml: 3.3 }}>
-              {userDetails?.data.phone?.replace(
-                /(\d{3})(\d{3})(\d{4})/,
-                '($1) $2-$3'
-              )}
+            <Typography variant='body2' color='text.secondary' gutterBottom>
+              User ID: {userDetails.data.id}
+            </Typography>
+            <Typography variant='body2' color='text.secondary'>
+              Joined:{' '}
+              {new Date(userDetails.data.createdAt).toLocaleDateString()}
             </Typography>
           </Box>
-
           <Box>
-            <Typography
-              variant='h6'
-              fontWeight='bold'
-              color='#333'
-              sx={{ display: 'flex', alignItems: 'center' }}
-            >
-              <Email fontSize='small' sx={{ mr: 1, color: '#00796b' }} />
-              Email Address
-            </Typography>
-            <Typography variant='body1' color='#555' sx={{ ml: 3.3 }}>
-              {userDetails?.data.email}
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography
-              variant='h6'
-              fontWeight='bold'
-              color='#333'
-              sx={{ display: 'flex', alignItems: 'center' }}
-            >
-              <CheckCircle fontSize='small' sx={{ mr: 1, color: '#00796b' }} />
-              User Status
-            </Typography>
             <Chip
-              label={userDetails?.data.status || 'ACTIVE'}
+              label={`${userDetails.data.type} - ${userDetails.data.status}`}
+              color={getStatusColor(userDetails.data.status) as any}
               sx={{
                 fontWeight: 'bold',
-                textTransform: 'none',
-                bgcolor:
-                  userDetails?.data.status === 'ACTIVE' ? '#e0f7fa' : '#ffebee',
-                color:
-                  userDetails?.data.status === 'ACTIVE' ? '#00796b' : '#c62828',
-                ml: 3.5,
                 px: 2,
                 py: 0.5,
                 borderRadius: 1,
-                boxShadow: '0px 2px 5px rgba(0,0,0,0.2)',
               }}
             />
           </Box>
@@ -291,93 +248,91 @@ const UserDetails = () => {
                   fontWeight='bold'
                   color='#333'
                 >
-                  🏢 Business Details
+                  🏢 Vendor Details
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
 
-                {/* <Stack spacing={2}>
-                  {userDetails?.data.settings?.businessCertificateNumber && (
-                    <Box>
-                      <Typography
-                        variant='subtitle2'
-                        fontWeight='bold'
-                        color='#666'
-                      >
-                        Business Certificate
-                      </Typography>
-                      <Typography variant='body1'>
-                        {userDetails.data.settings.businessCertificateNumber}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {userDetails?.data.settings?.vatNumber && (
-                    <Box>
-                      <Typography
-                        variant='subtitle2'
-                        fontWeight='bold'
-                        color='#666'
-                      >
-                        VAT Number
-                      </Typography>
-                      <Typography variant='body1'>
-                        {userDetails.data.settings.vatNumber}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  <Box>
-                    <Typography
-                      variant='subtitle2'
-                      fontWeight='bold'
-                      color='#666'
-                    >
-                      Account Status
+                <Stack spacing={1}>
+                  {userDetails.data.settings?.laundryName && (
+                    <Typography variant='body2'>
+                      <strong>Business Name:</strong>{' '}
+                      {userDetails.data.settings.laundryName}
                     </Typography>
-                    <Chip
-                      label={userDetails?.data.status}
-                      sx={{
-                        backgroundColor:
-                          userDetails?.data.status === 'ACTIVE'
-                            ? '#e8f5e8'
-                            : '#ffebee',
-                        color:
-                          userDetails?.data.status === 'ACTIVE'
-                            ? '#2e7d32'
-                            : '#c62828',
-                        px: 2,
-                        py: 0.5,
-                        borderRadius: 1,
-                      }}
-                    />
-                  </Box>
-
-                  {userDetails?.data.settings?.isOnboardingCompleted && (
-                    <Box>
-                      <Typography
-                        variant='subtitle2'
-                        fontWeight='bold'
-                        color='#666'
-                      >
-                        Onboarding
-                      </Typography>
-                      <Typography variant='body1' color='success.main'>
-                        ✅ Completed
-                      </Typography>
-                    </Box>
                   )}
-                </Stack> */}
+                  <Typography variant='body2'>
+                    <strong>Level:</strong> {userDetails.data.level || 'BASIC'}
+                  </Typography>
+                  <Typography variant='body2'>
+                    <strong>Documents Uploaded:</strong>{' '}
+                    {userDetails.data.settings?.isDocumentsUploaded
+                      ? '✅ Yes'
+                      : '❌ No'}
+                  </Typography>
+                </Stack>
               </Paper>
             </Grid>
           </Grid>
 
           {/* Vendor Laundries Section */}
           <VendorLaundriesSection vendorId={userDetails.data.id} />
-
-          {/* Document Management Section */}
-          <DocumentUploadSection userId={userDetails?.data.id} />
         </>
       )}
+
+      {/* Rider Information Section */}
+      {userDetails?.data.type === 'RIDER' && (
+        <>
+          <Typography variant='h5' gutterBottom fontWeight='bold' mt={2}>
+            Rider Information
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+
+          <Paper
+            elevation={6}
+            sx={{
+              borderRadius: 3,
+              p: 3,
+              mb: 4,
+              bgcolor: 'white',
+              boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <Typography
+              variant='h6'
+              gutterBottom
+              fontWeight='bold'
+              color='#333'
+            >
+              🚗 Rider Details
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+
+            <Stack spacing={1}>
+              <Typography variant='body2'>
+                <strong>Level:</strong> {userDetails.data.level || 'BASIC'}
+              </Typography>
+              <Typography variant='body2'>
+                <strong>Documents Uploaded:</strong>{' '}
+                {userDetails.data.settings?.isDocumentsUploaded
+                  ? '✅ Yes'
+                  : '❌ No'}
+              </Typography>
+            </Stack>
+          </Paper>
+        </>
+      )}
+
+      {/* Dynamic Document Management Section */}
+      <Typography variant='h5' gutterBottom fontWeight='bold' mt={4}>
+        Document Management
+      </Typography>
+      <Divider sx={{ mb: 3 }} />
+
+      <DynamicDocumentSection
+        userId={userDetails.data.id}
+        userType={
+          userDetails.data.type as 'VENDOR' | 'RIDER' | 'USER' | 'ADMIN'
+        }
+      />
 
       {/* Media Files Section */}
       <Typography variant='h5' gutterBottom fontWeight='bold' mt={4}>
@@ -387,7 +342,7 @@ const UserDetails = () => {
 
       {userDetails?.data.medias?.length ? (
         <Grid2 container spacing={3} sx={{ mb: 4 }}>
-          {userDetails.data.medias.map((file) => (
+          {userDetails.data.medias.map((file: any) => (
             <Box key={file.id} minWidth={200}>
               <MediaItem file={file} />
             </Box>
@@ -399,7 +354,7 @@ const UserDetails = () => {
         </Typography>
       )}
 
-      {/* Driver Tips Section */}
+      {/* Driver Tips Section - Only for Riders */}
       {userDetails?.data.type === 'RIDER' && (
         <Box mt={4}>
           <Typography variant='h5' fontWeight='bold' gutterBottom>
@@ -423,17 +378,16 @@ const UserDetails = () => {
                         textField: {
                           fullWidth: true,
                           error: !!error,
-                          helperText: error ? error.message : '',
+                          helperText: error?.message,
                         },
                       }}
                     />
                   )}
                 />
-
                 <Controller
                   name='dateTo'
                   control={dateControl}
-                  rules={{ validate: validateDateTo }}
+                  rules={{ validate: validateNotFuture }}
                   render={({ field, fieldState: { error } }) => (
                     <DatePicker
                       {...field}
@@ -443,77 +397,23 @@ const UserDetails = () => {
                         textField: {
                           fullWidth: true,
                           error: !!error,
-                          helperText: error ? error.message : '',
+                          helperText: error?.message,
                         },
                       }}
                     />
                   )}
                 />
               </Stack>
-              <Box mt={2}>
-                <Button
-                  disabled={isIncomplete}
-                  variant='contained'
-                  type='submit'
-                >
-                  Search
-                </Button>
-              </Box>
             </form>
           </LocalizationProvider>
 
+          {tipsLoading && <CircularProgress sx={{ mt: 2 }} />}
+
           {driverTips && (
-            <Box mt={4}>
-              <Box mb={2}>
-                <Typography variant='h6' fontWeight='bold' color='#333'>
-                  Total Tips:{' '}
-                  {driverTips?.receivedTips.reduce(
-                    (acc, tip) => acc + tip.amount,
-                    0
-                  )}{' '}
-                  SAR
-                </Typography>
-              </Box>
-              <Paper elevation={3}>
-                <Table>
-                  <TableHead>
-                    <TableRow hover selected>
-                      {['Amount', 'Order Id', 'Transaction Date'].map((col) => (
-                        <TableCell style={{ fontWeight: 'bold' }} key={col}>
-                          {col}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {driverTips?.receivedTips &&
-                    driverTips?.receivedTips.length > 0 ? (
-                      driverTips?.receivedTips.map((row, index) => (
-                        <TableRow key={index} hover>
-                          <TableCell>{row.amount ?? 'N/A'} SAR</TableCell>
-                          <TableCell
-                            style={{ cursor: 'pointer', color: '#1976d2' }}
-                            onClick={() =>
-                              navigate(`/order-details/${row.orderId}`)
-                            }
-                          >
-                            {row.orderId ?? 'N/A'}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(row.createdAt).toLocaleString()}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} align='center'>
-                          No tips received
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </Paper>
+            <Box mt={3}>
+              <Typography variant='h6'>Tips Summary</Typography>
+              <Typography>Total Tips: ${driverTips.total || 0}</Typography>
+              <Typography>Number of Tips: {driverTips.count || 0}</Typography>
             </Box>
           )}
         </Box>

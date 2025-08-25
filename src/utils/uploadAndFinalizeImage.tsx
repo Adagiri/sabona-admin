@@ -29,7 +29,7 @@ const uploadAndFinalizeImage = async (
     mediaId,
   } = imageDetails;
 
-  media = mediaId;
+  media = mediaId.toString();
 
   AWS.config.update({
     region: region, // Update with your desired region

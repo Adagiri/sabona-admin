@@ -1,188 +1,294 @@
-import { Box, Typography, Table, TableHead, TableRow, TableCell, TableBody, Paper, Pagination, CircularProgress, Alert } from "@mui/material";
-import { useFetchAllUsers } from "../hooks/Admin/query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { USER_TYPES } from "../hooks/Admin/interface";
-import { ToastContainer, toast } from 'react-toastify';
-import { useNavigate, useParams } from "react-router-dom";
-import ImageUpload from "../components/upload/ImageUpload";
-import { useFinaliseUploadImage, useUploadImage } from "../hooks/Admin/mutation";
-import uploadAndFinalizeImage from "../utils/uploadAndFinalizeImage";
+// File: src/pages/Driver.tsx
+
+import React, { useMemo, useState } from 'react';
+import {
+  Box,
+  Typography,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper,
+  Pagination,
+  CircularProgress,
+  Alert,
+  IconButton,
+  Chip,
+  Stack,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+import {
+  Visibility,
+  Edit,
+  CheckCircle,
+  Warning,
+  Error,
+} from '@mui/icons-material';
+import { useFetchAllUsers } from '../hooks/Admin/query';
+import { USER_TYPES } from '../hooks/Admin/interface';
+import { ToastContainer } from 'react-toastify';
+import { useNavigate, useParams } from 'react-router-dom';
+import RiderDocumentUpload from '../components/RiderDocumentUpload';
 
 const Driver = () => {
-    const { pageNumber } = useParams<{ pageNumber: string }>();
-    const [page, setPage] = useState<number>(Number(pageNumber) || 1);
-    const [limit] = useState(10);
-    const fileInputRefs = useRef<Record<string | number, HTMLInputElement>>({});
-    const [uploadId, setUploadId] = useState<string | null>(null);
+  const { pageNumber } = useParams<{ pageNumber: string }>();
+  const [page, setPage] = useState<number>(Number(pageNumber) || 1);
+  const [limit] = useState(10);
+  const [selectedRiderId, setSelectedRiderId] = useState<string | null>(null);
+  const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
 
-    const { mutateAsync: uploadVendorDoc } = useUploadImage();
-    const { mutateAsync: finaliseVendorDoc } = useFinaliseUploadImage();
-    const [isUploading, setIsUploading] = useState<boolean>(false);
+  const {
+    data: drivers,
+    isLoading,
+    error: errorFetchingUsers,
+    isError,
+  } = useFetchAllUsers({
+    type: USER_TYPES.RIDER,
+    page,
+    limit,
+  });
 
-    const { data: drivers, isLoading, error: errorFetchingUsers, isError , refetch : refetchDrivers } = useFetchAllUsers({
-        type: USER_TYPES.RIDER,
-        page,
-        limit,
-    });
-    const totalPages = useMemo(() => Math.ceil((drivers?.count ?? 0) / limit), [drivers, limit]);
+  const totalPages = useMemo(
+    () => Math.ceil((drivers?.count ?? 0) / limit),
+    [drivers, limit]
+  );
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
+  const handlePageChange = (
+    event: React.ChangeEvent<unknown>,
+    value: number
+  ) => {
+    setPage(value);
+    navigate(`/drivers/${value}`);
+  };
 
-    const handleImageClick = useCallback((vendorId: string) => () => {
-        if (vendorId) {
-            fileInputRefs.current[vendorId]?.click();
-            setUploadId(vendorId);
-        }
-    }, []);
+  const handleViewDetails = (riderId: string) => {
+    navigate(`/user-details/${riderId}`);
+  };
 
-    const handleImageChange = useCallback(
-        (vendorId: string) => async (e: React.ChangeEvent<HTMLInputElement>) => {
-            const file = e.target.files?.[0];
-            let media = null;
-            const isPublic = false
-            if (file) {
-                setIsUploading(true);
-                try {
-                    const mediaId = await uploadAndFinalizeImage(
-                        file,
-                        uploadVendorDoc,
-                        finaliseVendorDoc,
-                        vendorId,
-                        isPublic
-                    );
-                    media = mediaId;
-                    if(media) {
-                        showSuccess('Document uploaded successfully');
-                    }
+  const handleManageDocuments = (riderId: string) => {
+    setSelectedRiderId(riderId);
+    setDocumentDialogOpen(true);
+  };
 
-                }
-                catch (error: any) {
-                    showError(error.message);
-                }
-                finally {
-                    setIsUploading(false);
-                    refetchDrivers();
-                }
-            }
-        },
-        [finaliseVendorDoc, uploadVendorDoc]
-    );
+  const getStatusChip = (status: string) => {
+    const statusMap = {
+      ACTIVE: {
+        color: 'success' as const,
+        icon: <CheckCircle />,
+        label: 'Active',
+      },
+      INACTIVE: { color: 'error' as const, icon: <Error />, label: 'Inactive' },
+      PENDING: {
+        color: 'warning' as const,
+        icon: <Warning />,
+        label: 'Pending',
+      },
+    };
 
-    const showError = useCallback((errorMessage: string) => {
-        toast(errorMessage, { type: "error" });
-    }, []);
+    const config =
+      statusMap[status as keyof typeof statusMap] || statusMap.PENDING;
 
-    const showSuccess = useCallback((errorMessage: string) => {
-        toast(errorMessage, { type: "success" });
-    }, []);
-
-    useEffect(() => {
-        if (errorFetchingUsers) {
-            showError((errorFetchingUsers?.response?.data as { message: string })?.message || 'Unknown error');
-        }
-    }, [errorFetchingUsers, showError])
-
-    useEffect(() => {
-        if (!pageNumber) {
-            navigate(`/driver/1`, { replace: true });
-        } else {
-            setPage(Number(pageNumber));
-        }
-    }, [pageNumber, navigate]);
-
-    const handlePageChange = useCallback(
-        (_: any, value: number) => {
-            setPage(value);
-            navigate(`/driver/${value}`);
-        },
-        [navigate]
-    );
-
-
-    const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
-    const currentEnd = useMemo(() => Math.min(page * limit, drivers?.count || 0), [page, limit, drivers?.count]);
     return (
-        <Box pr={5}>
-            <ToastContainer />
-            <Typography variant="h4" gutterBottom mb={5}>
-                Driver
-            </Typography>
-            <Paper>
-                {isLoading ? (
-                    <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-                        <CircularProgress />
-                    </Box>
-                ) : isError ? (
+      <Chip
+        icon={config.icon}
+        label={config.label}
+        color={config.color}
+        size='small'
+      />
+    );
+  };
 
-                    <Box display="flex" justifyContent="center" alignItems="center" height="200px">
-                        <Alert severity="error">Failed to load drivers. Please try again later.</Alert>
-                    </Box>
-                ) : (<Table>
-                    <TableHead>
-                        <TableRow
-                            hover selected
-                        >
-                            {["First Name", "Last Name", "Type", "Phone", "Email", "Status", "Created At", "Document"].map((col) => (
-                                <TableCell style={{ fontWeight: 'bold' }} key={col}>{col}</TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {drivers?.data && drivers?.data.length > 0 ? (
-                            drivers.data.map((row, index) => (
-                                <TableRow key={index} onClick={() => navigate(`/user-details/${row?.id}`)} sx={{ cursor: 'pointer' }}>
-                                    <TableCell>{row.firstName ?? 'N/A'}</TableCell>
-                                    <TableCell>{row.lastName ?? 'N/A'}</TableCell>
-                                    <TableCell>{row.type}</TableCell>
-                                    <TableCell>{row.phone}</TableCell>
-                                    <TableCell>{row.email ?? 'N/A'}</TableCell>
-                                    <TableCell style={row.status === 'INACTIVE' ? { color: 'red' } : { color: 'green' }}>
-                                        {row.status}
-                                    </TableCell>
-                                    <TableCell>{row.createdAt}</TableCell>
-                                    <TableCell onClick={(e) => e.stopPropagation()}>
-                                        <ImageUpload
-                                            isLoading={isUploading && row.id === uploadId ? true : false}
-                                            variant="base"
-                                            selectedImage={!!row?.medias.length}
-                                            handleImageClick={handleImageClick(row.id)}
-                                            fileInputRef={(el: HTMLInputElement | null) => {
-                                                if (el) {
-                                                    fileInputRefs.current[row.id] = el;
-                                                }
-                                            }}
-                                            handleImageChange={handleImageChange(row.id)}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={7} align="center">
-                                    No drivers
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>)}
-                <Box display="flex" justifyContent="space-between" alignItems="center" mt={2} py={2} px={2}>
-                    <Box flex="1" display="flex" justifyContent="center" marginLeft={20}>
-                        <Pagination
-                            count={totalPages}
-                            page={page}
-                            onChange={handlePageChange}
-                            color="primary"
-                        />
-                    </Box>
-                    {drivers && (
-                        <Typography variant="body2" sx={{ ml: 3 }}>
-                            Showing {drivers?.data?.length > 0 ? `${currentStart}-${currentEnd}` : 0} of {drivers?.count || 0} items
+  const getDocumentStatus = (driver:any) => {
+    // Check if rider has documents uploaded
+    const hasDocuments = driver.settings?.isDocumentsUploaded || false;
+    const hasDriverLicense =
+      driver.medias?.some(
+        (media) => media.meta?.docType === 'DRIVER_LICENSE_DOC'
+      ) || false;
+
+    if (hasDocuments && hasDriverLicense) {
+      return { status: 'Complete', color: 'success' as const };
+    } else if (hasDocuments || hasDriverLicense) {
+      return { status: 'Partial', color: 'warning' as const };
+    } else {
+      return { status: 'Missing', color: 'error' as const };
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight={400}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Alert severity='error' sx={{ mb: 2 }}>
+        Error loading drivers:{' '}
+        {errorFetchingUsers?.message || 'Unknown error occurred'}
+      </Alert>
+    );
+  }
+
+  return (
+    <Box p={3}>
+      <Typography variant='h4' gutterBottom fontWeight='bold'>
+        Driver Management
+      </Typography>
+
+      {drivers?.data?.length ? (
+        <>
+          <Paper sx={{ width: '100%', overflow: 'hidden', mb: 3 }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Phone</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Documents</TableCell>
+                  <TableCell>Level</TableCell>
+                  <TableCell>Created</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {drivers.data.map((driver) => {
+                  const docStatus = getDocumentStatus(driver);
+                  return (
+                    <TableRow key={driver.id} hover>
+                      <TableCell>
+                        <Typography variant='body2' fontFamily='monospace'>
+                          {driver.id.slice(0, 8)}...
                         </Typography>
-                    )}
-                </Box>
-            </Paper>
-        </Box>
-    )
-}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant='body2' fontWeight='medium'>
+                          {driver.firstName} {driver.lastName}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant='body2'>
+                          {driver.email || 'Not provided'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant='body2'>
+                          {driver.phone || 'Not provided'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{getStatusChip(driver.status)}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={docStatus.status}
+                          color={docStatus.color}
+                          size='small'
+                          variant='outlined'
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={driver.level || 'BASIC'}
+                          size='small'
+                          variant='outlined'
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant='body2'>
+                          {new Date(driver.createdAt).toLocaleDateString()}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction='row' spacing={1}>
+                          <IconButton
+                            size='small'
+                            color='primary'
+                            onClick={() => handleViewDetails(driver.id)}
+                            title='View Details'
+                          >
+                            <Visibility />
+                          </IconButton>
+                          <IconButton
+                            size='small'
+                            color='secondary'
+                            onClick={() => handleManageDocuments(driver.id)}
+                            title='Manage Documents'
+                          >
+                            <Edit />
+                          </IconButton>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Paper>
 
-export default Driver
+          <Box display='flex' justifyContent='center' mt={3}>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              color='primary'
+              size='large'
+            />
+          </Box>
+        </>
+      ) : (
+        <Paper sx={{ p: 4, textAlign: 'center' }}>
+          <Typography variant='h6' color='textSecondary'>
+            No drivers found
+          </Typography>
+          <Typography variant='body2' color='textSecondary' mt={1}>
+            No riders are currently registered in the system.
+          </Typography>
+        </Paper>
+      )}
+
+      {/* Document Management Dialog */}
+      <Dialog
+        open={documentDialogOpen}
+        onClose={() => setDocumentDialogOpen(false)}
+        maxWidth='md'
+        fullWidth
+        PaperProps={{
+          sx: { minHeight: '500px' },
+        }}
+      >
+        <DialogTitle>
+          <Typography variant='h6'>Manage Rider Documents</Typography>
+        </DialogTitle>
+        <DialogContent>
+          {selectedRiderId && <RiderDocumentUpload riderId={selectedRiderId} />}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDocumentDialogOpen(false)}
+            variant='outlined'
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <ToastContainer />
+    </Box>
+  );
+};
+
+export default Driver;
