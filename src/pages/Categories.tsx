@@ -21,6 +21,9 @@ import {
   Breadcrumbs,
   Link,
   Alert,
+  Avatar,
+  FormControl,
+  FormLabel,
 } from '@mui/material';
 import {
   Edit,
@@ -29,6 +32,7 @@ import {
   ArrowBack,
   NavigateNext,
   Category,
+  ImageOutlined,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
@@ -39,10 +43,17 @@ import {
   useDeleteCategory,
   useEditCategory,
 } from '../hooks/Admin/mutation';
+import IconPicker from '../components/IconPicker';
 
 interface CategoryData {
   id: string;
   name: string;
+  iconId?: number;
+  icon?: {
+    id: number;
+    path: string;
+    name: string;
+  };
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -52,6 +63,7 @@ interface CategoryData {
 
 interface CategoryFormData {
   name: string;
+  iconId?: number;
 }
 
 const Categories: React.FC = () => {
@@ -70,16 +82,18 @@ const Categories: React.FC = () => {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CategoryFormData>({
     defaultValues: {
       name: '',
+      iconId: undefined,
     },
   });
 
   const handleCreateCategory = () => {
     setEditingCategory(null);
-    reset({ name: '' });
+    reset({ name: '', iconId: undefined });
     setOpenDialog(true);
   };
 
@@ -87,6 +101,7 @@ const Categories: React.FC = () => {
     setEditingCategory(category);
     reset({
       name: category.name,
+      iconId: category.iconId,
     });
     setOpenDialog(true);
   };
@@ -124,6 +139,7 @@ const Categories: React.FC = () => {
         await createCategory(data);
         toast.success('Category created successfully');
       }
+
       setOpenDialog(false);
       refetch();
     } catch (error: any) {
@@ -221,6 +237,9 @@ const Categories: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>
+                <strong>Icon</strong>
+              </TableCell>
+              <TableCell>
                 <strong>Category Name</strong>
               </TableCell>
               <TableCell>
@@ -241,6 +260,15 @@ const Categories: React.FC = () => {
             {categories?.data?.length > 0 ? (
               categories.data.map((category: CategoryData) => (
                 <TableRow key={category.id} hover>
+                  <TableCell>
+                    <Avatar
+                      src={category.icon?.path}
+                      sx={{ width: 40, height: 40 }}
+                      variant='rounded'
+                    >
+                      <ImageOutlined />
+                    </Avatar>
+                  </TableCell>
                   <TableCell>
                     <Typography variant='body1' fontWeight='bold'>
                       {category.name}
@@ -277,8 +305,6 @@ const Categories: React.FC = () => {
                         disabled={
                           category._count?.laundryServiceItem &&
                           category._count.laundryServiceItem > 0
-                            ? true
-                            : false
                         }
                       >
                         <Delete />
@@ -289,7 +315,7 @@ const Categories: React.FC = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align='center'>
+                <TableCell colSpan={6} align='center'>
                   <Typography variant='body1' color='text.secondary' py={4}>
                     No categories found. Create your first category to get
                     started.
@@ -325,7 +351,21 @@ const Categories: React.FC = () => {
                     fullWidth
                     error={!!errors.name}
                     helperText={errors.name?.message}
-                    placeholder='e.g., Shirts, Pants, Delicates'
+                  />
+                )}
+              />
+
+              <Controller
+                name='iconId'
+                control={control}
+                render={({ field }) => (
+                  <IconPicker
+                    selectedIconId={field.value}
+                    onSelect={(iconId) => field.onChange(iconId)}
+                    filterType='CATEGORY'
+                    label='Category Icon (Optional)'
+                    error={!!errors.iconId}
+                    helperText={errors.iconId?.message}
                   />
                 )}
               />

@@ -535,3 +535,46 @@ export const useFinaliseRiderDocument = () => {
     },
   });
 };
+
+// Icon Management Hooks
+export const useCreateIcon = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await api.post('/v1/admin/icon/create', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-icons'] });
+    },
+  });
+};
+
+export const useEditIcon = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ iconId, data }: { iconId: number; data: any }) => {
+      const response = await api.patch(`/v1/admin/icon/${iconId}/edit`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-icons'] });
+    },
+  });
+};
+
+export const useDeleteIcon = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (iconId: number) => {
+      const response = await api.delete(`/v1/admin/icon/${iconId}/delete`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-icons'] });
+    },
+  });
+};

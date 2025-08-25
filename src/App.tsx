@@ -33,6 +33,7 @@ import LaundryServices from './pages/LaundryServices';
 import LaundryServiceItems from './pages/LaundryServiceItems';
 import Categories from './pages/Categories';
 import EditLaundry from './pages/EditLaundry';
+import Icons from './pages/Icons';
 
 const App: React.FC = () => {
   return (
@@ -104,6 +105,7 @@ const AppContent: React.FC = () => {
               path='/application-details/:userId'
               element={<ApplicationDetails />}
             />
+            <Route path='/laundry/icons' element={<Icons />} />
           </Route>
         </Routes>
       </Box>

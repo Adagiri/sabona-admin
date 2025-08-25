@@ -27,6 +27,7 @@ import {
   FormControl,
   InputLabel,
   FormHelperText,
+  Avatar,
 } from '@mui/material';
 import {
   Edit,
@@ -35,6 +36,7 @@ import {
   ArrowBack,
   NavigateNext,
   AttachMoney,
+  ImageOutlined,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
@@ -44,16 +46,25 @@ import {
   useFetchLaundryServiceItems,
   useFetchCategories,
 } from '../hooks/Admin/query';
-import { useCreateLaundryServiceItem, useDeleteLaundryServiceItem, useEditLaundryServiceItem } from '../hooks/Admin/mutation';
+import {
+  useCreateLaundryServiceItem,
+  useDeleteLaundryServiceItem,
+  useEditLaundryServiceItem,
+} from '../hooks/Admin/mutation';
 
 interface ServiceItem {
   id: string;
   name: string;
   price: number;
-  categoryId?: string;
-  category?: {
+  categoryId: string;
+  category: {
     id: string;
     name: string;
+    icon?: {
+      id: number;
+      path: string;
+      name: string;
+    };
   };
   createdAt: string;
   updatedAt: string;
@@ -62,6 +73,11 @@ interface ServiceItem {
 interface Category {
   id: string;
   name: string;
+  icon?: {
+    id: number;
+    path: string;
+    name: string;
+  };
 }
 
 interface ItemFormData {
@@ -91,6 +107,9 @@ const LaundryServiceItems: React.FC = () => {
   const { mutateAsync: editItem } = useEditLaundryServiceItem();
   const { mutateAsync: deleteItem } = useDeleteLaundryServiceItem();
 
+  // Get service name from items data
+  const serviceName = items?.data?.[0]?.service?.name || 'Service Items';
+
   const {
     control,
     handleSubmit,
@@ -115,7 +134,7 @@ const LaundryServiceItems: React.FC = () => {
     reset({
       name: item.name,
       price: item.price,
-      categoryId: item.categoryId || '',
+      categoryId: item.categoryId,
     });
     setOpenDialog(true);
   };
@@ -139,13 +158,9 @@ const LaundryServiceItems: React.FC = () => {
   const onSubmit = async (data: ItemFormData) => {
     try {
       const payload = {
-        items: [
-          {
-            name: data.name,
-            price: Number(data.price),
-            categoryId: data.categoryId || undefined,
-          },
-        ],
+        name: data.name,
+        price: Number(data.price),
+        categoryId: data.categoryId,
       };
 
       if (editingItem) {
@@ -153,14 +168,14 @@ const LaundryServiceItems: React.FC = () => {
           laundryId: laundryId!,
           serviceId: serviceId!,
           itemId: editingItem.id,
-          data: payload.items[0],
+          data: payload,
         });
         toast.success('Item updated successfully');
       } else {
         await createItem({
           laundryId: laundryId!,
           serviceId: serviceId!,
-          data: payload,
+          data: { items: [payload] },
         });
         toast.success('Item created successfully');
       }
@@ -195,8 +210,6 @@ const LaundryServiceItems: React.FC = () => {
     );
   }
 
-  const serviceName = items?.serviceName || 'Service';
-
   return (
     <Box sx={{ p: 3 }}>
       <ToastContainer />
@@ -217,9 +230,9 @@ const LaundryServiceItems: React.FC = () => {
           onClick={() => navigate(`/laundry/${laundryId}/services`)}
           sx={{ textDecoration: 'none' }}
         >
-          {laundry?.data?.name}
+          {laundry?.data?.name || 'Services'}
         </Link>
-        <Typography color='text.primary'>{serviceName} - Items</Typography>
+        <Typography color='text.primary'>{serviceName}</Typography>
       </Breadcrumbs>
 
       {/* Header */}
@@ -255,6 +268,26 @@ const LaundryServiceItems: React.FC = () => {
         </Button>
       </Stack>
 
+      {/* Check if categories exist before allowing item creation */}
+      {(!categories?.data || categories.data.length === 0) && (
+        <Alert severity='warning' sx={{ mb: 3 }}>
+          <Typography variant='subtitle2' gutterBottom>
+            No Categories Available
+          </Typography>
+          <Typography variant='body2'>
+            You need to create at least one category before adding service
+            items.
+            <Button
+              size='small'
+              sx={{ ml: 1 }}
+              onClick={() => navigate('/laundry/categories')}
+            >
+              Manage Categories
+            </Button>
+          </Typography>
+        </Alert>
+      )}
+
       {/* Service Info */}
       <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
         <Stack direction='row' spacing={3}>
@@ -266,6 +299,10 @@ const LaundryServiceItems: React.FC = () => {
           </Typography>
           <Typography variant='body2'>
             <strong>Total Items:</strong> {items?.data?.length || 0}
+          </Typography>
+          <Typography variant='body2'>
+            <strong>Available Categories:</strong>{' '}
+            {categories?.data?.length || 0}
           </Typography>
         </Stack>
       </Paper>
@@ -302,15 +339,23 @@ const LaundryServiceItems: React.FC = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {item.category ? (
+                    <Stack direction='row' alignItems='center' spacing={1}>
+                      {item.category.icon?.path && (
+                        <Avatar
+                          src={item.category.icon.path}
+                          sx={{ width: 24, height: 24 }}
+                          variant='rounded'
+                        >
+                          <ImageOutlined fontSize='small' />
+                        </Avatar>
+                      )}
                       <Chip
                         label={item.category.name}
                         size='small'
                         color='primary'
+                        variant='outlined'
                       />
-                    ) : (
-                      <Chip label='No category' size='small' color='default' />
-                    )}
+                    </Stack>
                   </TableCell>
                   <TableCell>
                     <Stack direction='row' alignItems='center' spacing={1}>
@@ -382,6 +427,7 @@ const LaundryServiceItems: React.FC = () => {
                     fullWidth
                     error={!!errors.name}
                     helperText={errors.name?.message}
+                    placeholder='e.g., White Shirt, Jeans, Bed Sheet'
                   />
                 )}
               />
@@ -396,7 +442,7 @@ const LaundryServiceItems: React.FC = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label='Price'
+                    label='Price (SAR)'
                     type='number'
                     fullWidth
                     inputProps={{ step: '0.01', min: '0.01' }}
@@ -409,22 +455,40 @@ const LaundryServiceItems: React.FC = () => {
               <Controller
                 name='categoryId'
                 control={control}
+                rules={{ required: 'Category is required' }}
                 render={({ field }) => (
                   <FormControl fullWidth error={!!errors.categoryId}>
-                    <InputLabel>Category (Optional)</InputLabel>
-                    <Select {...field} label='Category (Optional)'>
-                      <MenuItem value=''>
-                        <em>No category</em>
-                      </MenuItem>
+                    <InputLabel>Category *</InputLabel>
+                    <Select {...field} label='Category *'>
                       {categories?.data?.map((category: Category) => (
                         <MenuItem key={category.id} value={category.id}>
-                          {category.name}
+                          <Stack
+                            direction='row'
+                            alignItems='center'
+                            spacing={1}
+                          >
+                            {category.icon?.path && (
+                              <Avatar
+                                src={category.icon.path}
+                                sx={{ width: 20, height: 20 }}
+                                variant='rounded'
+                              >
+                                <ImageOutlined fontSize='small' />
+                              </Avatar>
+                            )}
+                            <Typography>{category.name}</Typography>
+                          </Stack>
                         </MenuItem>
                       ))}
                     </Select>
                     {errors.categoryId && (
                       <FormHelperText>
                         {errors.categoryId.message}
+                      </FormHelperText>
+                    )}
+                    {!categories?.data?.length && (
+                      <FormHelperText>
+                        No categories available. Please create categories first.
                       </FormHelperText>
                     )}
                   </FormControl>
@@ -434,7 +498,11 @@ const LaundryServiceItems: React.FC = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button type='submit' variant='contained'>
+            <Button
+              type='submit'
+              variant='contained'
+              disabled={!categories?.data?.length}
+            >
               {editingItem ? 'Update' : 'Create'}
             </Button>
           </DialogActions>

@@ -1,5 +1,3 @@
-// File: src/components/Sidebar.tsx
-
 import React from 'react';
 import {
   Drawer,
@@ -19,7 +17,8 @@ import {
   Map,
   Discount,
   Paid,
-  LocalLaundryService, // Add this import for laundry icon
+  LocalLaundryService,
+  ImageOutlined, // Add this import for laundry icon
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -29,6 +28,11 @@ const menuItems = [
   { text: 'Customer', icon: <People />, route: '/customer' },
   { text: 'Vendor', icon: <Business />, route: '/vendor' },
   { text: 'Laundry', icon: <LocalLaundryService />, route: '/laundry' }, // Add laundry menu item
+  {
+    title: 'Icon Library',
+    path: '/laundry/icons',
+    icon: <ImageOutlined />,
+  },
   { text: 'Driver', icon: <LocalShipping />, route: '/driver' },
   { text: 'Application', icon: <Apps />, route: '/application' },
   { text: 'Map Stats', icon: <Map />, route: '/map-stats' },

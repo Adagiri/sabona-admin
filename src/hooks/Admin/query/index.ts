@@ -408,3 +408,13 @@ export const useGetRiderDocuments = (userId: string) => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
+
+export const useFetchIcons = () => {
+  return useQuery({
+    queryKey: ['admin-icons'],
+    queryFn: async () => {
+      const response = await api.get('/v1/admin/icons');
+      return response.data;
+    },
+  });
+};

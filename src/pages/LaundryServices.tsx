@@ -22,6 +22,7 @@ import {
   Breadcrumbs,
   Link,
   Alert,
+  Avatar,
 } from '@mui/material';
 import {
   Edit,
@@ -30,6 +31,7 @@ import {
   ArrowBack,
   Inventory,
   NavigateNext,
+  ImageOutlined,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
@@ -38,13 +40,23 @@ import {
   useFetchLaundryById,
   useFetchLaundryServices,
 } from '../hooks/Admin/query';
-import { useCreateLaundryService, useDeleteLaundryService, useEditLaundryService } from '../hooks/Admin/mutation';
+import {
+  useCreateLaundryService,
+  useDeleteLaundryService,
+  useEditLaundryService,
+} from '../hooks/Admin/mutation';
+import IconPicker from '../components/IconPicker';
 
 interface Service {
   id: string;
   name: string;
   description?: string;
   iconId?: number;
+  icon?: {
+    id: number;
+    path: string;
+    name: string;
+  };
   laundryId: string;
   createdAt: string;
   updatedAt: string;
@@ -56,6 +68,7 @@ interface Service {
 interface ServiceFormData {
   name: string;
   description: string;
+  iconId?: number;
 }
 
 const LaundryServices: React.FC = () => {
@@ -84,12 +97,13 @@ const LaundryServices: React.FC = () => {
     defaultValues: {
       name: '',
       description: '',
+      iconId: undefined,
     },
   });
 
   const handleCreateService = () => {
     setEditingService(null);
-    reset({ name: '', description: '' });
+    reset({ name: '', description: '', iconId: undefined });
     setOpenDialog(true);
   };
 
@@ -98,6 +112,7 @@ const LaundryServices: React.FC = () => {
     reset({
       name: service.name,
       description: service.description || '',
+      iconId: service.iconId,
     });
     setOpenDialog(true);
   };
@@ -139,6 +154,7 @@ const LaundryServices: React.FC = () => {
         });
         toast.success('Service created successfully');
       }
+
       setOpenDialog(false);
       refetch();
     } catch (error: any) {
@@ -228,12 +244,10 @@ const LaundryServices: React.FC = () => {
       <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
         <Stack direction='row' spacing={3}>
           <Typography variant='body2'>
-            <strong>Owner:</strong> {laundry?.data?.vendor?.firstName}{' '}
-            {laundry?.data?.vendor?.lastName}
+            <strong>Laundry:</strong> {laundry?.data?.name}
           </Typography>
           <Typography variant='body2'>
-            <strong>Address:</strong>{' '}
-            {laundry?.data?.address || 'No address provided'}
+            <strong>Location:</strong> {laundry?.data?.address}
           </Typography>
           <Typography variant='body2'>
             <strong>Total Services:</strong> {services?.data?.length || 0}
@@ -247,13 +261,19 @@ const LaundryServices: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>
+                <strong>Icon</strong>
+              </TableCell>
+              <TableCell>
                 <strong>Service Name</strong>
               </TableCell>
               <TableCell>
                 <strong>Description</strong>
               </TableCell>
               <TableCell>
-                <strong>Items Count</strong>
+                <strong>Items</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Status</strong>
               </TableCell>
               <TableCell>
                 <strong>Created</strong>
@@ -268,23 +288,31 @@ const LaundryServices: React.FC = () => {
               services.data.map((service: Service) => (
                 <TableRow key={service.id} hover>
                   <TableCell>
+                    <Avatar
+                      src={service.icon?.path}
+                      sx={{ width: 40, height: 40 }}
+                      variant='rounded'
+                    >
+                      <ImageOutlined />
+                    </Avatar>
+                  </TableCell>
+                  <TableCell>
                     <Typography variant='body1' fontWeight='bold'>
                       {service.name}
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {service.description || 'No description provided'}
+                    <Typography variant='body2' color='text.secondary'>
+                      {service.description || 'No description'}
+                    </Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      label={`${service._count?.laundryServiceItem || 0} items`}
-                      color={
-                        service._count?.laundryServiceItem
-                          ? 'success'
-                          : 'default'
-                      }
-                      size='small'
-                    />
+                    <Typography variant='body2'>
+                      {service._count?.laundryServiceItem || 0} items
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip label='Active' color='success' size='small' />
                   </TableCell>
                   <TableCell>
                     {new Date(service.createdAt).toLocaleDateString()}
@@ -323,7 +351,7 @@ const LaundryServices: React.FC = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align='center'>
+                <TableCell colSpan={7} align='center'>
                   <Typography variant='body1' color='text.secondary' py={4}>
                     No services found. Create your first service to get started.
                   </Typography>
@@ -361,6 +389,7 @@ const LaundryServices: React.FC = () => {
                   />
                 )}
               />
+
               <Controller
                 name='description'
                 control={control}
@@ -373,6 +402,21 @@ const LaundryServices: React.FC = () => {
                     rows={3}
                     error={!!errors.description}
                     helperText={errors.description?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name='iconId'
+                control={control}
+                render={({ field }) => (
+                  <IconPicker
+                    selectedIconId={field.value}
+                    onSelect={(iconId) => field.onChange(iconId)}
+                    filterType='SERVICE'
+                    label='Service Icon (Optional)'
+                    error={!!errors.iconId}
+                    helperText={errors.iconId?.message}
                   />
                 )}
               />
