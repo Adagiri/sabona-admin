@@ -105,7 +105,7 @@ const AppContent: React.FC = () => {
               path='/application-details/:userId'
               element={<ApplicationDetails />}
             />
-            <Route path='/laundry/icons' element={<Icons />} />
+            <Route path='/icons' element={<Icons />} />
           </Route>
         </Routes>
       </Box>

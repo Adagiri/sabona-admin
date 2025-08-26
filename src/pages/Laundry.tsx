@@ -50,7 +50,7 @@ interface Laundry {
   };
   createdAt: string;
   updatedAt: string;
-  _count?: {
+  _count: {
     laundryService: number;
   };
 }
@@ -266,10 +266,10 @@ const Laundry: React.FC = () => {
                       <TableCell>
                         <Chip
                           label={`${
-                            laundry._count?.laundryService || 0
+                            laundry?._count?.laundryService || 0
                           } services`}
                           color={
-                            laundry._count?.laundryService
+                            laundry?._count?.laundryService > 0
                               ? 'success'
                               : 'default'
                           }

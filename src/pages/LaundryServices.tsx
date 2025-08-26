@@ -56,12 +56,15 @@ interface Service {
     id: number;
     path: string;
     name: string;
+    media: {
+      path: string;
+    };
   };
   laundryId: string;
   createdAt: string;
   updatedAt: string;
   _count?: {
-    laundryServiceItem: number;
+    laundryServiceItems: number;
   };
 }
 
@@ -76,6 +79,7 @@ const LaundryServices: React.FC = () => {
   const navigate = useNavigate();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: laundry } = useFetchLaundryById(laundryId!);
   const {
@@ -137,30 +141,32 @@ const LaundryServices: React.FC = () => {
       }
     }
   };
-
-  const onSubmit = async (data: ServiceFormData) => {
-    try {
-      if (editingService) {
-        await editService({
-          laundryId: laundryId!,
-          serviceId: editingService.id,
-          data,
-        });
-        toast.success('Service updated successfully');
-      } else {
-        await createService({
-          laundryId: laundryId!,
-          data,
-        });
-        toast.success('Service created successfully');
-      }
-
-      setOpenDialog(false);
-      refetch();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to save service');
+const onSubmit = async (data: ServiceFormData) => {
+  setIsSubmitting(true);
+  try {
+    if (editingService) {
+      await editService({
+        laundryId: laundryId!,
+        serviceId: editingService.id,
+        data,
+      });
+      toast.success('Service updated successfully');
+    } else {
+      await createService({
+        laundryId: laundryId!,
+        data,
+      });
+      toast.success('Service created successfully');
     }
-  };
+
+    setOpenDialog(false);
+    refetch();
+  } catch (error: any) {
+    toast.error(error?.response?.data?.message || 'Failed to save service');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleViewItems = (serviceId: string) => {
     navigate(`/laundry/${laundryId}/service/${serviceId}/items`);
@@ -289,7 +295,7 @@ const LaundryServices: React.FC = () => {
                 <TableRow key={service.id} hover>
                   <TableCell>
                     <Avatar
-                      src={service.icon?.path}
+                      src={service.icon?.media.path}
                       sx={{ width: 40, height: 40 }}
                       variant='rounded'
                     >
@@ -308,7 +314,7 @@ const LaundryServices: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant='body2'>
-                      {service._count?.laundryServiceItem || 0} items
+                      {service._count?.laundryServiceItems || 0} items
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -424,8 +430,14 @@ const LaundryServices: React.FC = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button type='submit' variant='contained'>
-              {editingService ? 'Update' : 'Create'}
+            <Button type='submit' variant='contained' disabled={isSubmitting}>
+              {isSubmitting
+                ? editingService
+                  ? 'Updating...'
+                  : 'Creating...'
+                : editingService
+                ? 'Update'
+                : 'Create'}
             </Button>
           </DialogActions>
         </form>

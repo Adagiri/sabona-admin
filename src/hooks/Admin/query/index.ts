@@ -283,7 +283,6 @@ export const useGetApplicationDocuments = (userId: string) => {
   });
 };
 
-
 const searchMainVendorsAction = async (params: {
   laundryName: string;
   limit?: number;
@@ -373,27 +372,6 @@ export const useFetchLaundryServiceItems = (
   });
 };
 
-export const useFetchCategories = () => {
-  return useQuery({
-    queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
-    queryFn: async () => {
-      const response = await api.get('/admin/categories');
-      return response.data;
-    },
-  });
-};
-
-export const useFetchCategoryById = (categoryId: string) => {
-  return useQuery({
-    queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORY_BY_ID, categoryId],
-    queryFn: async () => {
-      const response = await api.get(`/admin/category/${categoryId}`);
-      return response.data;
-    },
-    enabled: !!categoryId,
-  });
-};
-
 const getRiderDocumentsAction = async (userId: string) => {
   const response = await api.get(`/admin/rider/documents/${userId}`);
   return response.data;
@@ -409,11 +387,35 @@ export const useGetRiderDocuments = (userId: string) => {
   });
 };
 
+export const useFetchCategories = () => {
+  return useQuery({
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
+    queryFn: async () => {
+      // Use consistent v1/admin prefix
+      const response = await api.get('/admin/categories');
+      return response.data;
+    },
+  });
+};
+
+export const useFetchCategoryById = (categoryId: string) => {
+  return useQuery({
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORY_BY_ID, categoryId],
+    queryFn: async () => {
+      // Use consistent v1/admin prefix
+      const response = await api.get(`/admin/category/${categoryId}`);
+      return response.data;
+    },
+    enabled: !!categoryId,
+  });
+};
+
 export const useFetchIcons = () => {
   return useQuery({
     queryKey: ['admin-icons'],
     queryFn: async () => {
-      const response = await api.get('/v1/admin/icons');
+      // Use consistent endpoint - match with mutation hooks
+      const response = await api.get('/icon/all');
       return response.data;
     },
   });

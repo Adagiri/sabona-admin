@@ -308,6 +308,8 @@ export interface UserSettings {
   long?: number;
   contactPhone?: string;
   isOnboardingCompleted?: boolean;
+  isDocumentsUploaded?: boolean;
+  address?: string;
 }
 
 export interface RiderDocumentDTO {

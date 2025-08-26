@@ -22,8 +22,6 @@ import {
   Link,
   Alert,
   Avatar,
-  FormControl,
-  FormLabel,
 } from '@mui/material';
 import {
   Edit,
@@ -53,6 +51,9 @@ interface CategoryData {
     id: number;
     path: string;
     name: string;
+    media: {
+      path: string;
+    };
   };
   createdAt: string;
   updatedAt: string;
@@ -72,7 +73,7 @@ const Categories: React.FC = () => {
   const [editingCategory, setEditingCategory] = useState<CategoryData | null>(
     null
   );
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: categories, isLoading, error, refetch } = useFetchCategories();
   const { mutateAsync: createCategory } = useCreateCategory();
   const { mutateAsync: editCategory } = useEditCategory();
@@ -82,7 +83,6 @@ const Categories: React.FC = () => {
     control,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors },
   } = useForm<CategoryFormData>({
     defaultValues: {
@@ -126,8 +126,8 @@ const Categories: React.FC = () => {
       }
     }
   };
-
   const onSubmit = async (data: CategoryFormData) => {
+    setIsSubmitting(true);
     try {
       if (editingCategory) {
         await editCategory({
@@ -144,6 +144,8 @@ const Categories: React.FC = () => {
       refetch();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Failed to save category');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -262,7 +264,7 @@ const Categories: React.FC = () => {
                 <TableRow key={category.id} hover>
                   <TableCell>
                     <Avatar
-                      src={category.icon?.path}
+                      src={category.icon?.media.path}
                       sx={{ width: 40, height: 40 }}
                       variant='rounded'
                     >
@@ -304,7 +306,7 @@ const Categories: React.FC = () => {
                         title='Delete Category'
                         disabled={
                           category._count?.laundryServiceItem &&
-                          category._count.laundryServiceItem > 0
+                          category._count.laundryServiceItem > 0 ? true : false
                         }
                       >
                         <Delete />
@@ -373,8 +375,14 @@ const Categories: React.FC = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
-            <Button type='submit' variant='contained'>
-              {editingCategory ? 'Update' : 'Create'}
+            <Button type='submit' variant='contained' disabled={isSubmitting}>
+              {isSubmitting
+                ? editingCategory
+                  ? 'Updating...'
+                  : 'Creating...'
+                : editingCategory
+                ? 'Update'
+                : 'Create'}
             </Button>
           </DialogActions>
         </form>

@@ -1,6 +1,4 @@
-// File: src/pages/LaundryServiceItems.tsx
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -35,7 +33,6 @@ import {
   Add,
   ArrowBack,
   NavigateNext,
-  AttachMoney,
   ImageOutlined,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -55,7 +52,8 @@ import {
 interface ServiceItem {
   id: string;
   name: string;
-  price: number;
+  vendorPrice: number;
+  platformPrice: number;
   categoryId: string;
   category: {
     id: string;
@@ -64,6 +62,9 @@ interface ServiceItem {
       id: number;
       path: string;
       name: string;
+      media: {
+        path: string;
+      };
     };
   };
   createdAt: string;
@@ -77,12 +78,16 @@ interface Category {
     id: number;
     path: string;
     name: string;
+    media: {
+      path: string;
+    };
   };
 }
 
 interface ItemFormData {
   name: string;
-  price: number;
+  vendorPrice: number;
+  platformPrice: number;
   categoryId: string;
 }
 
@@ -94,6 +99,7 @@ const LaundryServiceItems: React.FC = () => {
   const navigate = useNavigate();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<ServiceItem | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: laundry } = useFetchLaundryById(laundryId!);
   const {
@@ -114,28 +120,50 @@ const LaundryServiceItems: React.FC = () => {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<ItemFormData>({
     defaultValues: {
       name: '',
-      price: 0,
+      vendorPrice: 0,
+      platformPrice: 0,
       categoryId: '',
     },
   });
 
+  // Fix form population when editing
+  useEffect(() => {
+    if (editingItem && openDialog && categories?.data?.length) {
+      setValue('name', editingItem.name);
+      setValue('vendorPrice', editingItem.vendorPrice);
+      setValue('platformPrice', editingItem.platformPrice);
+      setTimeout(() => {
+        setValue('categoryId', editingItem.categoryId);
+      }, 500);
+    }
+  }, [editingItem, openDialog, categories?.data, setValue]);
+
   const handleCreateItem = () => {
+    if (!categories?.data?.length) {
+      toast.error('Please create categories first');
+      return;
+    }
     setEditingItem(null);
-    reset({ name: '', price: 0, categoryId: '' });
+    reset({
+      name: '',
+      vendorPrice: 0,
+      platformPrice: 0,
+      categoryId: '',
+    });
     setOpenDialog(true);
   };
 
   const handleEditItem = (item: ServiceItem) => {
+    if (!categories?.data?.length) {
+      toast.error('Categories not loaded');
+      return;
+    }
     setEditingItem(item);
-    reset({
-      name: item.name,
-      price: item.price,
-      categoryId: item.categoryId,
-    });
     setOpenDialog(true);
   };
 
@@ -155,11 +183,24 @@ const LaundryServiceItems: React.FC = () => {
     }
   };
 
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEditingItem(null);
+    reset({
+      name: '',
+      vendorPrice: 0,
+      platformPrice: 0,
+      categoryId: '',
+    });
+  };
+
   const onSubmit = async (data: ItemFormData) => {
+    setIsSubmitting(true);
     try {
       const payload = {
         name: data.name,
-        price: Number(data.price),
+        vendorPrice: Number(data.vendorPrice),
+        platformPrice: Number(data.platformPrice),
         categoryId: data.categoryId,
       };
 
@@ -179,10 +220,12 @@ const LaundryServiceItems: React.FC = () => {
         });
         toast.success('Item created successfully');
       }
-      setOpenDialog(false);
+      handleCloseDialog();
       refetch();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Failed to save item');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -319,7 +362,10 @@ const LaundryServiceItems: React.FC = () => {
                 <strong>Category</strong>
               </TableCell>
               <TableCell>
-                <strong>Price</strong>
+                <strong>Vendor Price</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Platform Price</strong>
               </TableCell>
               <TableCell>
                 <strong>Created</strong>
@@ -340,9 +386,9 @@ const LaundryServiceItems: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Stack direction='row' alignItems='center' spacing={1}>
-                      {item.category.icon?.path && (
+                      {item.category.icon?.media?.path && (
                         <Avatar
-                          src={item.category.icon.path}
+                          src={item.category.icon.media.path}
                           sx={{ width: 24, height: 24 }}
                           variant='rounded'
                         >
@@ -358,12 +404,14 @@ const LaundryServiceItems: React.FC = () => {
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    <Stack direction='row' alignItems='center' spacing={1}>
-                      <AttachMoney fontSize='small' />
-                      <Typography variant='body1' fontWeight='bold'>
-                        {item.price.toFixed(2)}
-                      </Typography>
-                    </Stack>
+                    <Typography variant='body1'>
+                      {item.vendorPrice.toFixed(2)} SAR
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant='body1'>
+                      {item.platformPrice.toFixed(2)} SAR
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     {new Date(item.createdAt).toLocaleDateString()}
@@ -392,7 +440,7 @@ const LaundryServiceItems: React.FC = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align='center'>
+                <TableCell colSpan={6} align='center'>
                   <Typography variant='body1' color='text.secondary' py={4}>
                     No items found. Create your first item to get started.
                   </Typography>
@@ -406,7 +454,7 @@ const LaundryServiceItems: React.FC = () => {
       {/* Create/Edit Item Dialog */}
       <Dialog
         open={openDialog}
-        onClose={() => setOpenDialog(false)}
+        onClose={handleCloseDialog}
         maxWidth='sm'
         fullWidth
       >
@@ -433,21 +481,41 @@ const LaundryServiceItems: React.FC = () => {
               />
 
               <Controller
-                name='price'
+                name='vendorPrice'
                 control={control}
                 rules={{
-                  required: 'Price is required',
+                  required: 'Vendor price is required',
                   min: { value: 0.01, message: 'Price must be greater than 0' },
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label='Price (SAR)'
+                    label='Vendor Price (SAR)'
                     type='number'
                     fullWidth
                     inputProps={{ step: '0.01', min: '0.01' }}
-                    error={!!errors.price}
-                    helperText={errors.price?.message}
+                    error={!!errors.vendorPrice}
+                    helperText={errors.vendorPrice?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name='platformPrice'
+                control={control}
+                rules={{
+                  required: 'Platform price is required',
+                  min: { value: 0.01, message: 'Price must be greater than 0' },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label='Platform Price (SAR)'
+                    type='number'
+                    fullWidth
+                    inputProps={{ step: '0.01', min: '0.01' }}
+                    error={!!errors.platformPrice}
+                    helperText={errors.platformPrice?.message}
                   />
                 )}
               />
@@ -459,7 +527,12 @@ const LaundryServiceItems: React.FC = () => {
                 render={({ field }) => (
                   <FormControl fullWidth error={!!errors.categoryId}>
                     <InputLabel>Category *</InputLabel>
-                    <Select {...field} label='Category *'>
+                    <Select
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      label='Category *'
+                    >
                       {categories?.data?.map((category: Category) => (
                         <MenuItem key={category.id} value={category.id}>
                           <Stack
@@ -467,9 +540,9 @@ const LaundryServiceItems: React.FC = () => {
                             alignItems='center'
                             spacing={1}
                           >
-                            {category.icon?.path && (
+                            {category.icon?.media?.path && (
                               <Avatar
-                                src={category.icon.path}
+                                src={category.icon.media.path}
                                 sx={{ width: 20, height: 20 }}
                                 variant='rounded'
                               >
@@ -497,13 +570,19 @@ const LaundryServiceItems: React.FC = () => {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+            <Button onClick={handleCloseDialog}>Cancel</Button>
             <Button
               type='submit'
               variant='contained'
-              disabled={!categories?.data?.length}
+              disabled={!categories?.data?.length || isSubmitting}
             >
-              {editingItem ? 'Update' : 'Create'}
+              {isSubmitting
+                ? editingItem
+                  ? 'Updating...'
+                  : 'Creating...'
+                : editingItem
+                ? 'Update'
+                : 'Create'}
             </Button>
           </DialogActions>
         </form>

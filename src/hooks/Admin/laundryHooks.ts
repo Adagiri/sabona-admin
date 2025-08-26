@@ -5,7 +5,7 @@ export const useFetchAllLaundries = () => {
   return useQuery({
     queryKey: ['laundries'],
     queryFn: async () => {
-      const response = await api.get('/v1/admin/laundries');
+      const response = await api.get('/admin/laundries');
       return response.data;
     },
   });
@@ -15,7 +15,7 @@ export const useFetchLaundryById = (laundryId: string) => {
   return useQuery({
     queryKey: ['laundry', laundryId],
     queryFn: async () => {
-      const response = await api.get(`/v1/admin/laundry/${laundryId}`);
+      const response = await api.get(`/admin/laundry/${laundryId}`);
       return response.data;
     },
     enabled: !!laundryId,
@@ -26,7 +26,7 @@ export const useFetchLaundryServices = (laundryId: string) => {
   return useQuery({
     queryKey: ['laundry-services', laundryId],
     queryFn: async () => {
-      const response = await api.get(`/v1/admin/laundry/${laundryId}/services`);
+      const response = await api.get(`/admin/laundry/${laundryId}/services`);
       return response.data;
     },
     enabled: !!laundryId,
@@ -41,7 +41,7 @@ export const useFetchLaundryServiceItems = (
     queryKey: ['laundry-service-items', laundryId, serviceId],
     queryFn: async () => {
       const response = await api.get(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/items`
+        `/admin/laundry/${laundryId}/service/${serviceId}/items`
       );
       return response.data;
     },
@@ -53,7 +53,7 @@ export const useFetchCategories = () => {
   return useQuery({
     queryKey: ['laundry-categories'],
     queryFn: async () => {
-      const response = await api.get('/v1/admin/categories');
+      const response = await api.get('/admin/categories');
       return response.data;
     },
   });
@@ -63,7 +63,7 @@ export const useFetchCategoryById = (categoryId: string) => {
   return useQuery({
     queryKey: ['laundry-category', categoryId],
     queryFn: async () => {
-      const response = await api.get(`/v1/admin/category/${categoryId}`);
+      const response = await api.get(`/admin/category/${categoryId}`);
       return response.data;
     },
     enabled: !!categoryId,
@@ -84,7 +84,7 @@ export const useEditLaundry = () => {
       data: any;
     }) => {
       const response = await api.patch(
-        `/v1/admin/laundry/${laundryId}/edit`,
+        `/admin/laundry/${laundryId}/edit`,
         data
       );
       return response.data;
@@ -101,7 +101,7 @@ export const useDeleteLaundry = () => {
   return useMutation({
     mutationFn: async (laundryId: string) => {
       const response = await api.delete(
-        `/v1/admin/laundry/${laundryId}/delete`
+        `/admin/laundry/${laundryId}/delete`
       );
       return response.data;
     },
@@ -125,7 +125,7 @@ export const useCreateLaundryService = () => {
       data: any;
     }) => {
       const response = await api.post(
-        `/v1/admin/laundry/${laundryId}/service/create`,
+        `/admin/laundry/${laundryId}/service/create`,
         data
       );
       return response.data;
@@ -152,7 +152,7 @@ export const useEditLaundryService = () => {
       data: any;
     }) => {
       const response = await api.patch(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/edit`,
+        `/admin/laundry/${laundryId}/service/${serviceId}/edit`,
         data
       );
       return response.data;
@@ -177,7 +177,7 @@ export const useDeleteLaundryService = () => {
       serviceId: string;
     }) => {
       const response = await api.delete(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/delete`
+        `/admin/laundry/${laundryId}/service/${serviceId}/delete`
       );
       return response.data;
     },
@@ -205,7 +205,7 @@ export const useCreateLaundryServiceItem = () => {
       data: any;
     }) => {
       const response = await api.post(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item`,
+        `/admin/laundry/${laundryId}/service/${serviceId}/item`,
         data
       );
       return response.data;
@@ -238,7 +238,7 @@ export const useEditLaundryServiceItem = () => {
       data: any;
     }) => {
       const response = await api.patch(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/edit`,
+        `/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/edit`,
         data
       );
       return response.data;
@@ -269,7 +269,7 @@ export const useDeleteLaundryServiceItem = () => {
       itemId: string;
     }) => {
       const response = await api.delete(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/delete`
+        `/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/delete`
       );
       return response.data;
     },
@@ -292,7 +292,7 @@ export const useCreateCategory = () => {
 
   return useMutation({
     mutationFn: async (data: any) => {
-      const response = await api.post('/v1/admin/category/create', data);
+      const response = await api.post('/admin/category/create', data);
       return response.data;
     },
     onSuccess: () => {
@@ -313,7 +313,7 @@ export const useEditCategory = () => {
       data: any;
     }) => {
       const response = await api.patch(
-        `/v1/admin/category/${categoryId}/edit`,
+        `/admin/category/${categoryId}/edit`,
         data
       );
       return response.data;
@@ -330,7 +330,7 @@ export const useDeleteCategory = () => {
   return useMutation({
     mutationFn: async (categoryId: string) => {
       const response = await api.delete(
-        `/v1/admin/category/${categoryId}/delete`
+        `/admin/category/${categoryId}/delete`
       );
       return response.data;
     },

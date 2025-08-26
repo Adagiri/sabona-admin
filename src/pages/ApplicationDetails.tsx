@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -261,11 +261,7 @@ const ApplicationDetails = () => {
                   <Typography>
                     <strong>Laundry Name:</strong> {user.settings.laundryName}
                   </Typography>
-                  {user.settings.address && (
-                    <Typography>
-                      <strong>Address:</strong> {user.settings.address}
-                    </Typography>
-                  )}
+
                   {user.settings.lat && user.settings.long && (
                     <Typography>
                       <strong>Location:</strong> Provided

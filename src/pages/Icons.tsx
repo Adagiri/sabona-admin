@@ -38,12 +38,15 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import { useForm, Controller } from 'react-hook-form';
-import ImageUpload from '../components/upload/ImageUpload';
 import uploadAndFinalizeImage from '../utils/uploadAndFinalizeImage';
 import {
-  useUploadAdminMedia,
-  useFinalizeAdminMedia,
+  useUploadImage,
+  useFinaliseUploadImage,
+  useCreateIcon,
+  useEditIcon,
+  useDeleteIcon,
 } from '../hooks/Admin/mutation';
+import { useFetchIcons } from '../hooks/Admin/query';
 
 interface Icon {
   id: number;
@@ -57,6 +60,9 @@ interface Icon {
     services: number;
     categories: number;
   };
+  media: {
+    path: string;
+  };
 }
 
 interface IconFormData {
@@ -64,30 +70,6 @@ interface IconFormData {
   description: string;
   type: 'SERVICE' | 'CATEGORY' | 'GENERAL';
 }
-
-// Mock data - replace with actual API calls
-const mockIcons: Icon[] = [
-  {
-    id: 1,
-    name: 'Washing Machine',
-    description: 'General washing service icon',
-    path: '/icons/washing-machine.png',
-    type: 'SERVICE',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-15T10:00:00Z',
-    _count: { services: 3, categories: 0 },
-  },
-  {
-    id: 2,
-    name: 'Shirts Category',
-    description: 'Icon for shirt items',
-    path: '/icons/shirt.png',
-    type: 'CATEGORY',
-    createdAt: '2024-01-14T09:00:00Z',
-    updatedAt: '2024-01-14T09:00:00Z',
-    _count: { services: 0, categories: 5 },
-  },
-];
 
 const Icons: React.FC = () => {
   const navigate = useNavigate();
@@ -104,10 +86,16 @@ const Icons: React.FC = () => {
   const [selectedIcon, setSelectedIcon] = useState<Icon | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Mock hooks - replace with actual ones
-  const icons = mockIcons;
-  const { mutateAsync: uploadMedia } = useUploadAdminMedia();
-  const { mutateAsync: finalizeMedia } = useFinalizeAdminMedia();
+  // Use real API hooks instead of mock data
+  const { data: iconsData, isLoading, error, refetch } = useFetchIcons();
+  const { mutateAsync: uploadMedia } = useUploadImage();
+  const { mutateAsync: finalizeMedia } = useFinaliseUploadImage();
+  const { mutateAsync: createIcon } = useCreateIcon();
+  const { mutateAsync: editIcon } = useEditIcon();
+  const { mutateAsync: deleteIcon } = useDeleteIcon();
+
+  // Get icons from API response
+  const icons: Icon[] = iconsData?.data || [];
 
   const {
     control,
@@ -203,11 +191,12 @@ const Icons: React.FC = () => {
       window.confirm(`Are you sure you want to delete "${selectedIcon.name}"?`)
     ) {
       try {
-        // TODO: Call delete API
+        await deleteIcon(selectedIcon.id);
         toast.success('Icon deleted successfully');
+        refetch();
         handleMenuClose();
       } catch (error: any) {
-        toast.error('Failed to delete icon');
+        toast.error(error?.response?.data?.message || 'Failed to delete icon');
       }
     }
   };
@@ -235,18 +224,23 @@ const Icons: React.FC = () => {
 
       const iconData = {
         ...data,
-        ...(mediaId && { mediaId }),
+        ...(mediaId && { mediaId: Number(mediaId) }),
       };
 
       if (editingIcon) {
-        // TODO: Call edit icon API
+        await editIcon({ iconId: editingIcon.id, data: iconData });
         toast.success('Icon updated successfully');
       } else {
-        // TODO: Call create icon API
+        await createIcon(iconData);
         toast.success('Icon created successfully');
       }
 
+      refetch();
       setOpenDialog(false);
+      reset();
+      setSelectedFile(null);
+      setFilePreview(null);
+      setEditingIcon(null);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Failed to save icon');
     } finally {
@@ -262,7 +256,7 @@ const Icons: React.FC = () => {
     return matchesSearch && matchesType;
   });
 
-  const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string): 'primary' | 'secondary' | 'default' => {
     switch (type) {
       case 'SERVICE':
         return 'primary';
@@ -274,6 +268,22 @@ const Icons: React.FC = () => {
         return 'default';
     }
   };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>Loading icons...</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity='error'>Failed to load icons. Please try again.</Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -397,7 +407,7 @@ const Icons: React.FC = () => {
                   }}
                 >
                   <Avatar
-                    src={icon.path}
+                    src={icon.media.path}
                     sx={{ width: 64, height: 64 }}
                     variant='rounded'
                   >
@@ -408,16 +418,12 @@ const Icons: React.FC = () => {
                   <Stack
                     direction='row'
                     justifyContent='space-between'
-                    alignItems='flex-start'
+                    alignItems='start'
+                    mb={1}
                   >
-                    <Box sx={{ flexGrow: 1, mr: 1 }}>
-                      <Typography variant='subtitle1' fontWeight='bold' noWrap>
-                        {icon.name}
-                      </Typography>
-                      <Typography variant='body2' color='text.secondary' noWrap>
-                        {icon.description || 'No description'}
-                      </Typography>
-                    </Box>
+                    <Typography variant='subtitle2' fontWeight='bold'>
+                      {icon.name}
+                    </Typography>
                     <IconButton
                       size='small'
                       onClick={(e) => handleMenuClick(e, icon)}
@@ -426,24 +432,31 @@ const Icons: React.FC = () => {
                     </IconButton>
                   </Stack>
 
-                  <Stack
-                    direction='row'
-                    justifyContent='space-between'
-                    alignItems='center'
-                    mt={1}
-                  >
+                  {icon.description && (
+                    <Typography
+                      variant='body2'
+                      color='text.secondary'
+                      sx={{ mb: 1, fontSize: '0.875rem' }}
+                    >
+                      {icon.description}
+                    </Typography>
+                  )}
+
+                  <Stack direction='row' spacing={1} mb={1}>
                     <Chip
                       label={icon.type}
                       size='small'
-                      color={getTypeColor(icon.type) as any}
+                      color={getTypeColor(icon.type)}
                       variant='outlined'
                     />
-                    <Typography variant='caption' color='text.secondary'>
-                      Used:{' '}
-                      {(icon._count?.services || 0) +
-                        (icon._count?.categories || 0)}
-                    </Typography>
                   </Stack>
+
+                  <Typography variant='caption' color='text.secondary'>
+                    Used:{' '}
+                    {(icon._count?.services || 0) +
+                      (icon._count?.categories || 0)}{' '}
+                    times
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -451,14 +464,12 @@ const Icons: React.FC = () => {
         ) : (
           <Grid item xs={12}>
             <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <ImageOutlined
-                sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }}
-              />
-              <Typography variant='h6' color='text.secondary' gutterBottom>
-                No Icons Found
+              <ImageOutlined sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
+              <Typography variant='h6' color='text.secondary' mb={1}>
+                No icons found
               </Typography>
-              <Typography variant='body2' color='text.secondary' mb={3}>
-                {searchTerm
+              <Typography variant='body2' color='text.secondary'>
+                {filteredIcons.length !== icons.length
                   ? 'Try adjusting your search or filter criteria.'
                   : 'Create your first icon to get started.'}
               </Typography>
@@ -554,48 +565,62 @@ const Icons: React.FC = () => {
                     error={!!errors.type}
                     helperText={errors.type?.message}
                   >
-                    <MenuItem value='SERVICE'>Service Icon</MenuItem>
-                    <MenuItem value='CATEGORY'>Category Icon</MenuItem>
-                    <MenuItem value='GENERAL'>General Purpose</MenuItem>
+                    <MenuItem value='GENERAL'>General</MenuItem>
+                    <MenuItem value='SERVICE'>Service</MenuItem>
+                    <MenuItem value='CATEGORY'>Category</MenuItem>
                   </TextField>
                 )}
               />
 
+              {/* File Upload */}
               <FormControl>
-                <FormLabel component='legend'>Icon Image</FormLabel>
-                <Box sx={{ mt: 1 }}>
-                  <Stack direction='row' spacing={2} alignItems='center'>
-                    {filePreview && (
-                      <Avatar
-                        src={filePreview}
-                        sx={{ width: 80, height: 80 }}
-                        variant='rounded'
-                      />
-                    )}
-                    <ImageUpload
-                      selectedImage={!!selectedFile || !!filePreview}
-                      handleImageClick={handleFileClick}
-                      fileInputRef={(el) => (fileInputRef.current = el)}
-                      handleImageChange={handleFileChange}
-                      isLoading={isUploading}
+                <FormLabel>Icon Image *</FormLabel>
+                <Box
+                  sx={{
+                    border: '2px dashed #ccc',
+                    borderRadius: 1,
+                    p: 3,
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    mt: 1,
+                    '&:hover': { borderColor: 'primary.main' },
+                  }}
+                  onClick={handleFileClick}
+                >
+                  {filePreview ? (
+                    <Avatar
+                      src={filePreview}
+                      sx={{ width: 80, height: 80, mx: 'auto', mb: 1 }}
+                      variant='rounded'
                     />
-                  </Stack>
-                  <Typography
-                    variant='caption'
-                    color='text.secondary'
-                    sx={{ mt: 1, display: 'block' }}
-                  >
-                    Recommended: Square icon (64x64 or larger), max 2MB (PNG,
-                    SVG preferred)
+                  ) : (
+                    <ImageOutlined
+                      sx={{ fontSize: 48, color: 'grey.400', mb: 1 }}
+                    />
+                  )}
+                  <Typography variant='body2'>
+                    {editingIcon && !selectedFile
+                      ? 'Click to change icon'
+                      : 'Click to select icon file'}
+                  </Typography>
+                  <Typography variant='caption' color='text.secondary'>
+                    PNG, JPG up to 2MB
                   </Typography>
                 </Box>
+                <input
+                  ref={fileInputRef}
+                  type='file'
+                  accept='image/*'
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                />
               </FormControl>
             </Stack>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
             <Button type='submit' variant='contained' disabled={isUploading}>
-              {editingIcon ? 'Update' : 'Create'}
+              {isUploading ? 'Saving...' : editingIcon ? 'Update' : 'Create'}
             </Button>
           </DialogActions>
         </form>

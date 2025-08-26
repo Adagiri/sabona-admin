@@ -1,7 +1,4 @@
-// File: src/pages/UserDetails.tsx
-// Replace the Document Management Section with this updated version:
-
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -18,7 +15,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Controller, useForm } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
-import {  getDriverTipsAction, useGetUserDetails } from '../hooks/Admin/query';
+import { getDriverTipsAction, useGetUserDetails } from '../hooks/Admin/query';
 import VendorLaundriesSection from '../components/VendorLaundriesSection';
 import DynamicDocumentSection from '../components/DynamicDocumentSection'; // New import
 import MediaItem from '../components/MediaItem';
@@ -39,16 +36,13 @@ const UserDetails = () => {
 
   const { data: userDetails, isLoading, error } = useGetUserDetails(userId!);
 
-  const {
-    control: dateControl,
-    handleSubmit: handleDateSubmit,
-    formState: { errors: dateErrors },
-  } = useForm<DateRangeForm>({
-    defaultValues: {
-      dateFrom: dayjs().subtract(30, 'day'),
-      dateTo: dayjs(),
-    },
-  });
+  const { control: dateControl, handleSubmit: handleDateSubmit } =
+    useForm<DateRangeForm>({
+      defaultValues: {
+        dateFrom: dayjs().subtract(30, 'day'),
+        dateTo: dayjs(),
+      },
+    });
 
   const validateNotFuture = (value: Dayjs | null) => {
     if (!value) return 'Date is required';
@@ -72,7 +66,7 @@ const UserDetails = () => {
       });
       setDriverTips(tips);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error('Failed to fetch driver tips');
     } finally {
       setTipsLoading(false);

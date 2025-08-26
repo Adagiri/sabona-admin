@@ -63,6 +63,7 @@ const Driver = () => {
     event: React.ChangeEvent<unknown>,
     value: number
   ) => {
+    console.log(typeof event)
     setPage(value);
     navigate(`/drivers/${value}`);
   };

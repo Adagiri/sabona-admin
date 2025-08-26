@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -56,7 +56,7 @@ export default function AdminCustomOrdersList() {
 
   const fetchCustomOrders = async () => {
     try {
-      const response = await fetch('/v1/admin/custom-orders', {
+      const response = await fetch('/admin/custom-orders', {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('adminToken')}`, // Replace with your auth method
         },
@@ -76,7 +76,7 @@ export default function AdminCustomOrdersList() {
     setIsUpdatingPricing(true);
     try {
       const response = await fetch(
-        `/v1/admin/custom-order/${selectedOrder.id}/pricing`,
+        `/admin/custom-order/${selectedOrder.id}/pricing`,
         {
           method: 'PATCH',
           headers: {

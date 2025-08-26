@@ -84,7 +84,7 @@ export const useFinaliseUploadImage = () => {
     onSuccess: () => {
       setTimeout(() => {
         queryClient.invalidateQueries({
-          queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_USERS,
+          queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_USERS],
         });
       }, 2000);
     },
@@ -105,7 +105,7 @@ export const useCreateCoupon = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: FETCH_ORDER_QUERIES.FETCH_ALL_COUPONS,
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_COUPONS],
       });
     },
   });
@@ -205,7 +205,7 @@ export const useEditLaundry = () => {
       data: any;
     }) => {
       const response = await api.patch(
-        `/v1/admin/laundry/${laundryId}/edit`,
+        `/admin/laundry/${laundryId}/edit`,
         data
       );
       return response.data;
@@ -226,9 +226,7 @@ export const useDeleteLaundry = () => {
 
   return useMutation({
     mutationFn: async (laundryId: string) => {
-      const response = await api.delete(
-        `/v1/admin/laundry/${laundryId}/delete`
-      );
+      const response = await api.delete(`/admin/laundry/${laundryId}/delete`);
       return response.data;
     },
     onSuccess: () => {
@@ -253,7 +251,7 @@ export const useCreateLaundryService = () => {
       data: any;
     }) => {
       const response = await api.post(
-        `/v1/admin/laundry/${laundryId}/service/create`,
+        `/admin/laundry/${laundryId}/service/create`,
         data
       );
       return response.data;
@@ -286,7 +284,7 @@ export const useEditLaundryService = () => {
       data: any;
     }) => {
       const response = await api.patch(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/edit`,
+        `/admin/laundry/${laundryId}/service/${serviceId}/edit`,
         data
       );
       return response.data;
@@ -314,7 +312,7 @@ export const useDeleteLaundryService = () => {
       serviceId: string;
     }) => {
       const response = await api.delete(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/delete`
+        `/admin/laundry/${laundryId}/service/${serviceId}/delete`
       );
       return response.data;
     },
@@ -348,7 +346,7 @@ export const useCreateLaundryServiceItem = () => {
       data: any;
     }) => {
       const response = await api.post(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item`,
+        `/admin/laundry/${laundryId}/service/${serviceId}/item`,
         data
       );
       return response.data;
@@ -387,7 +385,7 @@ export const useEditLaundryServiceItem = () => {
       data: any;
     }) => {
       const response = await api.patch(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/edit`,
+        `/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/edit`,
         data
       );
       return response.data;
@@ -418,7 +416,7 @@ export const useDeleteLaundryServiceItem = () => {
       itemId: string;
     }) => {
       const response = await api.delete(
-        `/v1/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/delete`
+        `/admin/laundry/${laundryId}/service/${serviceId}/item/${itemId}/delete`
       );
       return response.data;
     },
@@ -441,68 +439,6 @@ export const useDeleteLaundryServiceItem = () => {
 };
 
 // Category Management Hooks
-
-export const useCreateCategory = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: any) => {
-      const response = await api.post('/v1/admin/category/create', data);
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
-      });
-    },
-  });
-};
-
-export const useEditCategory = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      categoryId,
-      data,
-    }: {
-      categoryId: string;
-      data: any;
-    }) => {
-      const response = await api.patch(
-        `/v1/admin/category/${categoryId}/edit`,
-        data
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
-      });
-      queryClient.invalidateQueries({
-        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORY_BY_ID],
-      });
-    },
-  });
-};
-
-export const useDeleteCategory = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (categoryId: string) => {
-      const response = await api.delete(
-        `/v1/admin/category/${categoryId}/delete`
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
-      });
-    },
-  });
-};
 
 export const useUploadRiderDocument = () => {
   return useMutation({
@@ -537,12 +473,13 @@ export const useFinaliseRiderDocument = () => {
 };
 
 // Icon Management Hooks
+
 export const useCreateIcon = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: any) => {
-      const response = await api.post('/v1/admin/icon/create', data);
+      const response = await api.post('/icon/create', data);
       return response.data;
     },
     onSuccess: () => {
@@ -556,7 +493,7 @@ export const useEditIcon = () => {
 
   return useMutation({
     mutationFn: async ({ iconId, data }: { iconId: number; data: any }) => {
-      const response = await api.patch(`/v1/admin/icon/${iconId}/edit`, data);
+      const response = await api.patch(`/icon/${iconId}/edit`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -570,11 +507,72 @@ export const useDeleteIcon = () => {
 
   return useMutation({
     mutationFn: async (iconId: number) => {
-      const response = await api.delete(`/v1/admin/icon/${iconId}/delete`);
+      const response = await api.delete(`/icon/${iconId}/delete`);
       return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-icons'] });
+    },
+  });
+};
+
+// Category Management Hooks - Fix inconsistent endpoints
+export const useCreateCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: any) => {
+      // Use consistent v1/admin prefix
+      const response = await api.post('/admin/category/create', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
+      });
+    },
+  });
+};
+
+export const useEditCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      categoryId,
+      data,
+    }: {
+      categoryId: string;
+      data: any;
+    }) => {
+      // Use consistent v1/admin prefix
+      const response = await api.patch(
+        `/admin/category/${categoryId}/edit`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
+      });
+    },
+  });
+};
+
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (categoryId: string) => {
+      // Use consistent v1/admin prefix
+      const response = await api.delete(`/admin/category/${categoryId}/delete`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_LAUNDRY_CATEGORIES],
+      });
     },
   });
 };
