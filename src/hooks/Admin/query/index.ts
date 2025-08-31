@@ -420,3 +420,20 @@ export const useFetchIcons = () => {
     },
   });
 };
+
+
+export const ADMIN_SETTINGS_QUERIES = {
+  FETCH_ADMIN_SETTINGS: 'FETCH_ADMIN_SETTINGS',
+};
+
+export const useFetchAdminSettings = () => {
+  return useQuery({
+    queryKey: [ADMIN_SETTINGS_QUERIES.FETCH_ADMIN_SETTINGS],
+    queryFn: async () => {
+      const response = await api.get('/admin/settings');
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+};

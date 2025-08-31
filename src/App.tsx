@@ -34,6 +34,7 @@ import LaundryServiceItems from './pages/LaundryServiceItems';
 import Categories from './pages/Categories';
 import EditLaundry from './pages/EditLaundry';
 import Icons from './pages/Icons';
+import AdminSettings from './pages/AdminSettings';
 
 const App: React.FC = () => {
   return (
@@ -106,6 +107,7 @@ const AppContent: React.FC = () => {
               element={<ApplicationDetails />}
             />
             <Route path='/icons' element={<Icons />} />
+            <Route path='/admin-settings' element={<AdminSettings />} />
           </Route>
         </Routes>
       </Box>

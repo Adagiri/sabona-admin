@@ -22,6 +22,7 @@ import {
   ImageOutlined,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
+import { Settings } from 'lucide-react';
 
 const menuItems = [
   { text: 'Home', icon: <Home />, route: '/' },
@@ -35,6 +36,7 @@ const menuItems = [
   { text: 'Map Stats', icon: <Map />, route: '/map-stats' },
   { text: 'Voucher', icon: <Discount />, route: '/voucher' },
   { text: 'Tips', icon: <Paid />, route: '/tip' },
+  { text: 'Settings', icon: <Settings />, route: '/admin-settings' },
 ];
 
 const Sidebar: React.FC = () => {

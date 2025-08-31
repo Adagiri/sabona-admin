@@ -576,3 +576,34 @@ export const useDeleteCategory = () => {
     },
   });
 };
+
+
+// Admin Settings Management
+export interface UpdateAdminSettingsRequest {
+  vatRate?: number;
+  vatEnabled?: boolean;
+  serviceChargeType?: string;
+  serviceChargeRate?: number;
+  customOrderServiceChargeRate?: number;
+  deliveryBaseRate?: number;
+  deliveryPerKmRate?: number;
+  freeDeliveryThreshold?: number;
+  expressMultiplier?: number;
+  maxDeliveryDistance?: number;
+}
+
+export const useUpdateAdminSettings = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: UpdateAdminSettingsRequest) => {
+      const response = await api.patch('/admin/settings', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['FETCH_ADMIN_SETTINGS'],
+      });
+    },
+  });
+};
