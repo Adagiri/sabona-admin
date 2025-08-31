@@ -254,7 +254,7 @@ const AdminSettings: React.FC = () => {
                               <InputAdornment position='end'>
                                 {serviceChargeType === 'PERCENTAGE'
                                   ? '%'
-                                  : 'EGP'}
+                                  : 'SAR'}
                               </InputAdornment>
                             ),
                           }}
@@ -288,7 +288,7 @@ const AdminSettings: React.FC = () => {
                               <InputAdornment position='end'>
                                 {serviceChargeType === 'PERCENTAGE'
                                   ? '%'
-                                  : 'EGP'}
+                                  : 'SAR'}
                               </InputAdornment>
                             ),
                           }}
@@ -337,7 +337,7 @@ const AdminSettings: React.FC = () => {
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position='end'>
-                                EGP
+                                SAR
                               </InputAdornment>
                             ),
                           }}
@@ -369,7 +369,7 @@ const AdminSettings: React.FC = () => {
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position='end'>
-                                EGP/km
+                                SAR/km
                               </InputAdornment>
                             ),
                           }}
@@ -434,7 +434,7 @@ const AdminSettings: React.FC = () => {
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position='end'>
-                                EGP
+                                SAR
                               </InputAdornment>
                             ),
                           }}
