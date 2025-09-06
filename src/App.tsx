@@ -1,4 +1,4 @@
-// File: src/App.tsx
+
 
 import React from 'react';
 import {
@@ -27,7 +27,7 @@ import VoucherUsage from './pages/VoucherUsage';
 import Tip from './pages/Tip';
 import ApplicationDetails from './pages/ApplicationDetails';
 
-// Import new laundry management pages
+// Import laundry management pages
 import Laundry from './pages/Laundry';
 import LaundryServices from './pages/LaundryServices';
 import LaundryServiceItems from './pages/LaundryServiceItems';
@@ -35,6 +35,9 @@ import Categories from './pages/Categories';
 import EditLaundry from './pages/EditLaundry';
 import Icons from './pages/Icons';
 import AdminSettings from './pages/AdminSettings';
+
+// Import custom orders management page
+import CustomOrders from './pages/CustomOrders';
 
 const App: React.FC = () => {
   return (
@@ -85,6 +88,9 @@ const AppContent: React.FC = () => {
               path='/laundry/:laundryId/service/:serviceId/items'
               element={<LaundryServiceItems />}
             />
+
+            {/* Custom Orders Management Routes */}
+            <Route path='/custom-orders' element={<CustomOrders />} />
 
             <Route path='/driver/:pageNumber?' element={<Driver />} />
             <Route path='/voucher/:pageNumber?' element={<Voucher />} />

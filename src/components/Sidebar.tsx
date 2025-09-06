@@ -1,4 +1,3 @@
-// File: src/components/Sidebar.tsx
 import React from 'react';
 import {
   Drawer,
@@ -20,6 +19,7 @@ import {
   Paid,
   LocalLaundryService,
   ImageOutlined,
+  PinDrop,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 import { Settings } from 'lucide-react';
@@ -27,10 +27,11 @@ import { Settings } from 'lucide-react';
 const menuItems = [
   { text: 'Home', icon: <Home />, route: '/' },
   { text: 'Order', icon: <Inventory />, route: '/order' },
+  { text: 'Custom Orders', icon: <PinDrop />, route: '/custom-orders' },
   { text: 'Customer', icon: <People />, route: '/customer' },
   { text: 'Vendor', icon: <Business />, route: '/vendor' },
   { text: 'Laundry', icon: <LocalLaundryService />, route: '/laundry' },
-  { text: 'Icons', icon: <ImageOutlined />, route: '/icons' }, // Fixed route
+  { text: 'Icons', icon: <ImageOutlined />, route: '/icons' },
   { text: 'Driver', icon: <LocalShipping />, route: '/driver' },
   { text: 'Application', icon: <Apps />, route: '/application' },
   { text: 'Map Stats', icon: <Map />, route: '/map-stats' },
