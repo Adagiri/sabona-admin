@@ -56,9 +56,10 @@ interface CustomOrder {
   customerPaymentDate?: string;
   createdAt: string;
   customer: {
-    firstName: string;
-    lastName: string;
-    email: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
     phone?: string;
   };
   pickup: {
@@ -76,6 +77,7 @@ interface CustomOrder {
     status: string;
     createdAt: string;
     rider: {
+      name?: string;
       firstName?: string;
       lastName?: string;
       phone: string;
@@ -229,7 +231,7 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                   </ListItemIcon>
                   <ListItemText
                     primary='Name'
-                    secondary={`${order.customer.firstName} ${order.customer.lastName}`}
+                    secondary={`${order.customer?.firstName} ${order.customer?.lastName}`}
                   />
                 </ListItem>
                 <ListItem>
@@ -241,12 +243,15 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                     secondary={
                       <Box display='flex' alignItems='center' gap={1}>
                         <Typography variant='body2'>
-                          {order.customer.email}
+                          {order.customer?.email}
                         </Typography>
                         <IconButton
                           size='small'
                           onClick={() =>
-                            copyToClipboard(order.customer.email, 'Email')
+                            copyToClipboard(
+                              order?.customer?.email || 'nin',
+                              'Email'
+                            )
                           }
                         >
                           <ContentCopy fontSize='small' />
@@ -255,7 +260,7 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                     }
                   />
                 </ListItem>
-                {order.customer.phone && (
+                {order.customer?.phone && (
                   <ListItem>
                     <ListItemIcon>
                       <Phone />
@@ -265,12 +270,12 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                       secondary={
                         <Box display='flex' alignItems='center' gap={1}>
                           <Typography variant='body2'>
-                            {order.customer.phone}
+                            {order.customer?.phone}
                           </Typography>
                           <IconButton
                             size='small'
                             onClick={() =>
-                              copyToClipboard(order.customer.phone!, 'Phone')
+                              copyToClipboard(order.customer?.phone!, 'Phone')
                             }
                           >
                             <ContentCopy fontSize='small' />

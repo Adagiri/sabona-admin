@@ -16,7 +16,7 @@ import {
   Chip,
 } from '@mui/material';
 import { LocationOn, Money, Person, Schedule } from '@mui/icons-material';
-import { toast } from 'react-toastify';
+import { useUpdateCustomOrderPricing } from '../hooks/Admin/customOrdersHooks';
 
 interface CustomOrder {
   id: string;
@@ -26,9 +26,10 @@ interface CustomOrder {
   adminServiceCharge?: number;
   totalAmount?: number;
   customer: {
-    firstName: string;
-    lastName: string;
-    email: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
   };
   pickup: {
     pickupDate: string;
@@ -45,21 +46,22 @@ interface PricingDialogProps {
   open: boolean;
   onClose: () => void;
   order: CustomOrder;
-  onUpdate: () => void;
+  // ✅ Removed onUpdate prop - React Query handles cache invalidation
 }
 
 const PricingDialog: React.FC<PricingDialogProps> = ({
   open,
   onClose,
   order,
-  onUpdate,
 }) => {
   const [adminServiceCharge, setAdminServiceCharge] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
   const [estimatedCost, setEstimatedCost] = useState('');
   const [notes, setNotes] = useState('');
-  const [isUpdating, setIsUpdating] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // ✅ Use React Query mutation hook
+  const updatePricingMutation = useUpdateCustomOrderPricing();
 
   useEffect(() => {
     if (order) {
@@ -101,43 +103,26 @@ const PricingDialog: React.FC<PricingDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleUpdatePricing = async () => {
+  // ✅ Use mutation instead of manual fetch
+  const handleUpdatePricing = () => {
     if (!validateInputs()) {
       return;
     }
 
-    setIsUpdating(true);
-    try {
-      const response = await fetch(
-        `/api/admin/custom-order/${order.id}/pricing`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            adminServiceCharge: parseFloat(adminServiceCharge),
-            totalAmount: parseFloat(totalAmount),
-            estimatedVendorCost: parseFloat(estimatedCost),
-            notes: notes.trim() || undefined,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        toast.success('Pricing updated successfully');
-        onUpdate();
-        onClose();
-      } else {
-        const error = await response.json();
-        toast.error(`Error: ${error.message}`);
+    updatePricingMutation.mutate(
+      {
+        orderId: order.id,
+        adminServiceCharge: parseFloat(adminServiceCharge),
+        totalAmount: parseFloat(totalAmount),
+        estimatedVendorCost: parseFloat(estimatedCost),
+        notes: notes.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          onClose();
+        },
       }
-    } catch (error) {
-      console.error('Failed to update pricing:', error);
-      toast.error('Failed to update pricing');
-    } finally {
-      setIsUpdating(false);
-    }
+    );
   };
 
   const calculateMargin = () => {
@@ -175,8 +160,8 @@ const PricingDialog: React.FC<PricingDialogProps> = ({
               <Box display='flex' alignItems='center' gap={1} mb={1}>
                 <Person fontSize='small' color='action' />
                 <Typography variant='body2'>
-                  <strong>Customer:</strong> {order.customer.firstName}{' '}
-                  {order.customer.lastName}
+                  <strong>Customer:</strong> {order.customer?.firstName}{' '}
+                  {order.customer?.lastName}
                 </Typography>
               </Box>
               <Box display='flex' alignItems='center' gap={1} mb={1}>
@@ -339,18 +324,25 @@ const PricingDialog: React.FC<PricingDialogProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ p: 3 }}>
-        <Button onClick={onClose} disabled={isUpdating}>
+        <Button onClick={onClose} disabled={updatePricingMutation.isPending}>
           Cancel
         </Button>
         <Button
           onClick={handleUpdatePricing}
           variant='contained'
           disabled={
-            isUpdating || !adminServiceCharge || !totalAmount || !estimatedCost
+            updatePricingMutation.isPending ||
+            !adminServiceCharge ||
+            !totalAmount ||
+            !estimatedCost
           }
-          startIcon={isUpdating ? <CircularProgress size={20} /> : null}
+          startIcon={
+            updatePricingMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : null
+          }
         >
-          {isUpdating ? 'Updating...' : 'Update Pricing'}
+          {updatePricingMutation.isPending ? 'Updating...' : 'Update Pricing'}
         </Button>
       </DialogActions>
     </Dialog>

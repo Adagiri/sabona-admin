@@ -1,5 +1,3 @@
-// File: src/components/ReceiptUploadDialog.tsx
-
 import React, { useState, useRef } from 'react';
 import {
   Dialog,
@@ -27,7 +25,7 @@ import {
   Person,
   Payment,
 } from '@mui/icons-material';
-import { toast } from 'react-toastify';
+import { useUploadCustomOrderReceipt } from '../hooks/Admin/customOrdersHooks';
 
 interface CustomOrder {
   id: string;
@@ -35,14 +33,19 @@ interface CustomOrder {
   adminServiceCharge?: number;
   totalAmount?: number;
   customer: {
-    firstName: string;
-    lastName: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
   };
   riderOrders: Array<{
     rider: {
+      name?: string;
       firstName?: string;
       lastName?: string;
       phone: string;
+      email?: string;
     };
   }>;
 }
@@ -51,38 +54,39 @@ interface ReceiptUploadDialogProps {
   open: boolean;
   onClose: () => void;
   order: CustomOrder;
-  onUpdate: () => void;
+  // ✅ Removed onUpdate prop
 }
 
 const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
   open,
   onClose,
   order,
-  onUpdate,
 }) => {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [vendorName, setVendorName] = useState('');
   const [amountPaid, setAmountPaid] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [notes, setNotes] = useState('');
-  const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ✅ Use React Query mutation hook
+  const uploadReceiptMutation = useUploadCustomOrderReceipt();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        toast.error('Please select an image file');
+        // toast.error('Please select an image file'); // Hook handles this
         return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size must be less than 5MB');
+        // toast.error('File size must be less than 5MB'); // Hook handles this
         return;
       }
 
@@ -129,46 +133,27 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleUploadReceipt = async () => {
+  // ✅ Use mutation instead of manual fetch
+  const handleUploadReceipt = () => {
     if (!validateInputs()) {
       return;
     }
 
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('receiptImage', receiptFile!);
-      formData.append('vendorName', vendorName.trim());
-      formData.append('amountPaid', amountPaid);
-      formData.append('paymentMethod', paymentMethod);
-      if (notes.trim()) {
-        formData.append('notes', notes.trim());
+    uploadReceiptMutation.mutate(
+      {
+        orderId: order.id,
+        receiptFile: receiptFile!,
+        vendorName: vendorName.trim(),
+        amountPaid: parseFloat(amountPaid),
+        paymentMethod,
+        notes: notes.trim() || undefined,
+      },
+      {
+        onSuccess: () => {
+          onClose();
+        },
       }
-
-      const response = await fetch(
-        `/api/admin/custom-order/${order.id}/upload-receipt`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        toast.success(
-          'Receipt uploaded successfully. PayTabs invoice will be generated.'
-        );
-        onUpdate();
-        onClose();
-      } else {
-        const error = await response.json();
-        toast.error(`Error: ${error.message}`);
-      }
-    } catch (error) {
-      console.error('Failed to upload receipt:', error);
-      toast.error('Failed to upload receipt');
-    } finally {
-      setUploading(false);
-    }
+    );
   };
 
   const assignedDriver = order.riderOrders?.[0]?.rider;
@@ -191,8 +176,8 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <Typography variant='body2' gutterBottom>
-                <strong>Customer:</strong> {order.customer.firstName}{' '}
-                {order.customer.lastName}
+                <strong>Customer:</strong> {order.customer?.firstName}{' '}
+                {order.customer?.lastName}
               </Typography>
               <Typography variant='body2' gutterBottom>
                 <strong>Laundry:</strong> {order.customLaundryName}
@@ -409,24 +394,30 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ p: 3 }}>
-        <Button onClick={onClose} disabled={uploading}>
+        <Button onClick={onClose} disabled={uploadReceiptMutation.isPending}>
           Cancel
         </Button>
         <Button
           onClick={handleUploadReceipt}
           variant='contained'
           disabled={
-            uploading ||
+            uploadReceiptMutation.isPending ||
             !receiptFile ||
             !vendorName ||
             !amountPaid ||
             !paymentMethod
           }
           startIcon={
-            uploading ? <CircularProgress size={20} /> : <CloudUpload />
+            uploadReceiptMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              <CloudUpload />
+            )
           }
         >
-          {uploading ? 'Uploading...' : 'Upload Receipt & Generate Invoice'}
+          {uploadReceiptMutation.isPending
+            ? 'Uploading...'
+            : 'Upload Receipt & Generate Invoice'}
         </Button>
       </DialogActions>
     </Dialog>

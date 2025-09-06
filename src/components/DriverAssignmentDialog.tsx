@@ -1,6 +1,4 @@
-// File: src/components/DriverAssignmentDialog.tsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -32,7 +30,10 @@ import {
   AccessTime,
   Person,
 } from '@mui/icons-material';
-import { toast } from 'react-toastify';
+import {
+  useFetchAvailableDriversForCustomOrder,
+  useAssignDriverToCustomOrder,
+} from '../hooks/Admin/customOrdersHooks';
 
 interface Driver {
   id: string;
@@ -60,8 +61,11 @@ interface CustomOrder {
     pickupAddress: string;
   };
   customer: {
-    firstName: string;
-    lastName: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
   };
 }
 
@@ -69,77 +73,44 @@ interface DriverAssignmentDialogProps {
   open: boolean;
   onClose: () => void;
   order: CustomOrder;
-  onUpdate: () => void;
+  // ✅ Removed onUpdate prop
 }
 
 const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
   open,
   onClose,
   order,
-  onUpdate,
 }) => {
-  const [availableDrivers, setAvailableDrivers] = useState<Driver[]>([]);
   const [selectedDriverId, setSelectedDriverId] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [assigning, setAssigning] = useState(false);
 
-  useEffect(() => {
-    if (open && order) {
-      fetchAvailableDrivers();
-    }
-  }, [open, order]);
+  // ✅ Use React Query hooks
+  const {
+    data: driversData,
+    isLoading,
+    error,
+  } = useFetchAvailableDriversForCustomOrder(order?.id);
 
-  const fetchAvailableDrivers = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `/api/admin/custom-order/${order.id}/available-drivers`
-      );
-      const data = await response.json();
-      setAvailableDrivers(data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch available drivers:', error);
-      toast.error('Failed to load available drivers');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const assignDriverMutation = useAssignDriverToCustomOrder();
 
-  const handleAssignDriver = async () => {
+  const availableDrivers = driversData?.data || [];
+
+  // ✅ Use mutation instead of manual fetch
+  const handleAssignDriver = () => {
     if (!selectedDriverId) {
-      toast.error('Please select a driver');
-      return;
+      return; // Hook will handle error toast
     }
 
-    setAssigning(true);
-    try {
-      const response = await fetch(
-        `/api/admin/custom-order/${order.id}/assign-driver`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            riderId: selectedDriverId,
-          }),
-        }
-      );
-
-      if (response.ok) {
-        toast.success('Driver assigned successfully');
-        onUpdate();
-        onClose();
-      } else {
-        const error = await response.json();
-        toast.error(`Error: ${error.message}`);
+    assignDriverMutation.mutate(
+      {
+        orderId: order.id,
+        riderId: selectedDriverId,
+      },
+      {
+        onSuccess: () => {
+          onClose();
+        },
       }
-    } catch (error) {
-      console.error('Failed to assign driver:', error);
-      toast.error('Failed to assign driver');
-    } finally {
-      setAssigning(false);
-    }
+    );
   };
 
   const getDriverAvailabilityColor = (driver: Driver) => {
@@ -176,8 +147,8 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
               <Box display='flex' alignItems='center' gap={1} mb={1}>
                 <Person fontSize='small' color='action' />
                 <Typography variant='body2'>
-                  <strong>Customer:</strong> {order.customer.firstName}{' '}
-                  {order.customer.lastName}
+                  <strong>Customer:</strong> {order.customer?.firstName}{' '}
+                  {order.customer?.lastName}
                 </Typography>
               </Box>
               <Box display='flex' alignItems='center' gap={1} mb={1}>
@@ -203,10 +174,16 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
         </Paper>
 
         {/* Driver Selection */}
-        {loading ? (
+        {isLoading ? (
           <Box display='flex' justifyContent='center' p={4}>
             <CircularProgress />
           </Box>
+        ) : error ? (
+          <Alert severity='error'>
+            <Typography variant='body2'>
+              Failed to load available drivers. Please try again.
+            </Typography>
+          </Alert>
         ) : availableDrivers.length === 0 ? (
           <Alert severity='warning'>
             <Typography variant='body2'>
@@ -226,7 +203,7 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
                 onChange={(e) => setSelectedDriverId(e.target.value)}
               >
                 <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-                  {availableDrivers.map((driver) => (
+                  {availableDrivers.map((driver: Driver) => (
                     <ListItem
                       key={driver.id}
                       sx={{
@@ -348,18 +325,22 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ p: 3 }}>
-        <Button onClick={onClose} disabled={assigning}>
+        <Button onClick={onClose} disabled={assignDriverMutation.isPending}>
           Cancel
         </Button>
         <Button
           onClick={handleAssignDriver}
           variant='contained'
-          disabled={assigning || !selectedDriverId}
+          disabled={assignDriverMutation.isPending || !selectedDriverId}
           startIcon={
-            assigning ? <CircularProgress size={20} /> : <DirectionsCar />
+            assignDriverMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              <DirectionsCar />
+            )
           }
         >
-          {assigning ? 'Assigning...' : 'Assign Driver'}
+          {assignDriverMutation.isPending ? 'Assigning...' : 'Assign Driver'}
         </Button>
       </DialogActions>
     </Dialog>

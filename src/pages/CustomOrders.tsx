@@ -1,5 +1,3 @@
-// File: src/pages/CustomOrders.tsx
-
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -32,12 +30,15 @@ import {
   Refresh,
   BusAlert,
 } from '@mui/icons-material';
-import { toast } from 'react-toastify';
 import CustomOrdersStats from '../components/CustomOrdersStats';
 import CustomOrderDetailsDialog from '../components/CustomOrderDetailsDialog';
 import PricingDialog from '../components/PricingDialog';
 import DriverAssignmentDialog from '../components/DriverAssignmentDialog';
 import ReceiptUploadDialog from '../components/ReceiptUploadDialog';
+import {
+  useFetchCustomOrders,
+  useSendCustomOrderInvoice,
+} from '../hooks/Admin/customOrdersHooks';
 
 interface CustomOrder {
   id: string;
@@ -55,9 +56,10 @@ interface CustomOrder {
   customVendorName?: string;
   createdAt: string;
   customer: {
-    firstName: string;
-    lastName: string;
-    email: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
     phone?: string;
   };
   pickup: {
@@ -74,6 +76,7 @@ interface CustomOrder {
     type: string;
     status: string;
     rider: {
+      name?: string;
       firstName?: string;
       lastName?: string;
       phone: string;
@@ -84,21 +87,29 @@ interface CustomOrder {
 }
 
 const CustomOrders: React.FC = () => {
-//   const navigate = useNavigate();
   const [tabValue, setTabValue] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  const [customOrders, setCustomOrders] = useState<CustomOrder[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<CustomOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState<CustomOrder | null>(
-    null
-  );
+  const [selectedOrder, setSelectedOrder] = useState<CustomOrder | null>(null);
 
   // Dialog states
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+
+  // ✅ Use React Query hooks properly
+  const {
+    data: customOrdersData,
+    isLoading,
+    error,
+    refetch,
+  } = useFetchCustomOrders();
+
+  const sendInvoiceMutation = useSendCustomOrderInvoice();
+
+  // Extract orders from hook data
+  const customOrders = customOrdersData?.data || [];
 
   const tabs = [
     { label: 'All Orders', value: 'all' },
@@ -110,25 +121,17 @@ const CustomOrders: React.FC = () => {
   ];
 
   useEffect(() => {
-    fetchCustomOrders();
-  }, []);
-
-  useEffect(() => {
     filterOrders();
   }, [customOrders, tabValue, searchTerm]);
 
-  const fetchCustomOrders = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/admin/custom-orders');
-      const data = await response.json();
-      setCustomOrders(data.data || []);
-    } catch (error) {
-      console.error('Failed to fetch custom orders:', error);
-      toast.error('Failed to load custom orders');
-    } finally {
-      setLoading(false);
-    }
+  // ✅ Use refetch from React Query instead of manual fetch
+  const handleRefresh = () => {
+    refetch();
+  };
+
+  // ✅ Use mutation instead of manual fetch
+  const handleSendInvoice = (order: CustomOrder) => {
+    sendInvoiceMutation.mutate(order.id);
   };
 
   const filterOrders = () => {
@@ -138,7 +141,6 @@ const CustomOrders: React.FC = () => {
     const currentTab = tabs[tabValue];
     if (currentTab.value !== 'all') {
       if (currentTab.value === 'awaiting_receipt') {
-        // Orders where driver is assigned but no receipt uploaded yet
         filtered = filtered.filter(
           (order) =>
             order.status === 'IN_PROGRESS' &&
@@ -146,12 +148,10 @@ const CustomOrders: React.FC = () => {
             !order.customVendorPaid
         );
       } else if (currentTab.value === 'awaiting_pricing') {
-        // Orders where receipt is uploaded but pricing not set
         filtered = filtered.filter(
           (order) => order.customVendorPaid && !order.adminServiceCharge
         );
       } else if (currentTab.value === 'awaiting_payment') {
-        // Orders where pricing is set but customer hasn't paid
         filtered = filtered.filter(
           (order) =>
             order.adminServiceCharge &&
@@ -159,7 +159,6 @@ const CustomOrders: React.FC = () => {
             order.payTabsInvoiceUrl
         );
       } else {
-        // Standard status filtering
         filtered = filtered.filter(
           (order) => order.status === currentTab.value
         );
@@ -173,10 +172,10 @@ const CustomOrders: React.FC = () => {
           order.customLaundryName
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          `${order.customer.firstName} ${order.customer.lastName}`
+          `${order.customer?.firstName} ${order.customer?.lastName}`
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
-          order.customer.email
+          order.customer?.email
             .toLowerCase()
             .includes(searchTerm.toLowerCase()) ||
           order.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -257,29 +256,8 @@ const CustomOrders: React.FC = () => {
         setReceiptDialogOpen(true);
         break;
       case 'payment':
-        // Handle sending PayTabs invoice
         handleSendInvoice(order);
         break;
-    }
-  };
-
-  const handleSendInvoice = async (order: CustomOrder) => {
-    try {
-      const response = await fetch(
-        `/api/admin/custom-order/${order.id}/send-invoice`,
-        {
-          method: 'POST',
-        }
-      );
-      if (response.ok) {
-        toast.success('Invoice sent to customer');
-        fetchCustomOrders();
-      } else {
-        toast.error('Failed to send invoice');
-      }
-    } catch (error) {
-      console.error('Failed to send invoice:', error);
-      toast.error('Failed to send invoice');
     }
   };
 
@@ -288,7 +266,8 @@ const CustomOrders: React.FC = () => {
     setDetailsDialogOpen(true);
   };
 
-  if (loading) {
+  // ✅ Use React Query loading state
+  if (isLoading) {
     return (
       <Box
         display='flex'
@@ -297,6 +276,26 @@ const CustomOrders: React.FC = () => {
         height='50vh'
       >
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  // ✅ Handle error state from React Query
+  if (error) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        height='50vh'
+        flexDirection='column'
+      >
+        <Typography color='error' gutterBottom>
+          Failed to load custom orders
+        </Typography>
+        <Button onClick={handleRefresh} variant='contained'>
+          Try Again
+        </Button>
       </Box>
     );
   }
@@ -337,11 +336,12 @@ const CustomOrders: React.FC = () => {
           <Grid item xs={12} md={4}>
             <Button
               variant='outlined'
-              onClick={fetchCustomOrders}
+              onClick={handleRefresh}
               fullWidth
               startIcon={<Refresh />}
+              disabled={isLoading}
             >
-              Refresh
+              {isLoading ? 'Loading...' : 'Refresh'}
             </Button>
           </Grid>
         </Grid>
@@ -392,18 +392,18 @@ const CustomOrders: React.FC = () => {
                   <TableCell>
                     <Box>
                       <Typography variant='body2' fontWeight='medium'>
-                        {order.customer.firstName} {order.customer.lastName}
+                        {order.customer?.firstName} {order.customer?.lastName}
                       </Typography>
                       <Typography variant='caption' color='text.secondary'>
-                        {order.customer.email}
+                        {order.customer?.email}
                       </Typography>
-                      {order.customer.phone && (
+                      {order.customer?.phone && (
                         <Typography
                           variant='caption'
                           display='block'
                           color='text.secondary'
                         >
-                          {order.customer.phone}
+                          {order.customer?.phone}
                         </Typography>
                       )}
                     </Box>
@@ -502,8 +502,15 @@ const CustomOrders: React.FC = () => {
                           color={nextAction.color as any}
                           startIcon={nextAction.icon}
                           onClick={() => handleAction(order, nextAction.action)}
+                          disabled={
+                            sendInvoiceMutation.isPending &&
+                            nextAction.action === 'payment'
+                          }
                         >
-                          {nextAction.label}
+                          {sendInvoiceMutation.isPending &&
+                          nextAction.action === 'payment'
+                            ? 'Sending...'
+                            : nextAction.label}
                         </Button>
                       )}
                     </Stack>
@@ -536,21 +543,21 @@ const CustomOrders: React.FC = () => {
             open={pricingDialogOpen}
             onClose={() => setPricingDialogOpen(false)}
             order={selectedOrder}
-            onUpdate={fetchCustomOrders}
+            // ✅ Remove manual onUpdate - React Query will handle cache invalidation
           />
 
           <DriverAssignmentDialog
             open={driverDialogOpen}
             onClose={() => setDriverDialogOpen(false)}
             order={selectedOrder}
-            onUpdate={fetchCustomOrders}
+            // ✅ Remove manual onUpdate - React Query will handle cache invalidation
           />
 
           <ReceiptUploadDialog
             open={receiptDialogOpen}
             onClose={() => setReceiptDialogOpen(false)}
             order={selectedOrder}
-            onUpdate={fetchCustomOrders}
+            // ✅ Remove manual onUpdate - React Query will handle cache invalidation
           />
         </>
       )}
