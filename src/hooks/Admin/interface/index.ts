@@ -168,41 +168,127 @@ export type UserCoords = {
 }
 
 export interface OrderDetails {
+  // Basic order info
+  id: string;
+  status: keyof typeof ORDER_STATUSES;
+  totalAmount: number;
+  totalQuantity?: number; // Add this for item count
+  createdAt: string; // Add this for order date
+  updatedAt: string; // Add this for last update
+  deliveryType?: string;
+
+  // Customer information
+  user: {
     id: string;
-    status: keyof typeof ORDER_STATUSES;
-    totalAmount: number;
-    services: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    email?: string;
+  };
+
+  // Current service structure (keep as is)
+  services: {
+    id: string;
+    laundryService: {
+      id: string;
+      name: string;
+      description: string;
+      laundryServiceItems: {
         id: string;
-        laundryService: {
-            id: string;
-            name: string;
-            description: string;
-            laundryServiceItems: {
-                id: string;
-                name: string;
-                price: number;
-            }[];
-        }
-    }[],
-    laundry: {
         name: string;
-        laundryService: {
-            id: string;
-            name: string;
-            description: string;
-            laundryServiceItems: {
-                id: string;
-                name: string;
-                price: number;
-            }[];
-        }[];
-    },
-    tip: {
+        price: number;
+      }[];
+    };
+    // Add actual ordered items with quantities
+    items?: {
+      id: string;
+      laundryServiceItemId: string;
+      quantity: number;
+      laundryServiceItem: {
         id: string;
-        amount: number;
-        riderId: string;
-        type: TIP_TYPE;
-    }[],
+        name: string;
+        price: number;
+      };
+    }[];
+  }[];
+
+  // Current laundry structure (keep as is)
+  laundry: {
+    id: string;
+    name: string;
+    address?: string;
+    vendor: {
+      id: string;
+      phone: string;
+      firstName: string;
+      lastName: string;
+    };
+    laundryService: {
+      id: string;
+      name: string;
+      description: string;
+      laundryServiceItems: {
+        id: string;
+        name: string;
+        price: number;
+      }[];
+    }[];
+  };
+
+  // Pickup and delivery info
+  pickup?: {
+    pickupAddress: string;
+    pickupDate: string;
+    pickupTime: string;
+    pickupLat?: number;
+    pickupLong?: number;
+    rider?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      phone: string;
+    };
+  };
+
+  delivery?: {
+    deliveryAddress: string;
+    deliveryDate?: string;
+    deliveryType: string;
+    deliveryLat?: number;
+    deliveryLong?: number;
+    rider?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      phone: string;
+    };
+  };
+
+  // Payment information
+  paymentType?: string;
+  paymentStatus?: string;
+  paid?: boolean;
+  baseAmount?: number;
+  discountAmount?: number;
+
+  // Coupon info
+  coupon?: {
+    id: string;
+    code: string;
+    discount: number;
+  };
+
+  // Current tip structure (keep as is)
+  tip: {
+    id: string;
+    amount: number;
+    riderId: string;
+    type: TIP_TYPE;
+  }[];
+
+  // Additional useful fields
+  notes?: string;
+  adminNotes?: string;
 }
 
 export enum TIP_TYPE {

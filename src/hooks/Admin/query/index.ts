@@ -15,6 +15,7 @@ import {
   UserResponse,
 } from '../interface';
 import { AxiosError, AxiosResponse } from 'axios';
+import CustomOrder from '../../../types/customOrders';
 
 export const FETCH_ORDER_QUERIES = {
   FETCH_ALL_ORDERS: 'FETCH_ALL_ORDERS',
@@ -34,6 +35,11 @@ export const FETCH_ORDER_QUERIES = {
   FETCH_LAUNDRY_SERVICE_ITEMS: 'FETCH_LAUNDRY_SERVICE_ITEMS',
   FETCH_LAUNDRY_CATEGORIES: 'FETCH_LAUNDRY_CATEGORIES',
   FETCH_LAUNDRY_CATEGORY_BY_ID: 'FETCH_LAUNDRY_CATEGORY_BY_ID',
+  //
+  FETCH_CUSTOM_ORDER_DETAILS: 'FETCH_CUSTOM_ORDER_DETAILS',
+  FETCH_CUSTOM_ORDER_STATS: 'FETCH_CUSTOM_ORDER_STATS',
+  FETCH_AVAILABLE_DRIVERS: 'FETCH_AVAILABLE_DRIVERS',
+  FETCH_ALL_CUSTOM_ORDERS: 'FETCH_ALL_CUSTOM_ORDERS',
 };
 
 const getAllOrders = async ({
@@ -211,10 +217,10 @@ export const useFetchOrderDetails = (id: string) => {
 };
 
 const getOrderDetails = async (id: string): Promise<OrderDetails> => {
-  const response: AxiosResponse<OrderDetails> = await api.get(
+  const response: AxiosResponse<any> = await api.get(
     `/admin/orders/${id}`
   );
-  return response.data;
+  return response.data.data;
 };
 
 const getAllCoupons = async (params: FetchCouponParams) => {
@@ -435,5 +441,73 @@ export const useFetchAdminSettings = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+
+// Custom order details fetching - ADD this function
+const getCustomOrderDetails = async (orderId: string): Promise<CustomOrder> => {
+  const response: AxiosResponse<CustomOrder> = await api.get(
+    `/admin/custom-order/${orderId}/details`
+  );
+  return response.data;
+};
+
+export const useFetchCustomOrderDetails = (orderId: string) => {
+  return useQuery({
+    queryFn: () => getCustomOrderDetails(orderId),
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
+    enabled: !!orderId,
+  });
+};
+
+// Custom order statistics - ADD this function
+const getCustomOrderStats = async () => {
+  const response: AxiosResponse<any> = await api.get('/admin/custom-order/stats');
+  return response.data;
+};
+
+export const useFetchCustomOrderStats = () => {
+  return useQuery({
+    queryFn: getCustomOrderStats,
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_CUSTOM_ORDER_STATS],
+  });
+};
+
+// Available drivers for custom order - ADD this function
+const getAvailableDriversForCustomOrder = async (orderId: string) => {
+  const response: AxiosResponse<any> = await api.get(
+    `/admin/custom-order/${orderId}/available-drivers`
+  );
+  return response.data;
+};
+
+export const useFetchAvailableDrivers = (orderId: string) => {
+  return useQuery({
+    queryFn: () => getAvailableDriversForCustomOrder(orderId),
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_AVAILABLE_DRIVERS, orderId],
+    enabled: !!orderId,
+  });
+};
+
+// Fetch all custom orders with filtering - ADD this function
+interface FetchCustomOrdersParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  searchTerm?: string;
+}
+
+const getAllCustomOrders = async (params: FetchCustomOrdersParams) => {
+  const response: AxiosResponse<any> = await api.get('/admin/custom-order/all', {
+    params,
+  });
+  return response.data;
+};
+
+export const useFetchAllCustomOrders = (params: FetchCustomOrdersParams) => {
+  return useQuery({
+    queryFn: () => getAllCustomOrders(params),
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_CUSTOM_ORDERS, params],
   });
 };

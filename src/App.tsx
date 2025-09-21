@@ -38,6 +38,7 @@ import AdminSettings from './pages/AdminSettings';
 
 // Import custom orders management page
 import CustomOrders from './pages/CustomOrders';
+import CustomOrderDetails from './pages/CustomOrderDetails';
 
 const App: React.FC = () => {
   return (
@@ -105,6 +106,11 @@ const AppContent: React.FC = () => {
               path='/order-details/:orderId/:start?&end?'
               element={<OrderDetails />}
             />
+            <Route
+              path='/custom-order-details/:orderId'
+              element={<CustomOrderDetails />}
+            />
+
             <Route path='/user-details/:userId' element={<UserDetails />} />
             <Route path='/map-stats' element={<MapStats />} />
             <Route path='/tip/:pageNumber?' element={<Tip />} />
