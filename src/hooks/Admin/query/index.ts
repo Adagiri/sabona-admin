@@ -42,48 +42,6 @@ export const FETCH_ORDER_QUERIES = {
   FETCH_ALL_CUSTOM_ORDERS: 'FETCH_ALL_CUSTOM_ORDERS',
 };
 
-const getAllOrders = async ({
-  type,
-  page,
-  limit,
-  column,
-  direction,
-}: FetchOrdersParams) => {
-  const params: Record<string, any> = {};
-
-  if (type !== undefined) params.type = type;
-  if (page !== undefined) params.page = page;
-  if (limit !== undefined) params.limit = limit;
-  if (column !== undefined) params.column = column;
-  if (direction !== undefined) params.direction = direction;
-
-  const response: AxiosResponse<OrdersResponse> = await api.get(
-    '/admin/orders/all',
-    { params }
-  );
-  return response.data;
-};
-
-export const useFetchAllOrders = ({
-  type,
-  page,
-  limit,
-  column,
-  direction,
-}: FetchOrdersParams) => {
-  return useQuery({
-    queryFn: () => getAllOrders({ type, page, limit, column, direction }),
-    queryKey: [
-      FETCH_ORDER_QUERIES.FETCH_ALL_ORDERS,
-      type,
-      page,
-      limit,
-      column,
-      direction,
-    ],
-  });
-};
-
 const getAllUsers = async ({
   type,
   page = 1,
@@ -217,9 +175,7 @@ export const useFetchOrderDetails = (id: string) => {
 };
 
 const getOrderDetails = async (id: string): Promise<OrderDetails> => {
-  const response: AxiosResponse<any> = await api.get(
-    `/admin/orders/${id}`
-  );
+  const response: AxiosResponse<any> = await api.get(`/admin/orders/${id}`);
   return response.data.data;
 };
 
@@ -427,7 +383,6 @@ export const useFetchIcons = () => {
   });
 };
 
-
 export const ADMIN_SETTINGS_QUERIES = {
   FETCH_ADMIN_SETTINGS: 'FETCH_ADMIN_SETTINGS',
 };
@@ -443,7 +398,6 @@ export const useFetchAdminSettings = () => {
     gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };
-
 
 // Custom order details fetching - ADD this function
 const getCustomOrderDetails = async (orderId: string): Promise<CustomOrder> => {
@@ -463,7 +417,9 @@ export const useFetchCustomOrderDetails = (orderId: string) => {
 
 // Custom order statistics - ADD this function
 const getCustomOrderStats = async () => {
-  const response: AxiosResponse<any> = await api.get('/admin/custom-order/stats');
+  const response: AxiosResponse<any> = await api.get(
+    '/admin/custom-order/stats'
+  );
   return response.data;
 };
 
@@ -499,9 +455,12 @@ interface FetchCustomOrdersParams {
 }
 
 const getAllCustomOrders = async (params: FetchCustomOrdersParams) => {
-  const response: AxiosResponse<any> = await api.get('/admin/custom-order/all', {
-    params,
-  });
+  const response: AxiosResponse<any> = await api.get(
+    '/admin/custom-order/all',
+    {
+      params,
+    }
+  );
   return response.data;
 };
 
@@ -509,5 +468,52 @@ export const useFetchAllCustomOrders = (params: FetchCustomOrdersParams) => {
   return useQuery({
     queryFn: () => getAllCustomOrders(params),
     queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_CUSTOM_ORDERS, params],
+  });
+};
+
+const getAllOrders = async ({
+  type,
+  orderType, 
+  page,
+  limit,
+  column,
+  direction,
+}: FetchOrdersParams) => {
+  const params: Record<string, any> = {};
+
+  if (type !== undefined) params.type = type;
+  if (orderType !== undefined) params.orderType = orderType; // NEW: Include orderType
+  if (page !== undefined) params.page = page;
+  if (limit !== undefined) params.limit = limit;
+  if (column !== undefined) params.column = column;
+  if (direction !== undefined) params.direction = direction;
+
+  const response: AxiosResponse<OrdersResponse> = await api.get(
+    '/admin/orders/all',
+    { params }
+  );
+  return response.data;
+};
+
+export const useFetchAllOrders = ({
+  type,
+  orderType, // NEW: Add orderType parameter
+  page,
+  limit,
+  column,
+  direction,
+}: FetchOrdersParams) => {
+  return useQuery({
+    queryFn: () =>
+      getAllOrders({ type, orderType, page, limit, column, direction }),
+    queryKey: [
+      FETCH_ORDER_QUERIES.FETCH_ALL_ORDERS,
+      type,
+      orderType,
+      page,
+      limit,
+      column,
+      direction,
+    ],
   });
 };

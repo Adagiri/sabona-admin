@@ -43,6 +43,8 @@ export const useUpdateCustomOrderPricing = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -81,6 +83,8 @@ export const useAssignDriverToCustomOrder = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -134,6 +138,8 @@ export const useUploadCustomOrderReceipt = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -162,6 +168,8 @@ export const useSendCustomOrderInvoice = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
       });
@@ -196,6 +204,7 @@ export const useMarkCustomOrderReady = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -230,6 +239,7 @@ export const useUpdateCustomOrderNotes = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -270,6 +280,7 @@ export const useCancelCustomOrder = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,

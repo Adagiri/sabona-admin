@@ -18,7 +18,7 @@ export const useFetchCustomOrderById = (orderId: string) => {
     queryKey: ['custom-order', orderId],
     queryFn: async () => {
       const response = await api.get(`/admin/custom-order/${orderId}`);
-      return response.data;
+      return response.data.data;
     },
     enabled: !!orderId,
   });

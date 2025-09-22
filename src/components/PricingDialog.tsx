@@ -46,6 +46,7 @@ interface PricingDialogProps {
   open: boolean;
   onClose: () => void;
   order: CustomOrder;
+  
   // ✅ Removed onUpdate prop - React Query handles cache invalidation
 }
 

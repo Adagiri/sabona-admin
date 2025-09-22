@@ -1,254 +1,51 @@
-import React, { useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
+  Paper,
+  Grid,
+  Chip,
+  Button,
   CircularProgress,
   Alert,
-  Chip,
-  Card,
-  CardContent,
-  Stack,
-  Button,
-  IconButton,
   Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Grid,
-  Avatar,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
+  Stack,
 } from '@mui/material';
 import {
-  ArrowBack,
+  LocationOn,
   Person,
   Phone,
   Email,
-  LocationOn,
-  AttachMoney,
   Assignment,
-  UploadFile,
-  LocalShipping,
-  CheckCircle,
-  Edit,
   Receipt,
-  Payment,
-  DriveEta,
-  Schedule,
+  Money,
+  LocalShipping,
+  Edit,
+  Upload,
 } from '@mui/icons-material';
-import { useQuery } from '@tanstack/react-query';
-import { toast } from 'react-toastify';
-import api from '../services/api-service';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
+import CustomOrderDetailsDialog from '../components/CustomOrderDetailsDialog';
+import PricingDialog from '../components/PricingDialog';
+import DriverAssignmentDialog from '../components/DriverAssignmentDialog';
+import ReceiptUploadDialog from '../components/ReceiptUploadDialog';
+import { useState } from 'react';
 
-interface NextAction {
-  label: string;
-  action: () => void;
-  color: 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error';
-  icon: React.ReactElement;
-}
-
-// API Hook for fetching custom order details - Using your existing pattern
-const useFetchCustomOrderDetails = (orderId: string) => {
-  return useQuery({
-    queryKey: ['FETCH_CUSTOM_ORDER_DETAILS', orderId],
-    queryFn: async () => {
-      const response = await api.get(`/admin/custom-order/${orderId}/details`);
-      return response.data;
-    },
-    enabled: !!orderId,
-  });
-};
-
-const CustomOrderDetails: React.FC = () => {
+const CustomOrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
+  const [driverDialogOpen, setDriverDialogOpen] = useState(false);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
 
   const {
     data: order,
     isLoading,
-    error,
-  } = useFetchCustomOrderDetails(orderId || '');
+    isError,
+  } = useFetchCustomOrderById(orderId || '');
 
-  // State management
-  const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
-  const [driverDialogOpen, setDriverDialogOpen] = useState(false);
-  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
-  const [pricingForm, setPricingForm] = useState({
-    adminServiceCharge: order?.adminServiceCharge || 0,
-    totalAmount: order?.totalAmount || 0,
-    estimatedVendorCost: order?.estimatedVendorCost || 0,
-    notes: '',
-  });
-
-  // Event handlers
-  const handleBack = useCallback(() => {
-    navigate('/custom-orders');
-  }, [navigate]);
-
-  const handleSetPricing = useCallback(() => {
-    // TODO: Implement API call to update pricing using mutation hook
-    toast.success('Pricing updated successfully');
-    setPricingDialogOpen(false);
-  }, []);
-
-  const handleAssignDriver = useCallback(() => {
-    // TODO: Implement API call to assign driver using mutation hook
-    toast.success('Driver assigned successfully');
-    setDriverDialogOpen(false);
-  }, []);
-
-  const handleUploadReceipt = useCallback(() => {
-    // TODO: Implement API call to upload receipt using mutation hook
-    toast.success('Receipt uploaded successfully');
-    setReceiptDialogOpen(false);
-  }, []);
-
-  const handleSendInvoice = useCallback(() => {
-    // TODO: Implement API call to send PayTabs invoice using mutation hook
-    toast.success('Invoice sent to customer');
-  }, []);
-
-  // Utility functions
-  const getStatusColor = (
-    status: string
-  ):
-    | 'default'
-    | 'primary'
-    | 'secondary'
-    | 'error'
-    | 'info'
-    | 'success'
-    | 'warning' => {
-    const colors: Record<
-      string,
-      | 'default'
-      | 'primary'
-      | 'secondary'
-      | 'error'
-      | 'info'
-      | 'success'
-      | 'warning'
-    > = {
-      PENDING: 'warning',
-      ACCEPTED: 'primary',
-      IN_PROGRESS: 'secondary',
-      READY_FOR_PICKUP: 'info',
-      COMPLETED: 'success',
-      CANCELLED: 'error',
-    };
-    return colors[status] || 'default';
-  };
-
-  const getWorkflowSteps = () => [
-    {
-      label: 'Order Created',
-      description: 'Customer submitted custom order request',
-      completed: true,
-      icon: <Assignment />,
-    },
-    {
-      label: 'Pricing Set',
-      description: 'Admin set service charge and total amount',
-      completed: !!order?.adminServiceCharge,
-      icon: <AttachMoney />,
-    },
-    {
-      label: 'Driver Assigned',
-      description: 'Pickup driver assigned and dispatched',
-      completed: order?.riderOrders?.some(
-        (r: any) => r.type === 'RIDER_PICKUP'
-      ),
-      icon: <DriveEta />,
-    },
-    {
-      label: 'Items Collected',
-      description: 'Driver collected items from customer',
-      completed: order?.riderOrders?.some((r: any) => r.status === 'COMPLETED'),
-      icon: <CheckCircle />,
-    },
-    {
-      label: 'Receipt Uploaded',
-      description: 'Admin uploaded vendor receipt',
-      completed: !!order?.customVendorReceipt,
-      icon: <Receipt />,
-    },
-    {
-      label: 'Invoice Sent',
-      description: 'PayTabs invoice sent to customer',
-      completed: !!order?.payTabsInvoiceUrl,
-      icon: <Payment />,
-    },
-    {
-      label: 'Customer Paid',
-      description: 'Customer completed payment',
-      completed: order?.customerPaid || false,
-      icon: <CheckCircle />,
-    },
-    {
-      label: 'Ready for Delivery',
-      description: 'Order ready for delivery assignment',
-      completed: order?.status === 'READY_FOR_PICKUP',
-      icon: <LocalShipping />,
-    },
-  ];
-
-  const getNextActions = (): NextAction[] => {
-    const actions: NextAction[] = [];
-
-    if (!order?.adminServiceCharge) {
-      actions.push({
-        label: 'Set Pricing',
-        action: () => setPricingDialogOpen(true),
-        color: 'primary',
-        icon: <AttachMoney />,
-      });
-    }
-
-    if (!order?.riderOrders?.some((r: any) => r.type === 'RIDER_PICKUP')) {
-      actions.push({
-        label: 'Assign Pickup Driver',
-        action: () => setDriverDialogOpen(true),
-        color: 'secondary',
-        icon: <DriveEta />,
-      });
-    }
-
-    if (
-      !order?.customVendorReceipt &&
-      order?.riderOrders?.some((r: any) => r.status === 'COMPLETED')
-    ) {
-      actions.push({
-        label: 'Upload Receipt',
-        action: () => setReceiptDialogOpen(true),
-        color: 'info',
-        icon: <UploadFile />,
-      });
-    }
-
-    if (!order?.payTabsInvoiceUrl && order?.customVendorReceipt) {
-      actions.push({
-        label: 'Send Invoice',
-        action: handleSendInvoice,
-        color: 'success',
-        icon: <Payment />,
-      });
-    }
-
-    return actions;
-  };
+  console.log(order)
 
   if (isLoading) {
     return (
@@ -256,558 +53,490 @@ const CustomOrderDetails: React.FC = () => {
         display='flex'
         justifyContent='center'
         alignItems='center'
-        minHeight='60vh'
+        height='50vh'
       >
-        <CircularProgress size={60} />
+        <CircularProgress />
       </Box>
     );
   }
 
-  if (error || !order) {
+  if (isError || !order) {
     return (
-      <Box p={4}>
-        <Alert severity='error'>
-          Failed to load order details. Please try again.
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        height='50vh'
+        flexDirection='column'
+      >
+        <Alert severity='error' sx={{ mb: 2 }}>
+          Failed to load custom order details
         </Alert>
+        <Button variant='contained' onClick={() => navigate('/custom-orders')}>
+          Back to Custom Orders
+        </Button>
       </Box>
     );
   }
 
-  const nextActions = getNextActions();
-  const workflowSteps = getWorkflowSteps();
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'success';
+      case 'CANCELLED':
+        return 'error';
+      case 'IN_PROGRESS':
+        return 'warning';
+      case 'PENDING':
+        return 'default';
+      default:
+        return 'primary';
+    }
+  };
+
+  const getNextAction = () => {
+    switch (order.status) {
+      case 'PENDING':
+        if (!order.adminServiceCharge) return 'Set Pricing';
+        if (!order.customerPaid) return 'Awaiting Payment';
+        return 'Assign Pickup Driver';
+      case 'IN_PROGRESS':
+        if (!order.customVendorPaid) return 'Upload Receipt';
+        return 'Assign Delivery Driver';
+      case 'READY_FOR_PICKUP':
+        return 'In Transit';
+      default:
+        return null;
+    }
+  };
+
+  const nextAction = getNextAction();
 
   return (
-    <Box p={4}>
+    <Box sx={{ p: 3, maxWidth: '1200px', mx: 'auto' }}>
       {/* Header */}
-      <Stack direction='row' alignItems='center' spacing={2} mb={3}>
-        <IconButton onClick={handleBack}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant='h4' fontWeight='bold'>
-          Custom Order Details
-        </Typography>
-        <Chip
-          label={order.status}
-          color={getStatusColor(order.status)}
-          size='medium'
-        />
-      </Stack>
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mb={3}
+      >
+        <Box>
+          <Typography variant='h4' gutterBottom>
+            Custom Order #{order.id.slice(-8)}
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Custom Laundry Order - Management Dashboard
+          </Typography>
+        </Box>
+        <Button variant='outlined' onClick={() => navigate('/custom-orders')}>
+          Back to Custom Orders
+        </Button>
+      </Box>
+
+      {/* Action Bar */}
+      {nextAction && (
+        <Paper sx={{ p: 2, mb: 3, bgcolor: 'warning.light' }}>
+          <Box
+            display='flex'
+            justifyContent='space-between'
+            alignItems='center'
+          >
+            <Typography variant='body1' fontWeight='medium'>
+              Next Action Required: {nextAction}
+            </Typography>
+            <Stack direction='row' spacing={1}>
+              {nextAction === 'Set Pricing' && (
+                <Button
+                  variant='contained'
+                  startIcon={<Money />}
+                  onClick={() => setPricingDialogOpen(true)}
+                >
+                  Set Pricing
+                </Button>
+              )}
+              {nextAction === 'Assign Pickup Driver' && (
+                <Button
+                  variant='contained'
+                  startIcon={<Assignment />}
+                  onClick={() => setDriverDialogOpen(true)}
+                >
+                  Assign Driver
+                </Button>
+              )}
+              {nextAction === 'Upload Receipt' && (
+                <Button
+                  variant='contained'
+                  startIcon={<Upload />}
+                  onClick={() => setReceiptDialogOpen(true)}
+                >
+                  Upload Receipt
+                </Button>
+              )}
+            </Stack>
+          </Box>
+        </Paper>
+      )}
 
       <Grid container spacing={3}>
-        {/* Main Content */}
-        <Grid item xs={12} lg={8}>
-          {/* Order Info */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant='h6' gutterBottom>
-                Order Information
+        {/* Order Status */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Typography variant='h6' gutterBottom>
+              Order Status & Management
+            </Typography>
+            <Box display='flex' alignItems='center' gap={2} mb={2}>
+              <Chip
+                label={order.status}
+                color={getStatusColor(order.status)}
+                // size='large'
+                sx={{ fontSize: '1rem', px: 2, py: 1 }}
+              />
+              <Chip
+                label='Custom Order'
+                color='secondary'
+                size='small'
+                variant='outlined'
+              />
+              <Typography variant='body2' color='text.secondary'>
+                Created: {new Date(order.createdAt).toLocaleString()}
               </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Order ID
-                  </Typography>
-                  <Typography variant='body1' fontWeight='bold'>
-                    #{order.id.slice(-8)}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Created
-                  </Typography>
-                  <Typography variant='body1'>
-                    {new Date(order.createdAt).toLocaleString()}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Laundry Service
-                  </Typography>
-                  <Typography variant='body1' fontWeight='bold'>
-                    {order.customLaundryName}
-                  </Typography>
-                  <Typography variant='body2' sx={{ mt: 1 }}>
-                    {order.customLaundryDescription}
-                  </Typography>
-                </Grid>
-                {order.customLaundryAddress && (
-                  <Grid item xs={12}>
-                    <Typography variant='body2' color='text.secondary'>
-                      Service Address
-                    </Typography>
-                    <Typography variant='body1'>
-                      {order.customLaundryAddress}
-                    </Typography>
-                  </Grid>
-                )}
-              </Grid>
-            </CardContent>
-          </Card>
+            </Box>
 
-          {/* Customer Info */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant='h6' gutterBottom>
-                Customer Information
-              </Typography>
-              <Stack direction='row' spacing={2} alignItems='center'>
-                <Avatar>
-                  <Person />
-                </Avatar>
-                <Box>
-                  <Typography variant='body1' fontWeight='bold'>
-                    {order.customer.firstName} {order.customer.lastName}
-                  </Typography>
-                  <Stack direction='row' spacing={2} alignItems='center'>
-                    <Stack direction='row' spacing={0.5} alignItems='center'>
-                      <Email fontSize='small' color='action' />
-                      <Typography variant='body2'>
-                        {order.customer.email}
-                      </Typography>
-                    </Stack>
-                    {order.customer.phone && (
-                      <Stack direction='row' spacing={0.5} alignItems='center'>
-                        <Phone fontSize='small' color='action' />
-                        <Typography variant='body2'>
-                          {order.customer.phone}
-                        </Typography>
-                      </Stack>
-                    )}
-                  </Stack>
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
-
-          {/* Pickup & Delivery */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant='h6' gutterBottom>
-                Pickup & Delivery
-              </Typography>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    variant='body2'
-                    color='text.secondary'
-                    gutterBottom
-                  >
-                    Pickup Details
-                  </Typography>
-                  <Stack spacing={1}>
-                    <Stack direction='row' spacing={0.5} alignItems='center'>
-                      <Schedule fontSize='small' color='action' />
-                      <Typography variant='body2'>
-                        {order.pickup.pickupDate} at {order.pickup.pickupTime}
-                      </Typography>
-                    </Stack>
-                    <Stack
-                      direction='row'
-                      spacing={0.5}
-                      alignItems='flex-start'
-                    >
-                      <LocationOn fontSize='small' color='action' />
-                      <Typography variant='body2'>
-                        {order.pickup.pickupAddress}
-                      </Typography>
-                    </Stack>
-                  </Stack>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography
-                    variant='body2'
-                    color='text.secondary'
-                    gutterBottom
-                  >
-                    Delivery Details
-                  </Typography>
-                  <Stack spacing={1}>
-                    <Stack direction='row' spacing={0.5} alignItems='center'>
-                      <LocalShipping fontSize='small' color='action' />
-                      <Typography variant='body2'>
-                        {order.delivery.deliveryType}
-                      </Typography>
-                    </Stack>
-                    <Stack
-                      direction='row'
-                      spacing={0.5}
-                      alignItems='flex-start'
-                    >
-                      <LocationOn fontSize='small' color='action' />
-                      <Typography variant='body2'>
-                        {order.delivery.deliveryAddress}
-                      </Typography>
-                    </Stack>
-                  </Stack>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Pricing Details */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Stack
-                direction='row'
-                justifyContent='space-between'
-                alignItems='center'
-                mb={2}
+            {/* Management Actions */}
+            <Stack direction='row' spacing={2}>
+              <Button
+                startIcon={<Edit />}
+                onClick={() => setDetailsDialogOpen(true)}
+                variant='outlined'
+                size='small'
               >
-                <Typography variant='h6'>Pricing Details</Typography>
-                {order.adminServiceCharge && (
-                  <Button
-                    startIcon={<Edit />}
-                    onClick={() => setPricingDialogOpen(true)}
-                  >
-                    Edit
-                  </Button>
-                )}
-              </Stack>
-
-              {order.adminServiceCharge ? (
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography variant='body2' color='text.secondary'>
-                      Estimated Vendor Cost
-                    </Typography>
-                    <Typography variant='h6'>
-                      {order.estimatedVendorCost || 0} SAR
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant='body2' color='text.secondary'>
-                      Admin Service Charge
-                    </Typography>
-                    <Typography variant='h6'>
-                      {order.adminServiceCharge} SAR
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 1 }} />
-                    <Typography variant='body2' color='text.secondary'>
-                      Total Amount
-                    </Typography>
-                    <Typography variant='h5' fontWeight='bold'>
-                      {order.totalAmount || 0} SAR
-                    </Typography>
-                  </Grid>
-                </Grid>
-              ) : (
-                <Alert severity='warning'>
-                  Pricing not set yet. Please set pricing to proceed.
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Payment Status */}
-          <Card>
-            <CardContent>
-              <Typography variant='h6' gutterBottom>
-                Payment Status
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Customer Payment
-                  </Typography>
-                  <Chip
-                    label={order.customerPaid ? 'Paid' : 'Pending'}
-                    color={order.customerPaid ? 'success' : 'warning'}
-                    sx={{ mt: 0.5 }}
-                  />
-                  {order.payTabsInvoiceUrl && (
-                    <Button
-                      size='small'
-                      sx={{ mt: 1, display: 'block' }}
-                      href={order.payTabsInvoiceUrl}
-                      target='_blank'
-                    >
-                      View Invoice
-                    </Button>
-                  )}
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant='body2' color='text.secondary'>
-                    Vendor Payment
-                  </Typography>
-                  <Typography variant='body1'>
-                    {order.customVendorPaid
-                      ? `${order.customVendorPaid} SAR`
-                      : 'Not paid'}
-                  </Typography>
-                  {order.customPaymentMethod && (
-                    <Typography variant='caption' color='text.secondary'>
-                      Method: {order.customPaymentMethod}
-                    </Typography>
-                  )}
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
+                Edit Details
+              </Button>
+              <Button
+                startIcon={<Money />}
+                onClick={() => setPricingDialogOpen(true)}
+                variant='outlined'
+                size='small'
+              >
+                Manage Pricing
+              </Button>
+              <Button
+                startIcon={<Assignment />}
+                onClick={() => setDriverDialogOpen(true)}
+                variant='outlined'
+                size='small'
+              >
+                Assign Drivers
+              </Button>
+              <Button
+                startIcon={<Receipt />}
+                onClick={() => setReceiptDialogOpen(true)}
+                variant='outlined'
+                size='small'
+              >
+                Manage Receipt
+              </Button>
+            </Stack>
+          </Paper>
         </Grid>
 
-        {/* Sidebar */}
-        <Grid item xs={12} lg={4}>
-          {/* Next Actions */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant='h6' gutterBottom>
-                Next Actions
+        {/* Customer Information */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography
+              variant='h6'
+              gutterBottom
+              display='flex'
+              alignItems='center'
+              gap={1}
+            >
+              <Person /> Customer Information
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant='body1' fontWeight='medium'>
+                {order.customer?.firstName} {order.customer?.lastName}
               </Typography>
-              {nextActions.length > 0 ? (
-                <Stack spacing={2}>
-                  {nextActions.map((action, index) => (
-                    <Button
-                      key={index}
-                      variant='contained'
-                      color={action.color}
-                      startIcon={action.icon}
-                      onClick={action.action}
-                      fullWidth
-                    >
-                      {action.label}
-                    </Button>
-                  ))}
-                </Stack>
-              ) : (
-                <Typography variant='body2' color='text.secondary'>
-                  No pending actions
-                </Typography>
+              <Box display='flex' alignItems='center' gap={1} mt={1}>
+                <Phone fontSize='small' color='action' />
+                <Typography variant='body2'>{order.customer?.phone}</Typography>
+              </Box>
+              {order.customer?.email && (
+                <Box display='flex' alignItems='center' gap={1} mt={1}>
+                  <Email fontSize='small' color='action' />
+                  <Typography variant='body2'>
+                    {order.customer?.email}
+                  </Typography>
+                </Box>
               )}
-            </CardContent>
-          </Card>
+            </Box>
+          </Paper>
+        </Grid>
 
-          {/* Workflow Progress */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant='h6' gutterBottom>
-                Workflow Progress
+        {/* Custom Laundry Information */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography
+              variant='h6'
+              gutterBottom
+              display='flex'
+              alignItems='center'
+              gap={1}
+            >
+              <LocationOn /> Custom Laundry Location
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant='body1' fontWeight='medium'>
+                {order.customLaundryName}
               </Typography>
-              <Stepper orientation='vertical'>
-                {workflowSteps.map((step, index) => (
-                  <Step key={index} active={step.completed}>
-                    <StepLabel
-                      icon={
-                        step.completed ? (
-                          <CheckCircle color='success' />
-                        ) : (
-                          <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
-                            {index + 1}
-                          </Avatar>
-                        )
+              <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
+                {order.customLaundryDescription}
+              </Typography>
+              {order.customLaundryAddress && (
+                <Box display='flex' alignItems='center' gap={1} mt={1}>
+                  <LocationOn fontSize='small' color='action' />
+                  <Typography variant='body2'>
+                    {order.customLaundryAddress}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Pricing Information */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography
+              variant='h6'
+              gutterBottom
+              display='flex'
+              alignItems='center'
+              gap={1}
+            >
+              <Money /> Pricing Details
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              {order.adminServiceCharge ? (
+                <>
+                  <Box display='flex' justifyContent='space-between' mb={1}>
+                    <Typography variant='body2'>Service Charge:</Typography>
+                    <Typography variant='body2' fontWeight='medium'>
+                      ${order.adminServiceCharge}
+                    </Typography>
+                  </Box>
+                  <Box display='flex' justifyContent='space-between' mb={1}>
+                    <Typography variant='body1' fontWeight='medium'>
+                      Total Amount:
+                    </Typography>
+                    <Typography
+                      variant='body1'
+                      fontWeight='bold'
+                      color='primary'
+                    >
+                      ${order.totalAmount}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={
+                      order.customerPaid
+                        ? 'Payment Received'
+                        : 'Awaiting Payment'
+                    }
+                    color={order.customerPaid ? 'success' : 'warning'}
+                    size='small'
+                    sx={{ mt: 1 }}
+                  />
+                </>
+              ) : (
+                <Alert severity='warning' sx={{ mt: 1 }}>
+                  Pricing not set. Please set pricing to proceed.
+                </Alert>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Vendor Payment Status */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography
+              variant='h6'
+              gutterBottom
+              display='flex'
+              alignItems='center'
+              gap={1}
+            >
+              <Receipt /> Vendor Payment
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              {order.customVendorPaid ? (
+                <>
+                  <Box display='flex' justifyContent='space-between' mb={1}>
+                    <Typography variant='body2'>Vendor:</Typography>
+                    <Typography variant='body2' fontWeight='medium'>
+                      {order.customVendorName}
+                    </Typography>
+                  </Box>
+                  <Box display='flex' justifyContent='space-between' mb={1}>
+                    <Typography variant='body2'>Amount Paid:</Typography>
+                    <Typography variant='body2' fontWeight='medium'>
+                      ${order.customVendorPaid}
+                    </Typography>
+                  </Box>
+                  <Box display='flex' justifyContent='space-between' mb={1}>
+                    <Typography variant='body2'>Payment Method:</Typography>
+                    <Typography variant='body2' fontWeight='medium'>
+                      {order.customPaymentMethod}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label='Payment Confirmed'
+                    color='success'
+                    size='small'
+                    sx={{ mt: 1 }}
+                  />
+                </>
+              ) : (
+                <Alert severity='info'>
+                  Driver payment receipt not uploaded yet.
+                </Alert>
+              )}
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Driver Assignments */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 3 }}>
+            <Typography
+              variant='h6'
+              gutterBottom
+              display='flex'
+              alignItems='center'
+              gap={1}
+            >
+              <LocalShipping /> Driver Assignments
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+
+            <Grid container spacing={2}>
+              {/* Pickup Driver */}
+              <Grid item xs={12} md={6}>
+                <Typography variant='subtitle1' gutterBottom>
+                  Pickup Driver
+                </Typography>
+                {order.riderOrders?.find(
+                  (ro: any) => ro.type === 'RIDER_PICKUP'
+                ) ? (
+                  <Box>
+                    <Typography variant='body2' fontWeight='medium'>
+                      {
+                        order.riderOrders.find(
+                          (ro: any) => ro.type === 'RIDER_PICKUP'
+                        ).rider?.firstName
+                      }{' '}
+                      {
+                        order.riderOrders.find(
+                          (ro: any) => ro.type === 'RIDER_PICKUP'
+                        ).rider?.lastName
                       }
-                    >
-                      <Typography variant='body2' fontWeight='bold'>
-                        {step.label}
-                      </Typography>
-                    </StepLabel>
-                    <StepContent>
-                      <Typography variant='caption' color='text.secondary'>
-                        {step.description}
-                      </Typography>
-                    </StepContent>
-                  </Step>
-                ))}
-              </Stepper>
-            </CardContent>
-          </Card>
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      {
+                        order.riderOrders.find(
+                          (ro: any) => ro.type === 'RIDER_PICKUP'
+                        ).rider?.phone
+                      }
+                    </Typography>
+                    <Chip
+                      label='Assigned'
+                      color='success'
+                      size='small'
+                      sx={{ mt: 1 }}
+                    />
+                  </Box>
+                ) : (
+                  <Alert severity='warning' sx={{ mt: 1 }}>
+                    No pickup driver assigned
+                  </Alert>
+                )}
+              </Grid>
 
-          {/* Assigned Drivers */}
-          <Card>
-            <CardContent>
-              <Typography variant='h6' gutterBottom>
-                Assigned Drivers
-              </Typography>
-              {order.riderOrders && order.riderOrders.length > 0 ? (
-                <List dense>
-                  {order.riderOrders.map((riderOrder: any) => (
-                    <ListItem key={riderOrder.id}>
-                      <ListItemIcon>
-                        <Avatar>
-                          <DriveEta />
-                        </Avatar>
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={`${riderOrder.rider.firstName} ${riderOrder.rider.lastName}`}
-                        secondary={
-                          <Stack>
-                            <Typography variant='caption'>
-                              {riderOrder.type.replace('_', ' ')}
-                            </Typography>
-                            <Typography variant='caption'>
-                              Status: {riderOrder.status}
-                            </Typography>
-                            <Typography variant='caption'>
-                              {riderOrder.rider.phone}
-                            </Typography>
-                          </Stack>
-                        }
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              ) : (
-                <Typography variant='body2' color='text.secondary'>
-                  No drivers assigned yet
+              {/* Delivery Driver */}
+              <Grid item xs={12} md={6}>
+                <Typography variant='subtitle1' gutterBottom>
+                  Delivery Driver
                 </Typography>
-              )}
-            </CardContent>
-          </Card>
+                {order.riderOrders?.find(
+                  (ro: any) => ro.type === 'RIDER_DELIVERY'
+                ) ? (
+                  <Box>
+                    <Typography variant='body2' fontWeight='medium'>
+                      {
+                        order.riderOrders.find(
+                          (ro: any) => ro.type === 'RIDER_DELIVERY'
+                        ).rider?.firstName
+                      }{' '}
+                      {
+                        order.riderOrders.find(
+                          (ro: any) => ro.type === 'RIDER_DELIVERY'
+                        ).rider?.lastName
+                      }
+                    </Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      {
+                        order.riderOrders.find(
+                          (ro: any) => ro.type === 'RIDER_DELIVERY'
+                        ).rider?.phone
+                      }
+                    </Typography>
+                    <Chip
+                      label='Assigned'
+                      color='success'
+                      size='small'
+                      sx={{ mt: 1 }}
+                    />
+                  </Box>
+                ) : (
+                  <Alert severity='info' sx={{ mt: 1 }}>
+                    No delivery driver assigned yet
+                  </Alert>
+                )}
+              </Grid>
+            </Grid>
+          </Paper>
         </Grid>
       </Grid>
 
-      {/* Pricing Dialog */}
-      <Dialog
+      {/* Management Dialogs */}
+      <CustomOrderDetailsDialog
+        open={detailsDialogOpen}
+        onClose={() => setDetailsDialogOpen(false)}
+        order={order}
+        // onUpdate={refetch}
+      />
+
+      <PricingDialog
         open={pricingDialogOpen}
         onClose={() => setPricingDialogOpen(false)}
-        maxWidth='sm'
-        fullWidth
-      >
-        <DialogTitle>Set Order Pricing</DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <TextField
-              label='Estimated Vendor Cost'
-              type='number'
-              value={pricingForm.estimatedVendorCost}
-              onChange={(e) =>
-                setPricingForm({
-                  ...pricingForm,
-                  estimatedVendorCost: Number(e.target.value),
-                })
-              }
-              InputProps={{ endAdornment: 'SAR' }}
-              fullWidth
-            />
-            <TextField
-              label='Admin Service Charge'
-              type='number'
-              value={pricingForm.adminServiceCharge}
-              onChange={(e) =>
-                setPricingForm({
-                  ...pricingForm,
-                  adminServiceCharge: Number(e.target.value),
-                })
-              }
-              InputProps={{ endAdornment: 'SAR' }}
-              fullWidth
-            />
-            <TextField
-              label='Total Amount'
-              type='number'
-              value={pricingForm.totalAmount}
-              onChange={(e) =>
-                setPricingForm({
-                  ...pricingForm,
-                  totalAmount: Number(e.target.value),
-                })
-              }
-              InputProps={{ endAdornment: 'SAR' }}
-              fullWidth
-            />
-            <TextField
-              label='Notes'
-              multiline
-              rows={3}
-              value={pricingForm.notes}
-              onChange={(e) =>
-                setPricingForm({ ...pricingForm, notes: e.target.value })
-              }
-              fullWidth
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setPricingDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSetPricing} variant='contained'>
-            Save Pricing
-          </Button>
-        </DialogActions>
-      </Dialog>
+        order={order}
+        // onUpdate={refetch}
+      />
 
-      {/* Driver Assignment Dialog */}
-      <Dialog
+      <DriverAssignmentDialog
         open={driverDialogOpen}
         onClose={() => setDriverDialogOpen(false)}
-        maxWidth='sm'
-        fullWidth
-      >
-        <DialogTitle>Assign Pickup Driver</DialogTitle>
-        <DialogContent>
-          <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel>Select Driver</InputLabel>
-            <Select>
-              <MenuItem value='1'>Mohammed Hassan - 4.8★ (156 orders)</MenuItem>
-              <MenuItem value='2'>Ali Ahmed - 4.6★ (89 orders)</MenuItem>
-              <MenuItem value='3'>Omar Salem - 4.9★ (203 orders)</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            label='Notes for driver'
-            multiline
-            rows={3}
-            fullWidth
-            sx={{ mt: 2 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDriverDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleAssignDriver} variant='contained'>
-            Assign Driver
-          </Button>
-        </DialogActions>
-      </Dialog>
+        order={order}
+        // onUpdate={refetch}
+      />
 
-      {/* Receipt Upload Dialog */}
-      <Dialog
+      <ReceiptUploadDialog
         open={receiptDialogOpen}
         onClose={() => setReceiptDialogOpen(false)}
-        maxWidth='sm'
-        fullWidth
-      >
-        <DialogTitle>Upload Vendor Receipt</DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <TextField
-              label='Vendor Name'
-              fullWidth
-              defaultValue={order.customLaundryName}
-            />
-            <TextField
-              label='Amount Paid'
-              type='number'
-              InputProps={{ endAdornment: 'SAR' }}
-              fullWidth
-            />
-            <FormControl fullWidth>
-              <InputLabel>Payment Method</InputLabel>
-              <Select>
-                <MenuItem value='CASH'>Cash</MenuItem>
-                <MenuItem value='CARD'>Card</MenuItem>
-                <MenuItem value='BANK_TRANSFER'>Bank Transfer</MenuItem>
-                <MenuItem value='MOBILE_PAYMENT'>Mobile Payment</MenuItem>
-              </Select>
-            </FormControl>
-            <Button
-              variant='outlined'
-              component='label'
-              startIcon={<UploadFile />}
-              fullWidth
-            >
-              Upload Receipt Image
-              <input type='file' hidden accept='image/*' />
-            </Button>
-            <TextField label='Notes' multiline rows={3} fullWidth />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setReceiptDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleUploadReceipt} variant='contained'>
-            Upload Receipt
-          </Button>
-        </DialogActions>
-      </Dialog>
+        order={order}
+        // onUpdate={refetch}
+      />
     </Box>
   );
 };

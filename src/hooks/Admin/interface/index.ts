@@ -56,11 +56,12 @@ export const ORDER_STATUSES_ARRAY = [
 ]
 
 export interface FetchOrdersParams {
-    page?: number;
-    limit?: number;
-    column?: string;
-    direction?: "ASC" | "DESC";
-    type?: keyof typeof ORDER_STATUSES | null;
+  page?: number;
+  limit?: number;
+  column?: string;
+  direction?: 'ASC' | 'DESC';
+  type?: keyof typeof ORDER_STATUSES | null; 
+  orderType?: 'REGISTERED_LAUNDRY' | 'CUSTOM_LAUNDRY'; 
 }
 
 export const STATUSES = {

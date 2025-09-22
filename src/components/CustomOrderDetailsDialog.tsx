@@ -90,6 +90,7 @@ interface CustomOrderDetailsDialogProps {
   open: boolean;
   onClose: () => void;
   order: CustomOrder;
+  
 }
 
 const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
@@ -275,7 +276,10 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                           <IconButton
                             size='small'
                             onClick={() =>
-                              copyToClipboard(order.customer?.phone!, 'Phone')
+                              copyToClipboard(
+                                order.customer?.phone ?? '',
+                                'Phone'
+                              )
                             }
                           >
                             <ContentCopy fontSize='small' />

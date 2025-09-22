@@ -37,8 +37,9 @@ import {
 
 interface Driver {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
   phone: string;
   email: string;
   rating: number;
@@ -227,8 +228,8 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
 
                       <ListItemAvatar>
                         <Avatar sx={{ bgcolor: 'primary.main' }}>
-                          {driver.firstName[0]}
-                          {driver.lastName[0]}
+                          {driver.name ? driver.name[0] : 'D'}
+                          {driver.name ? driver.name[1] : 'R'}
                         </Avatar>
                       </ListItemAvatar>
 
@@ -236,7 +237,7 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
                         primary={
                           <Box display='flex' alignItems='center' gap={1}>
                             <Typography variant='subtitle1' fontWeight='bold'>
-                              {driver.firstName} {driver.lastName}
+                              {driver.name || 'No name yet'}
                             </Typography>
                             <Chip
                               label={getDriverAvailabilityText(driver)}
@@ -256,8 +257,10 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
                               <Box display='flex' alignItems='center' gap={0.5}>
                                 <Star fontSize='small' color='warning' />
                                 <Typography variant='body2'>
-                                  {driver.rating.toFixed(1)} (
+                                  {'_'} (
                                   {driver.totalOrders} orders)
+                                  {/* {driver.rating.toFixed(1)} (
+                                  {driver.totalOrders} orders) */}
                                 </Typography>
                               </Box>
 

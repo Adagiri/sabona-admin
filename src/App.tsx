@@ -1,5 +1,4 @@
-
-
+// File: src/App.tsx
 import React from 'react';
 import {
   BrowserRouter as Router,
@@ -38,6 +37,9 @@ import AdminSettings from './pages/AdminSettings';
 
 // Import custom orders management page
 import CustomOrders from './pages/CustomOrders';
+
+// NEW: Import the new order detail pages
+import RegularOrderDetails from './pages/RegularOrderDetails';
 import CustomOrderDetails from './pages/CustomOrderDetails';
 
 const App: React.FC = () => {
@@ -90,27 +92,40 @@ const AppContent: React.FC = () => {
               element={<LaundryServiceItems />}
             />
 
+            {/* UPDATED: Order Management Routes */}
+            {/* Regular orders page - shows only REGISTERED_LAUNDRY orders */}
+            <Route
+              path='/order/:pageNumber?/:orderStatus?'
+              element={<Order />}
+            />
+
             {/* Custom Orders Management Routes */}
             <Route path='/custom-orders' element={<CustomOrders />} />
+
+            {/* NEW: Order Detail Routes */}
+            {/* Regular order details - tracking only */}
+            <Route
+              path='/regular-order/:orderId'
+              element={<RegularOrderDetails />}
+            />
+
+            {/* Custom order details - full management */}
+            <Route
+              path='/custom-order/:orderId'
+              element={<CustomOrderDetails />}
+            />
+
+            {/* LEGACY: Keep existing order-details route for backward compatibility */}
+            <Route
+              path='/order-details/:orderId/:start?&end?'
+              element={<OrderDetails />}
+            />
 
             <Route path='/driver/:pageNumber?' element={<Driver />} />
             <Route path='/voucher/:pageNumber?' element={<Voucher />} />
             <Route path='/createVoucher' element={<CreateVoucher />} />
             <Route path='/voucherUsage/:voucherId' element={<VoucherUsage />} />
             <Route path='/application/:pageNumber?' element={<Application />} />
-            <Route
-              path='/order/:pageNumber?/:orderStatus?'
-              element={<Order />}
-            />
-            <Route
-              path='/order-details/:orderId/:start?&end?'
-              element={<OrderDetails />}
-            />
-            <Route
-              path='/custom-order-details/:orderId'
-              element={<CustomOrderDetails />}
-            />
-
             <Route path='/user-details/:userId' element={<UserDetails />} />
             <Route path='/map-stats' element={<MapStats />} />
             <Route path='/tip/:pageNumber?' element={<Tip />} />
