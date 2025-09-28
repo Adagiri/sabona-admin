@@ -54,6 +54,7 @@ interface ServiceItem {
   name: string;
   vendorPrice: number;
   platformPrice: number;
+  expressPrice: number;
   categoryId: string;
   category: {
     id: string;
@@ -88,6 +89,7 @@ interface ItemFormData {
   name: string;
   vendorPrice: number;
   platformPrice: number;
+  expressPrice: number;
   categoryId: string;
 }
 
@@ -127,6 +129,7 @@ const LaundryServiceItems: React.FC = () => {
       name: '',
       vendorPrice: 0,
       platformPrice: 0,
+      expressPrice: 0,
       categoryId: '',
     },
   });
@@ -137,6 +140,7 @@ const LaundryServiceItems: React.FC = () => {
       setValue('name', editingItem.name);
       setValue('vendorPrice', editingItem.vendorPrice);
       setValue('platformPrice', editingItem.platformPrice);
+      setValue('expressPrice', editingItem.expressPrice);
       setTimeout(() => {
         setValue('categoryId', editingItem.categoryId);
       }, 500);
@@ -153,6 +157,7 @@ const LaundryServiceItems: React.FC = () => {
       name: '',
       vendorPrice: 0,
       platformPrice: 0,
+      expressPrice: 0,
       categoryId: '',
     });
     setOpenDialog(true);
@@ -190,6 +195,7 @@ const LaundryServiceItems: React.FC = () => {
       name: '',
       vendorPrice: 0,
       platformPrice: 0,
+      expressPrice: 0,
       categoryId: '',
     });
   };
@@ -201,6 +207,7 @@ const LaundryServiceItems: React.FC = () => {
         name: data.name,
         vendorPrice: Number(data.vendorPrice),
         platformPrice: Number(data.platformPrice),
+        expressPrice: Number(data.expressPrice),
         categoryId: data.categoryId,
       };
 
@@ -368,6 +375,9 @@ const LaundryServiceItems: React.FC = () => {
                 <strong>Platform Price</strong>
               </TableCell>
               <TableCell>
+                <strong>Express Price</strong>
+              </TableCell>
+              <TableCell>
                 <strong>Created</strong>
               </TableCell>
               <TableCell>
@@ -411,6 +421,11 @@ const LaundryServiceItems: React.FC = () => {
                   <TableCell>
                     <Typography variant='body1'>
                       {item.platformPrice.toFixed(2)} SAR
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant='body1'>
+                      {item.expressPrice.toFixed(2)} SAR
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -516,6 +531,26 @@ const LaundryServiceItems: React.FC = () => {
                     inputProps={{ step: '0.01', min: '0.01' }}
                     error={!!errors.platformPrice}
                     helperText={errors.platformPrice?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name='expressPrice'
+                control={control}
+                rules={{
+                  required: 'Express price is required',
+                  min: { value: 0.01, message: 'Price must be greater than 0' },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label='Express Price (SAR)'
+                    type='number'
+                    fullWidth
+                    inputProps={{ step: '0.01', min: '0.01' }}
+                    error={!!errors.expressPrice}
+                    helperText={errors.expressPrice?.message}
                   />
                 )}
               />
