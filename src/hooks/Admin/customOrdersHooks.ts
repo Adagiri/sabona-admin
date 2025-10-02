@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api-service';
+import { toast } from 'react-toastify';
 
 // ==================== CUSTOM ORDERS QUERY HOOKS ====================
 
@@ -158,91 +159,38 @@ export const useAssignDriverToCustomOrder = () => {
   });
 };
 
-export const useUploadCustomOrderReceipt = () => {
-  const queryClient = useQueryClient();
+// export const useMarkCustomOrderReadyForDelivery = () => {
+//   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({
-      orderId,
-      receiptFile,
-      vendorName,
-      amountPaid,
-      paymentMethod,
-      notes,
-    }: {
-      orderId: string;
-      receiptFile: File;
-      vendorName: string;
-      amountPaid: number;
-      paymentMethod: string;
-      notes?: string;
-    }) => {
-      const formData = new FormData();
-      formData.append('receiptImage', receiptFile);
-      formData.append('vendorName', vendorName);
-      formData.append('amountPaid', amountPaid.toString());
-      formData.append('paymentMethod', paymentMethod);
-      if (notes) {
-        formData.append('notes', notes);
-      }
-
-      const response = await api.post(
-        `/admin/custom-order/${orderId}/upload-receipt`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['custom-orders'] });
-      queryClient.invalidateQueries({
-        queryKey: ['custom-order', variables.orderId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['custom-orders-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['custom-orders-pending'] });
-      queryClient.invalidateQueries({
-        queryKey: ['custom-order-workflow', variables.orderId],
-      });
-    },
-  });
-};
-
-export const useMarkCustomOrderReadyForDelivery = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      orderId,
-      deliveryRiderId,
-    }: {
-      orderId: string;
-      deliveryRiderId?: string;
-    }) => {
-      const response = await api.post(
-        `/admin/custom-order/${orderId}/mark-ready-for-delivery`,
-        {
-          deliveryRiderId,
-        }
-      );
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['custom-orders'] });
-      queryClient.invalidateQueries({
-        queryKey: ['custom-order', variables.orderId],
-      });
-      queryClient.invalidateQueries({ queryKey: ['custom-orders-stats'] });
-      queryClient.invalidateQueries({ queryKey: ['custom-orders-pending'] });
-      queryClient.invalidateQueries({
-        queryKey: ['custom-order-workflow', variables.orderId],
-      });
-    },
-  });
-};
+//   return useMutation({
+//     mutationFn: async ({
+//       orderId,
+//       deliveryRiderId,
+//     }: {
+//       orderId: string;
+//       deliveryRiderId?: string;
+//     }) => {
+//       const response = await api.post(
+//         `/admin/custom-order/${orderId}/mark-ready-for-delivery`,
+//         {
+//           deliveryRiderId,
+//         }
+//       );
+//       return response.data;
+//     },
+//     onSuccess: (_, variables) => {
+//       queryClient.invalidateQueries({ queryKey: ['custom-orders'] });
+//       queryClient.invalidateQueries({
+//         queryKey: ['custom-order', variables.orderId],
+//       });
+//       queryClient.invalidateQueries({ queryKey: ['custom-orders-stats'] });
+//       queryClient.invalidateQueries({ queryKey: ['custom-orders-pending'] });
+//       queryClient.invalidateQueries({
+//         queryKey: ['custom-order-workflow', variables.orderId],
+//       });
+//     },
+//   });
+// };
 
 export const useSendCustomOrderInvoice = () => {
   const queryClient = useQueryClient();
@@ -386,6 +334,83 @@ export const useFetchCustomOrdersAnalytics = (timeRange: string = '30d') => {
         params: { timeRange },
       });
       return response.data;
+    },
+  });
+};
+
+export const useMarkCustomOrderReadyForDelivery = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      deliveryRiderId,
+    }: {
+      orderId: string;
+      deliveryRiderId: string;
+    }) => {
+      const response = await api.post(
+        `/admin/custom-order/${orderId}/mark-ready-for-delivery`,
+        { deliveryRiderId }
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['custom-orders'] });
+      queryClient.invalidateQueries({
+        queryKey: ['custom-order', variables.orderId],
+      });
+      toast.success('Delivery driver assigned successfully');
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message || 'Failed to assign delivery driver'
+      );
+    },
+  });
+};
+
+export const useUploadCustomOrderReceipt = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      receiptImageId, // Changed from receiptFile
+      vendorName,
+      amountPaid,
+      paymentMethod,
+      notes,
+    }: {
+      orderId: string;
+      receiptImageId?: string; // mediaId from S3 upload
+      vendorName: string;
+      amountPaid: number;
+      paymentMethod: string;
+      notes?: string;
+    }) => {
+      // Send JSON, not FormData
+      const response = await api.post(
+        `/admin/custom-order/${orderId}/upload-receipt`,
+        {
+          receiptImageId, // Send mediaId
+          vendorName,
+          amountPaid,
+          paymentMethod,
+          notes,
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      console.log(typeof data);
+      queryClient.invalidateQueries({
+        queryKey: ['custom-order', variables.orderId],
+      });
+      toast.success('Receipt uploaded successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to upload receipt');
     },
   });
 };

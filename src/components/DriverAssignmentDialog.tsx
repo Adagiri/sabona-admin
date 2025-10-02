@@ -15,7 +15,6 @@ import {
   ListItemText,
   Avatar,
   Radio,
-  FormControlLabel,
   RadioGroup,
   FormControl,
   Chip,
@@ -36,7 +35,7 @@ import {
 } from '../hooks/Admin/customOrdersHooks';
 
 interface Driver {
-  id: string;
+  riderId: string; // Changed from id to riderId
   firstName?: string;
   lastName?: string;
   name?: string;
@@ -48,6 +47,7 @@ interface Driver {
   currentLong?: number;
   isAvailable: boolean;
   distanceFromPickup?: number;
+  distance?: number;
   estimatedArrival?: string;
 }
 
@@ -74,7 +74,6 @@ interface DriverAssignmentDialogProps {
   open: boolean;
   onClose: () => void;
   order: CustomOrder;
-  // ✅ Removed onUpdate prop
 }
 
 const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
@@ -84,7 +83,6 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
 }) => {
   const [selectedDriverId, setSelectedDriverId] = useState('');
 
-  // ✅ Use React Query hooks
   const {
     data: driversData,
     isLoading,
@@ -95,10 +93,9 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
 
   const availableDrivers = driversData?.data || [];
 
-  // ✅ Use mutation instead of manual fetch
   const handleAssignDriver = () => {
     if (!selectedDriverId) {
-      return; // Hook will handle error toast
+      return;
     }
 
     assignDriverMutation.mutate(
@@ -116,15 +113,15 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
 
   const getDriverAvailabilityColor = (driver: Driver) => {
     if (!driver.isAvailable) return 'error';
-    if (driver.distanceFromPickup && driver.distanceFromPickup > 10)
-      return 'warning';
+    const dist = driver.distanceFromPickup || driver.distance || 0;
+    if (dist > 10) return 'warning';
     return 'success';
   };
 
   const getDriverAvailabilityText = (driver: Driver) => {
     if (!driver.isAvailable) return 'Busy';
-    if (driver.distanceFromPickup && driver.distanceFromPickup > 10)
-      return 'Far';
+    const dist = driver.distanceFromPickup || driver.distance || 0;
+    if (dist > 10) return 'Far';
     return 'Available';
   };
 
@@ -204,103 +201,118 @@ const DriverAssignmentDialog: React.FC<DriverAssignmentDialogProps> = ({
                 onChange={(e) => setSelectedDriverId(e.target.value)}
               >
                 <List sx={{ maxHeight: 400, overflow: 'auto' }}>
-                  {availableDrivers.map((driver: Driver) => (
-                    <ListItem
-                      key={driver.id}
-                      sx={{
-                        border: 1,
-                        borderColor: 'grey.300',
-                        borderRadius: 2,
-                        mb: 1,
-                        '&:hover': { bgcolor: 'grey.50' },
-                        ...(selectedDriverId === driver.id && {
-                          bgcolor: 'primary.light',
-                          borderColor: 'primary.main',
-                        }),
-                      }}
-                    >
-                      <FormControlLabel
-                        value={driver.id}
-                        control={<Radio />}
-                        label=''
-                        sx={{ mr: 1 }}
-                      />
+                  {availableDrivers.map((driver: Driver) => {
+                    const driverName =
+                      driver.firstName && driver.lastName
+                        ? `${driver.firstName} ${driver.lastName}`
+                        : driver.name || 'Driver';
+                    const dist = driver.distanceFromPickup || driver.distance;
 
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: 'primary.main' }}>
-                          {driver.name ? driver.name[0] : 'D'}
-                          {driver.name ? driver.name[1] : 'R'}
-                        </Avatar>
-                      </ListItemAvatar>
+                    return (
+                      <ListItem
+                        key={driver.riderId}
+                        onClick={() => setSelectedDriverId(driver.riderId)}
+                        sx={{
+                          cursor: 'pointer',
+                          border: 1,
+                          borderColor: 'grey.300',
+                          borderRadius: 2,
+                          mb: 1,
+                          '&:hover': { bgcolor: 'grey.50' },
+                          ...(selectedDriverId === driver.riderId && {
+                            bgcolor: 'primary.light',
+                            borderColor: 'primary.main',
+                          }),
+                        }}
+                      >
+                        <Radio
+                          checked={selectedDriverId === driver.riderId}
+                          value={driver.riderId}
+                        />
 
-                      <ListItemText
-                        primary={
-                          <Box display='flex' alignItems='center' gap={1}>
-                            <Typography variant='subtitle1' fontWeight='bold'>
-                              {driver.name || 'No name yet'}
-                            </Typography>
-                            <Chip
-                              label={getDriverAvailabilityText(driver)}
-                              color={getDriverAvailabilityColor(driver)}
-                              size='small'
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Box>
-                            <Box
-                              display='flex'
-                              alignItems='center'
-                              gap={2}
-                              mt={0.5}
-                            >
-                              <Box display='flex' alignItems='center' gap={0.5}>
-                                <Star fontSize='small' color='warning' />
-                                <Typography variant='body2'>
-                                  {'_'} (
-                                  {driver.totalOrders} orders)
-                                  {/* {driver.rating.toFixed(1)} (
-                                  {driver.totalOrders} orders) */}
-                                </Typography>
-                              </Box>
+                        <ListItemAvatar>
+                          <Avatar sx={{ bgcolor: 'primary.main' }}>
+                            {driverName[0]}
+                            {driverName[1] || ''}
+                          </Avatar>
+                        </ListItemAvatar>
 
-                              <Box display='flex' alignItems='center' gap={0.5}>
-                                <Phone fontSize='small' color='action' />
-                                <Typography variant='body2'>
-                                  {driver.phone}
-                                </Typography>
-                              </Box>
+                        <ListItemText
+                          primary={
+                            <Box display='flex' alignItems='center' gap={1}>
+                              <Typography variant='subtitle1' fontWeight='bold'>
+                                {driverName}
+                              </Typography>
+                              <Chip
+                                label={getDriverAvailabilityText(driver)}
+                                color={getDriverAvailabilityColor(driver)}
+                                size='small'
+                              />
                             </Box>
-
-                            {driver.distanceFromPickup && (
+                          }
+                          secondary={
+                            <Box component='div'>
                               <Box
                                 display='flex'
                                 alignItems='center'
                                 gap={2}
                                 mt={0.5}
                               >
-                                <Typography
-                                  variant='body2'
-                                  color='text.secondary'
+                                <Box
+                                  display='flex'
+                                  alignItems='center'
+                                  gap={0.5}
                                 >
-                                  📍 {driver.distanceFromPickup.toFixed(1)} km
-                                  away
-                                </Typography>
-                                {driver.estimatedArrival && (
+                                  <Star fontSize='small' color='warning' />
+                                  <Typography variant='body2' component='span'>
+                                    {driver.rating || '_'} (
+                                    {driver.totalOrders || 0} orders)
+                                  </Typography>
+                                </Box>
+
+                                <Box
+                                  display='flex'
+                                  alignItems='center'
+                                  gap={0.5}
+                                >
+                                  <Phone fontSize='small' color='action' />
+                                  <Typography variant='body2' component='span'>
+                                    {driver.phone}
+                                  </Typography>
+                                </Box>
+                              </Box>
+
+                              {dist && (
+                                <Box
+                                  display='flex'
+                                  alignItems='center'
+                                  gap={2}
+                                  mt={0.5}
+                                >
                                   <Typography
                                     variant='body2'
                                     color='text.secondary'
+                                    component='span'
                                   >
-                                    🕒 ETA: {driver.estimatedArrival}
+                                    📍 {dist.toFixed(1)} km away
                                   </Typography>
-                                )}
-                              </Box>
-                            )}
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                  ))}
+                                  {driver.estimatedArrival && (
+                                    <Typography
+                                      variant='body2'
+                                      color='text.secondary'
+                                      component='span'
+                                    >
+                                      🕒 ETA: {driver.estimatedArrival}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              )}
+                            </Box>
+                          }
+                        />
+                      </ListItem>
+                    );
+                  })}
                 </List>
               </RadioGroup>
             </FormControl>

@@ -25,7 +25,13 @@ import {
   Person,
   Payment,
 } from '@mui/icons-material';
+import { toast } from 'react-toastify';
 import { useUploadCustomOrderReceipt } from '../hooks/Admin/customOrdersHooks';
+import {
+  useUploadImage,
+  useFinaliseUploadImage,
+} from '../hooks/Admin/mutation';
+import uploadAndFinalizeImage from '../utils/uploadAndFinalizeImage';
 
 interface CustomOrder {
   id: string;
@@ -54,7 +60,6 @@ interface ReceiptUploadDialogProps {
   open: boolean;
   onClose: () => void;
   order: CustomOrder;
-  // ✅ Removed onUpdate prop
 }
 
 const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
@@ -69,30 +74,29 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
   const [notes, setNotes] = useState('');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isUploading, setIsUploading] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ Use React Query mutation hook
+  // S3 upload hooks
+  const { mutateAsync: uploadImage } = useUploadImage();
+  const { mutateAsync: finaliseUpload } = useFinaliseUploadImage();
   const uploadReceiptMutation = useUploadCustomOrderReceipt();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        // toast.error('Please select an image file'); // Hook handles this
+        toast.error('Please select an image file');
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        // toast.error('File size must be less than 5MB'); // Hook handles this
+        toast.error('File size must be less than 5MB');
         return;
       }
 
       setReceiptFile(file);
-
-      // Create preview URL
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     }
@@ -133,30 +137,60 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  // ✅ Use mutation instead of manual fetch
-  const handleUploadReceipt = () => {
+  const handleUploadReceipt = async () => {
     if (!validateInputs()) {
       return;
     }
 
-    uploadReceiptMutation.mutate(
-      {
-        orderId: order.id,
-        receiptFile: receiptFile!,
-        vendorName: vendorName.trim(),
-        amountPaid: parseFloat(amountPaid),
-        paymentMethod,
-        notes: notes.trim() || undefined,
-      },
-      {
-        onSuccess: () => {
-          onClose();
-        },
+    setIsUploading(true);
+
+    try {
+      // Step 1: Upload receipt image to S3 using signed URL
+      const receiptMediaId = await uploadAndFinalizeImage(
+        receiptFile!,
+        uploadImage,
+        finaliseUpload,
+        'admin',
+        false // private
+      );
+
+      // Step 2: Send receipt metadata + mediaId to backend
+      if (receiptMediaId) {
+        uploadReceiptMutation.mutate(
+          {
+            orderId: order.id,
+            receiptImageId: receiptMediaId,
+            vendorName: vendorName.trim(),
+            amountPaid: parseFloat(amountPaid),
+            paymentMethod,
+            notes: notes.trim() || undefined,
+          },
+          {
+            onSuccess: () => {
+              setIsUploading(false);
+              onClose();
+            },
+            onError: () => {
+              setIsUploading(false);
+            },
+          }
+        );
       }
-    );
+    } catch (error) {
+      console.error('Receipt upload error:', error);
+      toast.error('Failed to upload receipt');
+      setIsUploading(false);
+    }
   };
 
   const assignedDriver = order.riderOrders?.[0]?.rider;
+  const isButtonDisabled =
+    isUploading ||
+    uploadReceiptMutation.isPending ||
+    !receiptFile ||
+    !vendorName ||
+    !amountPaid ||
+    !paymentMethod;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth='md' fullWidth>
@@ -168,7 +202,6 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
       </DialogTitle>
 
       <DialogContent>
-        {/* Order Context */}
         <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
           <Typography variant='h6' gutterBottom fontWeight='bold'>
             Order Information
@@ -194,18 +227,8 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
               )}
             </Grid>
           </Grid>
-
-          {order.adminServiceCharge && (
-            <Box mt={2}>
-              <Typography variant='body2'>
-                <strong>Expected Amount Range:</strong>{' '}
-                {order.adminServiceCharge} - {order.totalAmount} SAR
-              </Typography>
-            </Box>
-          )}
         </Paper>
 
-        {/* Receipt Upload */}
         <Box mb={3}>
           <Typography variant='h6' gutterBottom fontWeight='bold'>
             Receipt Image
@@ -298,7 +321,6 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
           />
         </Box>
 
-        {/* Receipt Details */}
         <Typography variant='h6' gutterBottom fontWeight='bold'>
           Payment Details
         </Typography>
@@ -374,7 +396,6 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
           </Grid>
         </Grid>
 
-        {/* Process Information */}
         <Alert severity='info' sx={{ mt: 3 }}>
           <Typography variant='body2' gutterBottom>
             <strong>What happens next:</strong>
@@ -382,9 +403,11 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
           <Typography variant='body2' component='ul' sx={{ mt: 1, pl: 2 }}>
             <li>Receipt will be stored and linked to this order</li>
             <li>
-              PayTabs invoice will be automatically generated for the customer
+              <strong>
+                Customer invoice will be generated for the amount paid to vendor
+              </strong>
             </li>
-            <li>Customer will receive payment link via email/SMS</li>
+            <li>Customer will receive payment link via SMS/Email</li>
             <li>
               Order status will update to "Ready for Delivery" after customer
               payment
@@ -394,28 +417,25 @@ const ReceiptUploadDialog: React.FC<ReceiptUploadDialogProps> = ({
       </DialogContent>
 
       <DialogActions sx={{ p: 3 }}>
-        <Button onClick={onClose} disabled={uploadReceiptMutation.isPending}>
+        <Button
+          onClick={onClose}
+          disabled={isUploading || uploadReceiptMutation.isPending}
+        >
           Cancel
         </Button>
         <Button
           onClick={handleUploadReceipt}
           variant='contained'
-          disabled={
-            uploadReceiptMutation.isPending ||
-            !receiptFile ||
-            !vendorName ||
-            !amountPaid ||
-            !paymentMethod
-          }
+          disabled={isButtonDisabled}
           startIcon={
-            uploadReceiptMutation.isPending ? (
+            isUploading || uploadReceiptMutation.isPending ? (
               <CircularProgress size={20} />
             ) : (
               <CloudUpload />
             )
           }
         >
-          {uploadReceiptMutation.isPending
+          {isUploading || uploadReceiptMutation.isPending
             ? 'Uploading...'
             : 'Upload Receipt & Generate Invoice'}
         </Button>

@@ -9,6 +9,7 @@ import {
   Alert,
   Divider,
   Stack,
+  TextField,
 } from '@mui/material';
 import {
   LocationOn,
@@ -21,23 +22,27 @@ import {
   LocalShipping,
   Edit,
   Upload,
+  ContentCopy,
+  OpenInNew,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
 import CustomOrderDetailsDialog from '../components/CustomOrderDetailsDialog';
-import PricingDialog from '../components/PricingDialog';
 import DriverAssignmentDialog from '../components/DriverAssignmentDialog';
 import ReceiptUploadDialog from '../components/ReceiptUploadDialog';
 import { useState } from 'react';
+import DeliveryDriverAssignmentDialog from '../components/DeliveryDriverAssignmentDialog';
+import { toast } from 'react-toastify';
 
 const CustomOrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
 
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  const [pricingDialogOpen, setPricingDialogOpen] = useState(false);
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  const [deliveryDriverDialogOpen, setDeliveryDriverDialogOpen] =
+    useState(false);
 
   const {
     data: order,
@@ -45,7 +50,7 @@ const CustomOrderDetails = () => {
     isError,
   } = useFetchCustomOrderById(orderId || '');
 
-  console.log(order)
+  console.log(order);
 
   if (isLoading) {
     return (
@@ -97,11 +102,10 @@ const CustomOrderDetails = () => {
   const getNextAction = () => {
     switch (order.status) {
       case 'PENDING':
-        if (!order.adminServiceCharge) return 'Set Pricing';
-        if (!order.customerPaid) return 'Awaiting Payment';
         return 'Assign Pickup Driver';
       case 'IN_PROGRESS':
         if (!order.customVendorPaid) return 'Upload Receipt';
+        if (!order.customerPaid) return 'Awaiting Payment';
         return 'Assign Delivery Driver';
       case 'READY_FOR_PICKUP':
         return 'In Transit';
@@ -146,15 +150,6 @@ const CustomOrderDetails = () => {
               Next Action Required: {nextAction}
             </Typography>
             <Stack direction='row' spacing={1}>
-              {nextAction === 'Set Pricing' && (
-                <Button
-                  variant='contained'
-                  startIcon={<Money />}
-                  onClick={() => setPricingDialogOpen(true)}
-                >
-                  Set Pricing
-                </Button>
-              )}
               {nextAction === 'Assign Pickup Driver' && (
                 <Button
                   variant='contained'
@@ -171,6 +166,15 @@ const CustomOrderDetails = () => {
                   onClick={() => setReceiptDialogOpen(true)}
                 >
                   Upload Receipt
+                </Button>
+              )}
+              {nextAction === 'Assign Delivery Driver' && (
+                <Button
+                  variant='contained'
+                  startIcon={<LocalShipping />}
+                  onClick={() => setDeliveryDriverDialogOpen(true)}
+                >
+                  Assign Delivery Driver
                 </Button>
               )}
             </Stack>
@@ -213,14 +217,7 @@ const CustomOrderDetails = () => {
               >
                 Edit Details
               </Button>
-              <Button
-                startIcon={<Money />}
-                onClick={() => setPricingDialogOpen(true)}
-                variant='outlined'
-                size='small'
-              >
-                Manage Pricing
-              </Button>
+
               <Button
                 startIcon={<Assignment />}
                 onClick={() => setDriverDialogOpen(true)}
@@ -367,7 +364,7 @@ const CustomOrderDetails = () => {
               alignItems='center'
               gap={1}
             >
-              <Receipt /> Vendor Payment
+              <Receipt /> Vendor Payment & Customer Invoice
             </Typography>
             <Box sx={{ mt: 2 }}>
               {order.customVendorPaid ? (
@@ -379,9 +376,23 @@ const CustomOrderDetails = () => {
                     </Typography>
                   </Box>
                   <Box display='flex' justifyContent='space-between' mb={1}>
-                    <Typography variant='body2'>Amount Paid:</Typography>
+                    <Typography variant='body2'>
+                      Amount Paid to Vendor:
+                    </Typography>
                     <Typography variant='body2' fontWeight='medium'>
-                      ${order.customVendorPaid}
+                      {order.customVendorPaid} SAR
+                    </Typography>
+                  </Box>
+                  <Box display='flex' justifyContent='space-between' mb={1}>
+                    <Typography variant='body2'>
+                      Customer Invoice Amount:
+                    </Typography>
+                    <Typography
+                      variant='body2'
+                      fontWeight='medium'
+                      color='primary.main'
+                    >
+                      {order.customVendorPaid} SAR
                     </Typography>
                   </Box>
                   <Box display='flex' justifyContent='space-between' mb={1}>
@@ -391,20 +402,120 @@ const CustomOrderDetails = () => {
                     </Typography>
                   </Box>
                   <Chip
-                    label='Payment Confirmed'
-                    color='success'
+                    label={
+                      order.customerPaid
+                        ? 'Customer Paid'
+                        : 'Awaiting Customer Payment'
+                    }
+                    color={order.customerPaid ? 'success' : 'warning'}
                     size='small'
                     sx={{ mt: 1 }}
                   />
                 </>
               ) : (
                 <Alert severity='info'>
-                  Driver payment receipt not uploaded yet.
+                  Driver payment receipt not uploaded yet. Upload receipt to
+                  generate customer invoice.
                 </Alert>
               )}
             </Box>
           </Paper>
         </Grid>
+
+        {/* Payment Invoice Link */}
+        {order.payTabsInvoiceUrl && (
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
+              <Typography
+                variant='h6'
+                gutterBottom
+                display='flex'
+                alignItems='center'
+                gap={1}
+              >
+                <Receipt /> Customer Payment Invoice
+              </Typography>
+              <Box sx={{ mt: 2 }}>
+                <Alert
+                  severity={order.customerPaid ? 'success' : 'warning'}
+                  sx={{ mb: 2 }}
+                >
+                  <Typography variant='body2' fontWeight='bold'>
+                    Payment Status:{' '}
+                    {order.customerPaid ? 'Paid ✓' : 'Awaiting Payment'}
+                  </Typography>
+                  {order.customerPaymentDate && (
+                    <Typography variant='caption' display='block'>
+                      Paid on:{' '}
+                      {new Date(order.customerPaymentDate).toLocaleString()}
+                    </Typography>
+                  )}
+                </Alert>
+
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'grey.50',
+                    borderRadius: 1,
+                    border: 1,
+                    borderColor: 'grey.300',
+                  }}
+                >
+                  <Typography
+                    variant='body2'
+                    color='text.secondary'
+                    gutterBottom
+                  >
+                    Invoice Link (Share with customer):
+                  </Typography>
+                  <Box
+                    display='flex'
+                    gap={1}
+                    alignItems='center'
+                    sx={{ mt: 1 }}
+                  >
+                    <TextField
+                      fullWidth
+                      value={order.payTabsInvoiceUrl}
+                      InputProps={{
+                        readOnly: true,
+                        sx: { fontFamily: 'monospace', fontSize: '0.875rem' },
+                      }}
+                      size='small'
+                    />
+                    <Button
+                      variant='contained'
+                      onClick={() => {
+                        navigator.clipboard.writeText(order.payTabsInvoiceUrl);
+                        toast.success('Invoice link copied to clipboard!');
+                      }}
+                      startIcon={<ContentCopy />}
+                    >
+                      Copy
+                    </Button>
+                    <Button
+                      variant='outlined'
+                      onClick={() =>
+                        window.open(order.payTabsInvoiceUrl, '_blank')
+                      }
+                      startIcon={<OpenInNew />}
+                    >
+                      Open
+                    </Button>
+                  </Box>
+                </Box>
+
+                {!order.customerPaid && (
+                  <Alert severity='info' sx={{ mt: 2 }}>
+                    Share this link with the customer via WhatsApp, SMS, or any
+                    messaging app. The customer must pay this invoice before
+                    delivery can proceed.
+                  </Alert>
+                )}
+              </Box>
+            </Paper>
+          </Grid>
+        )}
 
         {/* Driver Assignments */}
         <Grid item xs={12}>
@@ -517,13 +628,6 @@ const CustomOrderDetails = () => {
         // onUpdate={refetch}
       />
 
-      <PricingDialog
-        open={pricingDialogOpen}
-        onClose={() => setPricingDialogOpen(false)}
-        order={order}
-        // onUpdate={refetch}
-      />
-
       <DriverAssignmentDialog
         open={driverDialogOpen}
         onClose={() => setDriverDialogOpen(false)}
@@ -536,6 +640,12 @@ const CustomOrderDetails = () => {
         onClose={() => setReceiptDialogOpen(false)}
         order={order}
         // onUpdate={refetch}
+      />
+
+      <DeliveryDriverAssignmentDialog
+        open={deliveryDriverDialogOpen}
+        onClose={() => setDeliveryDriverDialogOpen(false)}
+        order={order}
       />
     </Box>
   );

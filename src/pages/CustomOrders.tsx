@@ -29,7 +29,7 @@ interface CustomOrder {
   customLaundryDescription: string;
   customLaundryAddress?: string;
   status: string;
-  adminServiceCharge?: number;
+  customVendorPaid?: number;
   totalAmount?: number;
   customerPaid: boolean;
   createdAt: string;
@@ -91,44 +91,50 @@ const CustomOrders: React.FC = () => {
 
     setFilteredOrders(filtered);
   };
-type StatusColor = Exclude<ChipProps['color'], undefined>;
 
-const getStatusColor = (status: string): StatusColor => {
-  switch (status) {
-    case 'PENDING':
-      return 'warning';
-    case 'ACCEPTED':
-      return 'info';
-    case 'IN_PROGRESS':
-      return 'primary';
-    case 'READY_FOR_PICKUP':
-      return 'secondary';
-    case 'COMPLETED':
-      return 'success';
-    case 'CANCELLED':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
+  type StatusColor = Exclude<ChipProps['color'], undefined>;
 
-const getOrderStatus = (
-  order: CustomOrder
-): { label: string; color: StatusColor } => {
-  if (!order.adminServiceCharge) {
-    return { label: 'Needs Pricing', color: 'warning' };
-  }
-  if (!order.customerPaid && order.adminServiceCharge) {
-    return { label: 'Awaiting Payment', color: 'info' };
-  }
-  if (order.customerPaid && order.status !== 'COMPLETED') {
-    return { label: 'In Progress', color: 'primary' };
-  }
-  return {
-    label: order.status.replace('_', ' '),
-    color: getStatusColor(order.status),
+
+  const getOrderStatus = (
+    order: CustomOrder
+  ): { label: string; color: StatusColor } => {
+    // Flow: PENDING → driver assigned → receipt uploaded → customer pays → delivery assigned → COMPLETED
+
+    if (order.status === 'PENDING') {
+      return { label: 'Needs Pickup Driver', color: 'warning' };
+    }
+
+    if (order.status === 'ACCEPTED') {
+      return { label: 'Awaiting Receipt', color: 'info' };
+    }
+
+    if (order.status === 'IN_PROGRESS') {
+      if (!order.customVendorPaid) {
+        return { label: 'Awaiting Receipt', color: 'info' };
+      }
+      if (!order.customerPaid) {
+        return { label: 'Awaiting Payment', color: 'warning' };
+      }
+      return { label: 'Ready for Delivery', color: 'primary' };
+    }
+
+    if (order.status === 'READY_FOR_PICKUP') {
+      return { label: 'Out for Delivery', color: 'secondary' };
+    }
+
+    if (order.status === 'COMPLETED') {
+      return { label: 'Completed', color: 'success' };
+    }
+
+    if (order.status === 'CANCELLED') {
+      return { label: 'Cancelled', color: 'error' };
+    }
+
+    return {
+      label: order.status.replace(/_/g, ' '),
+      color: 'default',
+    };
   };
-};
 
   if (isLoading) {
     return (
@@ -280,6 +286,7 @@ const getOrderStatus = (
                         label='Paid'
                         color='success'
                         size='small'
+                        variant='outlined'
                         sx={{ ml: 0.5 }}
                       />
                     )}
@@ -288,11 +295,11 @@ const getOrderStatus = (
                   <TableCell>
                     {order.totalAmount ? (
                       <Typography variant='body2' fontWeight='medium'>
-                        ${order.totalAmount}
+                        {order.totalAmount} SAR
                       </Typography>
                     ) : (
                       <Typography variant='caption' color='text.secondary'>
-                        Not set
+                        Pending
                       </Typography>
                     )}
                   </TableCell>
