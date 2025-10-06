@@ -290,6 +290,7 @@ export interface OrderDetails {
   // Additional useful fields
   notes?: string;
   adminNotes?: string;
+  cancelReason?: string;
 }
 
 export enum TIP_TYPE {

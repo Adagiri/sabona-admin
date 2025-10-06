@@ -15,7 +15,6 @@ import {
   ListItemText,
   Avatar,
   Radio,
-  FormControlLabel,
   RadioGroup,
   FormControl,
   Paper,
@@ -33,9 +32,7 @@ interface DeliveryDriverAssignmentDialogProps {
   order: any;
 }
 
-const DeliveryDriverAssignmentDialog: React.FC<
-  DeliveryDriverAssignmentDialogProps
-> = ({ open, onClose, order }) => {
+const DeliveryDriverAssignmentDialog: React.FC<DeliveryDriverAssignmentDialogProps> = ({ open, onClose, order }) => {
   const [selectedDriverId, setSelectedDriverId] = useState('');
 
   const {
@@ -118,24 +115,24 @@ const DeliveryDriverAssignmentDialog: React.FC<
                 <List sx={{ maxHeight: 400, overflow: 'auto' }}>
                   {availableDrivers.map((driver: any) => (
                     <ListItem
-                      key={driver.id}
+                      key={driver.riderId}
+                      onClick={() => setSelectedDriverId(driver.riderId)}
                       sx={{
+                        cursor: 'pointer',
                         border: 1,
                         borderColor: 'grey.300',
                         borderRadius: 2,
                         mb: 1,
                         '&:hover': { bgcolor: 'grey.50' },
-                        ...(selectedDriverId === driver.id && {
+                        ...(selectedDriverId === driver.riderId && {
                           bgcolor: 'primary.light',
                           borderColor: 'primary.main',
                         }),
                       }}
                     >
-                      <FormControlLabel
-                        value={driver.id}
-                        control={<Radio />}
-                        label=''
-                        sx={{ mr: 1 }}
+                      <Radio
+                        checked={selectedDriverId === driver.riderId}
+                        value={driver.riderId}
                       />
 
                       <ListItemAvatar>

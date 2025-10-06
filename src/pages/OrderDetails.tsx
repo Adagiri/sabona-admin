@@ -54,6 +54,9 @@ import {
 } from '@mui/icons-material';
 import { useFetchOrderDetails } from '../hooks/Admin/query';
 import { toast } from 'react-toastify';
+import { Cancel } from '@mui/icons-material';
+import { FormControlLabel, Checkbox } from '@mui/material';
+import { useCancelOrder } from '../hooks/Admin/mutations/customOrders';
 
 const OrderDetails: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -66,10 +69,34 @@ const OrderDetails: React.FC = () => {
     refetch,
   } = useFetchOrderDetails(orderId || '');
 
-  
   // State management
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
+
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [refundCustomer, setRefundCustomer] = useState(false);
+  const cancelMutation = useCancelOrder();
+
+  const handleCancelOrder = async () => {
+    if (!cancelReason.trim()) {
+      toast.error('Please provide a cancellation reason');
+      return;
+    }
+
+    try {
+      await cancelMutation.mutateAsync({
+        orderId: orderId!,
+        reason: cancelReason,
+        refundCustomer,
+      });
+      setCancelDialogOpen(false);
+      setCancelReason('');
+      setRefundCustomer(false);
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+    }
+  };
 
   // Event handlers
   const handleBack = useCallback(() => {
@@ -329,7 +356,8 @@ const OrderDetails: React.FC = () => {
                     <Stack direction='row' spacing={0.5} alignItems='center'>
                       <LocationOn fontSize='small' color='action' />
                       <Typography variant='body2'>
-                        {orderDetails.laundry?.address || 'Address not provided'}
+                        {orderDetails.laundry?.address ||
+                          'Address not provided'}
                       </Typography>
                     </Stack>
                   </Stack>
@@ -558,6 +586,18 @@ const OrderDetails: React.FC = () => {
                 >
                   Add Notes
                 </Button>
+
+                {orderDetails?.status !== 'CANCELLED' &&
+                  orderDetails?.status !== 'COMPLETED' && (
+                    <Button
+                      variant='outlined'
+                      color='error'
+                      startIcon={<Cancel />}
+                      onClick={() => setCancelDialogOpen(true)}
+                    >
+                      Cancel Order
+                    </Button>
+                  )}
                 {orderDetails.status === 'PENDING' && (
                   <Button
                     variant='contained'
@@ -710,6 +750,60 @@ const OrderDetails: React.FC = () => {
           <Button onClick={() => setNotesDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleSaveNotes} variant='contained'>
             Save Notes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Cancel Order Dialog */}
+      <Dialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        maxWidth='sm'
+        fullWidth
+      >
+        <DialogTitle>Cancel Order</DialogTitle>
+        <DialogContent>
+          <Alert severity='warning' sx={{ mb: 2 }}>
+            This action will cancel the order. The customer will be notified.
+          </Alert>
+
+          <TextField
+            label='Cancellation Reason'
+            multiline
+            rows={3}
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            required
+            sx={{ mb: 2 }}
+            placeholder='Enter reason for cancellation...'
+          />
+
+          {orderDetails?.paid && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={refundCustomer}
+                  onChange={(e) => setRefundCustomer(e.target.checked)}
+                />
+              }
+              label='Refund customer payment'
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleCancelOrder}
+            variant='contained'
+            color='error'
+            disabled={cancelMutation.isPending || !cancelReason.trim()}
+          >
+            {cancelMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              'Confirm Cancellation'
+            )}
           </Button>
         </DialogActions>
       </Dialog>

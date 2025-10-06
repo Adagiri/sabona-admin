@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../services/api-service';
 import { toast } from 'react-toastify';
 import { CUSTOM_ORDER_QUERIES } from '../query/customOrders';
+import { FETCH_ORDER_QUERIES } from '../query';
 
 // Types
 interface UpdatePricingRequest {
@@ -289,6 +290,44 @@ export const useCancelCustomOrder = () => {
       });
       queryClient.invalidateQueries({
         queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_STATS],
+      });
+      toast.success('Order cancelled successfully');
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || 'Failed to cancel order';
+      toast.error(message);
+    },
+  });
+};
+
+
+export const useCancelOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      reason,
+      refundCustomer,
+    }: {
+      orderId: string;
+      reason: string;
+      refundCustomer?: boolean;
+    }) => {
+      const response = await api.patch(`/admin/order/${orderId}/cancel`, {
+        reason,
+        refundCustomer,
+      });
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      console.log(typeof data)
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, variables.orderId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_ORDERS],
       });
       toast.success('Order cancelled successfully');
     },

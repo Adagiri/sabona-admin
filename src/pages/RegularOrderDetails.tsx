@@ -1,4 +1,6 @@
+// src/pages/RegularOrderDetails.tsx
 
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -14,6 +16,13 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   LocationOn,
@@ -24,19 +33,48 @@ import {
   Business,
   AccessTime,
   Receipt,
+  Cancel,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchOrderDetails } from '../hooks/Admin/query';
+import { toast } from 'react-toastify';
+import { useCancelOrder } from '../hooks/Admin/mutations/customOrders';
 
 const RegularOrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+
+  // Cancel dialog state
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [refundCustomer, setRefundCustomer] = useState(false);
+  const cancelMutation = useCancelOrder();
 
   const {
     data: order,
     isLoading,
     isError,
   } = useFetchOrderDetails(orderId || '');
+
+  const handleCancelOrder = async () => {
+    if (!cancelReason.trim()) {
+      toast.error('Please provide a cancellation reason');
+      return;
+    }
+
+    try {
+      await cancelMutation.mutateAsync({
+        orderId: orderId!,
+        reason: cancelReason,
+        refundCustomer,
+      });
+      setCancelDialogOpen(false);
+      setCancelReason('');
+      setRefundCustomer(false);
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -102,9 +140,21 @@ const RegularOrderDetails = () => {
             Regular Laundry Order - Tracking Details
           </Typography>
         </Box>
-        <Button variant='outlined' onClick={() => navigate('/order')}>
-          Back to Orders
-        </Button>
+        <Box display='flex' gap={2}>
+          {order.status !== 'CANCELLED' && order.status !== 'COMPLETED' && (
+            <Button
+              variant='outlined'
+              color='error'
+              startIcon={<Cancel />}
+              onClick={() => setCancelDialogOpen(true)}
+            >
+              Cancel Order
+            </Button>
+          )}
+          <Button variant='outlined' onClick={() => navigate('/order')}>
+            Back to Orders
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
@@ -279,56 +329,185 @@ const RegularOrderDetails = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Service</TableCell>
-                    <TableCell>Items</TableCell>
+                    <TableCell>Item</TableCell>
+                    <TableCell align='right'>Price</TableCell>
                     <TableCell align='right'>Quantity</TableCell>
+                    <TableCell align='right'>Subtotal</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {order.services.map((service: any, serviceIndex: number) =>
-                    service.items?.map((item: any, itemIndex: number) => (
-                      <TableRow key={`${serviceIndex}-${itemIndex}`}>
-                        <TableCell>{service.name || 'Service'}</TableCell>
-                        <TableCell>{item.name || 'Item'}</TableCell>
-                        <TableCell align='right'>{item.quantity}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
+                  {order.services.map((service: any) => (
+                    <>
+                      {service.items && service.items.length > 0 ? (
+                        service.items.map((item: any, itemIndex: number) => (
+                          <TableRow key={`${service.id}-${itemIndex}`}>
+                            <TableCell>
+                              {service.laundryService?.name || 'Service'}
+                            </TableCell>
+                            <TableCell>
+                              {item.laundryServiceItem?.name || 'Item'}
+                            </TableCell>
+                            <TableCell align='right'>
+                              $
+                              {item.laundryServiceItem?.platformPrice?.toFixed(2) ||
+                                '0.00'}
+                            </TableCell>
+                            <TableCell align='right'>{item.quantity}</TableCell>
+                            <TableCell align='right'>
+                              $
+                              {(
+                                (item.laundryServiceItem?.platformPrice || 0) *
+                                item.quantity
+                              ).toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow key={service.id}>
+                          <TableCell>
+                            {service.laundryService?.name || 'Service'}
+                          </TableCell>
+                          <TableCell colSpan={4}>
+                            <Typography variant='body2' color='text.secondary'>
+                              No items found
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  ))}
                 </TableBody>
               </Table>
+            )}
+
+            {(!order.services || order.services.length === 0) && (
+              <Alert severity='info'>No service items in this order</Alert>
             )}
 
             <Divider sx={{ my: 2 }} />
 
             {/* Pricing */}
-            <Box
-              display='flex'
-              justifyContent='space-between'
-              alignItems='center'
-            >
-              <Typography variant='h6'>Total Amount</Typography>
-              <Typography variant='h6' color='primary' fontWeight='bold'>
-                ${order.totalAmount}
-              </Typography>
-            </Box>
+            <Box>
+              {order.baseAmount && (
+                <Box
+                  display='flex'
+                  justifyContent='space-between'
+                  alignItems='center'
+                  mb={1}
+                >
+                  <Typography variant='body1'>Base Amount</Typography>
+                  <Typography variant='body1'>
+                    ${order.baseAmount.toFixed(2)}
+                  </Typography>
+                </Box>
+              )}
 
-            {order.coupon && (
+              {order.discountAmount && order.discountAmount > 0 && (
+                <Box
+                  display='flex'
+                  justifyContent='space-between'
+                  alignItems='center'
+                  mb={1}
+                >
+                  <Typography variant='body1' color='success.main'>
+                    Discount {order.coupon && `(${order.coupon.code})`}
+                  </Typography>
+                  <Typography variant='body1' color='success.main'>
+                    -${order.discountAmount.toFixed(2)}
+                  </Typography>
+                </Box>
+              )}
+
+              <Divider sx={{ my: 1 }} />
+
               <Box
                 display='flex'
                 justifyContent='space-between'
                 alignItems='center'
-                mt={1}
               >
-                <Typography variant='body2' color='text.secondary'>
-                  Coupon Applied: {order.coupon.code}
-                </Typography>
-                <Typography variant='body2' color='success.main'>
-                  Discount Applied
+                <Typography variant='h6'>Total Amount</Typography>
+                <Typography variant='h6' color='primary' fontWeight='bold'>
+                  ${order.totalAmount.toFixed(2)}
                 </Typography>
               </Box>
-            )}
+
+              {order.paid && (
+                <Box display='flex' justifyContent='flex-end' mt={1}>
+                  <Chip label='Paid' color='success' size='small' />
+                </Box>
+              )}
+            </Box>
           </Paper>
         </Grid>
+
+        {/* Additional Notes */}
+        {order.notes && (
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant='h6' gutterBottom>
+                Order Notes
+              </Typography>
+              <Typography variant='body2' color='text.secondary'>
+                {order.notes}
+              </Typography>
+            </Paper>
+          </Grid>
+        )}
       </Grid>
+
+      {/* Cancel Order Dialog */}
+      <Dialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        maxWidth='sm'
+        fullWidth
+      >
+        <DialogTitle>Cancel Order</DialogTitle>
+        <DialogContent>
+          <Alert severity='warning' sx={{ mb: 2 }}>
+            This action will cancel the order. The customer will be notified.
+          </Alert>
+
+          <TextField
+            label='Cancellation Reason'
+            multiline
+            rows={3}
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            required
+            sx={{ mb: 2, mt: 1 }}
+            placeholder='Enter reason for cancellation...'
+          />
+
+          {order.paid && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={refundCustomer}
+                  onChange={(e) => setRefundCustomer(e.target.checked)}
+                />
+              }
+              label='Refund customer payment'
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleCancelOrder}
+            variant='contained'
+            color='error'
+            disabled={cancelMutation.isPending || !cancelReason.trim()}
+          >
+            {cancelMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              'Confirm Cancellation'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

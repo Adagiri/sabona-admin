@@ -33,6 +33,16 @@ import ReceiptUploadDialog from '../components/ReceiptUploadDialog';
 import { useState } from 'react';
 import DeliveryDriverAssignmentDialog from '../components/DeliveryDriverAssignmentDialog';
 import { toast } from 'react-toastify';
+import { Cancel } from '@mui/icons-material';
+import {
+  FormControlLabel,
+  Checkbox,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+import { useCancelCustomOrder } from '../hooks/Admin/mutations/customOrders';
 
 const CustomOrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -43,6 +53,10 @@ const CustomOrderDetails = () => {
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [deliveryDriverDialogOpen, setDeliveryDriverDialogOpen] =
     useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [refundCustomer, setRefundCustomer] = useState(false);
+  const cancelMutation = useCancelCustomOrder();
 
   const {
     data: order,
@@ -50,7 +64,25 @@ const CustomOrderDetails = () => {
     isError,
   } = useFetchCustomOrderById(orderId || '');
 
-  console.log(order);
+  const handleCancelOrder = async () => {
+    if (!cancelReason.trim()) {
+      toast.error('Please provide a cancellation reason');
+      return;
+    }
+
+    try {
+      await cancelMutation.mutateAsync({
+        orderId: orderId!,
+        reason: cancelReason,
+        refundCustomer,
+      });
+      setCancelDialogOpen(false);
+      setCancelReason('');
+      setRefundCustomer(false);
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -234,6 +266,18 @@ const CustomOrderDetails = () => {
               >
                 Manage Receipt
               </Button>
+
+              {order.status !== 'CANCELLED' && order.status !== 'COMPLETED' && (
+                <Button
+                  startIcon={<Cancel />}
+                  onClick={() => setCancelDialogOpen(true)}
+                  variant='outlined'
+                  color='error'
+                  size='small'
+                >
+                  Cancel Order
+                </Button>
+              )}
             </Stack>
           </Paper>
         </Grid>
@@ -647,6 +691,100 @@ const CustomOrderDetails = () => {
         onClose={() => setDeliveryDriverDialogOpen(false)}
         order={order}
       />
+
+      {/* Cancel Order Dialog */}
+      <Dialog
+        open={cancelDialogOpen}
+        onClose={() => setCancelDialogOpen(false)}
+        maxWidth='sm'
+        fullWidth
+      >
+        {/* Status-specific warnings */}
+        {order.status === 'ACCEPTED' && (
+          <Alert severity='warning' sx={{ mb: 2 }}>
+            <Typography variant='subtitle2' gutterBottom>
+              ⚠️ Order has been ACCEPTED
+            </Typography>
+            <Typography variant='body2'>
+              The pickup driver has been assigned. Cancelling now may impact
+              operations.
+            </Typography>
+          </Alert>
+        )}
+
+        {order.status === 'IN_PROGRESS' && (
+          <Alert severity='error' sx={{ mb: 2 }}>
+            <Typography variant='subtitle2' gutterBottom>
+              ⚠️ Order is IN PROGRESS
+            </Typography>
+            <Typography variant='body2'>
+              Work has already started. Receipt may have been uploaded. Ensure
+              coordination with driver and vendor.
+            </Typography>
+          </Alert>
+        )}
+
+        {order.status === 'READY_FOR_PICKUP' && (
+          <Alert severity='error' sx={{ mb: 2 }}>
+            <Typography variant='subtitle2' gutterBottom>
+              ⚠️ Order is READY FOR PICKUP
+            </Typography>
+            <Typography variant='body2'>
+              Delivery driver may be assigned. Coordinate immediately before
+              cancelling.
+            </Typography>
+          </Alert>
+        )}
+
+        <Alert severity='warning' sx={{ mb: 2 }}>
+          This action will cancel the order. The customer will be notified.
+        </Alert>
+        <DialogTitle>Cancel Custom Order</DialogTitle>
+        <DialogContent>
+          <Alert severity='warning' sx={{ mb: 2 }}>
+            This action will cancel the order. The customer will be notified.
+          </Alert>
+
+          <TextField
+            label='Cancellation Reason'
+            multiline
+            rows={3}
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            required
+            sx={{ mb: 2, mt: 1 }}
+            placeholder='Enter reason for cancellation...'
+          />
+
+          {order.customerPaid && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={refundCustomer}
+                  onChange={(e) => setRefundCustomer(e.target.checked)}
+                />
+              }
+              label='Refund customer payment'
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleCancelOrder}
+            variant='contained'
+            color='error'
+            disabled={cancelMutation.isPending || !cancelReason.trim()}
+          >
+            {cancelMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              'Confirm Cancellation'
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
