@@ -577,7 +577,6 @@ export const useDeleteCategory = () => {
   });
 };
 
-
 // Admin Settings Management
 export interface UpdateAdminSettingsRequest {
   vatRate?: number;
@@ -603,6 +602,37 @@ export const useUpdateAdminSettings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['FETCH_ADMIN_SETTINGS'],
+      });
+    },
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      reason,
+    }: {
+      userId: string;
+      reason?: string;
+    }) => {
+      const response = await api.delete(`/admin/users/${userId}`, {
+        data: { reason },
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate all user-related queries
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_USERS],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_USER_DETAILS],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_APPLICATIONS],
       });
     },
   });

@@ -9,20 +9,28 @@ import {
   Grid,
   CircularProgress,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  Grid2,
 } from '@mui/material';
+import { Delete } from '@mui/icons-material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Controller, useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { getDriverTipsAction, useGetUserDetails } from '../hooks/Admin/query';
 import VendorLaundriesSection from '../components/VendorLaundriesSection';
-import DynamicDocumentSection from '../components/DynamicDocumentSection'; // New import
+import DynamicDocumentSection from '../components/DynamicDocumentSection';
 import MediaItem from '../components/MediaItem';
 import VendorLocationMap from '../components/VendorLocationMap';
 import dayjs, { Dayjs } from 'dayjs';
 import { toast } from 'react-toastify';
-import { Grid2 } from '@mui/material';
+import { useDeleteUser } from '../hooks/Admin/mutation';
 
 interface DateRangeForm {
   dateFrom: Dayjs | null;
@@ -31,9 +39,13 @@ interface DateRangeForm {
 
 const UserDetails = () => {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const [driverTips, setDriverTips] = useState<any>(null);
   const [tipsLoading, setTipsLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState('');
 
+  const { mutateAsync: deleteUser, isPending: isDeleting } = useDeleteUser();
   const { data: userDetails, isLoading, error } = useGetUserDetails(userId!);
 
   const { control: dateControl, handleSubmit: handleDateSubmit } =
@@ -43,6 +55,27 @@ const UserDetails = () => {
         dateTo: dayjs(),
       },
     });
+
+  const handleDeleteUser = async () => {
+    if (!userId) return;
+
+    try {
+      await deleteUser({
+        userId,
+        reason: deleteReason.trim() || undefined,
+      });
+
+      toast.success('User account deleted successfully');
+      navigate('/users/1');
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || 'Failed to delete user account'
+      );
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteReason('');
+    }
+  };
 
   const validateNotFuture = (value: Dayjs | null) => {
     if (!value) return 'Date is required';
@@ -109,12 +142,29 @@ const UserDetails = () => {
 
   return (
     <Box p={3}>
-      {/* User Information Section */}
-      <Typography variant='h4' gutterBottom fontWeight='bold'>
-        User Details
-      </Typography>
+      {/* Header with Delete Button */}
+      <Stack
+        direction='row'
+        justifyContent='space-between'
+        alignItems='center'
+        mb={2}
+      >
+        <Typography variant='h4' fontWeight='bold'>
+          User Details
+        </Typography>
+        <Button
+          variant='contained'
+          color='error'
+          startIcon={<Delete />}
+          onClick={() => setDeleteDialogOpen(true)}
+          disabled={!userDetails?.data}
+        >
+          Delete Account
+        </Button>
+      </Stack>
       <Divider sx={{ mb: 3 }} />
 
+      {/* User Information Section */}
       <Paper
         elevation={6}
         sx={{
@@ -412,6 +462,66 @@ const UserDetails = () => {
           )}
         </Box>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => !isDeleting && setDeleteDialogOpen(false)}
+        maxWidth='sm'
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant='h6' color='error'>
+            Delete User Account
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity='warning' sx={{ mb: 2 }}>
+            This action will permanently delete the account and free up the
+            phone number for reuse. This cannot be undone.
+          </Alert>
+
+          <Typography variant='body2' gutterBottom>
+            <strong>User:</strong> {userDetails.data.firstName}{' '}
+            {userDetails.data.lastName}
+          </Typography>
+          <Typography variant='body2' gutterBottom>
+            <strong>Type:</strong> {userDetails.data.type}
+          </Typography>
+          <Typography variant='body2' gutterBottom>
+            <strong>Phone:</strong> {userDetails.data.phone || 'No phone'}
+          </Typography>
+
+          <TextField
+            fullWidth
+            multiline
+            rows={3}
+            label='Deletion Reason (Optional)'
+            value={deleteReason}
+            onChange={(e) => setDeleteReason(e.target.value)}
+            placeholder='Provide a reason for deletion (for audit trail)'
+            sx={{ mt: 2 }}
+            disabled={isDeleting}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteDialogOpen(false)}
+            disabled={isDeleting}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant='contained'
+            color='error'
+            onClick={handleDeleteUser}
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={20} /> : <Delete />}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Account'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
