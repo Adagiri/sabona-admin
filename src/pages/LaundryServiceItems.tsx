@@ -48,17 +48,24 @@ import {
   useDeleteLaundryServiceItem,
   useEditLaundryServiceItem,
 } from '../hooks/Admin/mutation';
+import TranslationFields from '../components/TranslationFields';
 
 interface ServiceItem {
   id: string;
-  name: string;
+  nameLocale: {
+    en: string;
+    ar: string;
+  };
   vendorPrice: number;
   platformPrice: number;
   expressPrice: number;
   categoryId: string;
   category: {
     id: string;
-    name: string;
+    nameLocale: {
+      en: string;
+      ar: string;
+    };
     icon?: {
       id: number;
       path: string;
@@ -74,7 +81,10 @@ interface ServiceItem {
 
 interface Category {
   id: string;
-  name: string;
+  nameLocale: {
+    en: string;
+    ar: string;
+  };
   icon?: {
     id: number;
     path: string;
@@ -86,7 +96,10 @@ interface Category {
 }
 
 interface ItemFormData {
-  name: string;
+  nameLocale: {
+    en: string;
+    ar: string;
+  };
   vendorPrice: number;
   platformPrice: number;
   expressPrice: number;
@@ -126,7 +139,7 @@ const LaundryServiceItems: React.FC = () => {
     formState: { errors },
   } = useForm<ItemFormData>({
     defaultValues: {
-      name: '',
+      nameLocale: { en: '', ar: '' },
       vendorPrice: 0,
       platformPrice: 0,
       expressPrice: 0,
@@ -137,7 +150,10 @@ const LaundryServiceItems: React.FC = () => {
   // Fix form population when editing
   useEffect(() => {
     if (editingItem && openDialog && categories?.data?.length) {
-      setValue('name', editingItem.name);
+      // Set translation fields
+      setValue('nameLocale.en', editingItem.nameLocale?.en);
+      setValue('nameLocale.ar', editingItem.nameLocale?.ar);
+
       setValue('vendorPrice', editingItem.vendorPrice);
       setValue('platformPrice', editingItem.platformPrice);
       setValue('expressPrice', editingItem.expressPrice);
@@ -154,7 +170,7 @@ const LaundryServiceItems: React.FC = () => {
     }
     setEditingItem(null);
     reset({
-      name: '',
+      nameLocale: { en: '', ar: '' },
       vendorPrice: 0,
       platformPrice: 0,
       expressPrice: 0,
@@ -192,7 +208,7 @@ const LaundryServiceItems: React.FC = () => {
     setOpenDialog(false);
     setEditingItem(null);
     reset({
-      name: '',
+      nameLocale: { en: '', ar: '' },
       vendorPrice: 0,
       platformPrice: 0,
       expressPrice: 0,
@@ -204,7 +220,7 @@ const LaundryServiceItems: React.FC = () => {
     setIsSubmitting(true);
     try {
       const payload = {
-        name: data.name,
+        nameLocale: data.nameLocale,
         vendorPrice: Number(data.vendorPrice),
         platformPrice: Number(data.platformPrice),
         expressPrice: Number(data.expressPrice),
@@ -391,7 +407,7 @@ const LaundryServiceItems: React.FC = () => {
                 <TableRow key={item.id} hover>
                   <TableCell>
                     <Typography variant='body1' fontWeight='bold'>
-                      {item.name}
+                      {item.nameLocale.en}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -406,7 +422,7 @@ const LaundryServiceItems: React.FC = () => {
                         </Avatar>
                       )}
                       <Chip
-                        label={item.category.name}
+                        label={item.category.nameLocale.en}
                         size='small'
                         color='primary'
                         variant='outlined'
@@ -443,7 +459,7 @@ const LaundryServiceItems: React.FC = () => {
                       </IconButton>
                       <IconButton
                         size='small'
-                        onClick={() => handleDeleteItem(item.id, item.name)}
+                        onClick={() => handleDeleteItem(item.id, item.nameLocale.en)}
                         color='error'
                         title='Delete Item'
                       >
@@ -479,20 +495,12 @@ const LaundryServiceItems: React.FC = () => {
           </DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 1 }}>
-              <Controller
-                name='name'
+              <TranslationFields
                 control={control}
-                rules={{ required: 'Item name is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Item Name'
-                    fullWidth
-                    error={!!errors.name}
-                    helperText={errors.name?.message}
-                    placeholder='e.g., White Shirt, Jeans, Bed Sheet'
-                  />
-                )}
+                fieldName='nameLocale'
+                label='Item Name'
+                errors={errors}
+                required={true}
               />
 
               <Controller
@@ -584,7 +592,7 @@ const LaundryServiceItems: React.FC = () => {
                                 <ImageOutlined fontSize='small' />
                               </Avatar>
                             )}
-                            <Typography>{category.name}</Typography>
+                            <Typography>{category.nameLocale.en}</Typography>
                           </Stack>
                         </MenuItem>
                       ))}

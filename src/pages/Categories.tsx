@@ -1,5 +1,3 @@
-// File: src/pages/Categories.tsx
-
 import React, { useState } from 'react';
 import {
   Box,
@@ -17,7 +15,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Breadcrumbs,
   Link,
   Alert,
@@ -42,10 +39,14 @@ import {
   useEditCategory,
 } from '../hooks/Admin/mutation';
 import IconPicker from '../components/IconPicker';
+import TranslationFields from '../components/TranslationFields';
 
 interface CategoryData {
   id: string;
-  name: string;
+  nameLocale: {
+    en: string;
+    ar: string;
+  };
   iconId?: number;
   icon?: {
     id: number;
@@ -63,7 +64,14 @@ interface CategoryData {
 }
 
 interface CategoryFormData {
-  name: string;
+  nameLocale: {
+    en: string;
+    ar: string;
+  };
+  descriptionLocale?: {
+    en: string;
+    ar: string;
+  };
   iconId?: number;
 }
 
@@ -86,21 +94,30 @@ const Categories: React.FC = () => {
     formState: { errors },
   } = useForm<CategoryFormData>({
     defaultValues: {
-      name: '',
+      nameLocale: { en: '', ar: '' },
+      descriptionLocale: { en: '', ar: '' },
       iconId: undefined,
     },
   });
 
   const handleCreateCategory = () => {
     setEditingCategory(null);
-    reset({ name: '', iconId: undefined });
+    reset({
+      nameLocale: { en: '', ar: '' },
+      descriptionLocale: { en: '', ar: '' },
+      iconId: undefined,
+    });
     setOpenDialog(true);
   };
 
   const handleEditCategory = (category: CategoryData) => {
     setEditingCategory(category);
     reset({
-      name: category.name,
+      nameLocale: {
+        en: category.nameLocale?.en,
+        ar: category.nameLocale?.ar,
+      },
+
       iconId: category.iconId,
     });
     setOpenDialog(true);
@@ -273,7 +290,7 @@ const Categories: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <Typography variant='body1' fontWeight='bold'>
-                      {category.name}
+                      {category.nameLocale.en}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -300,13 +317,15 @@ const Categories: React.FC = () => {
                       <IconButton
                         size='small'
                         onClick={() =>
-                          handleDeleteCategory(category.id, category.name)
+                          handleDeleteCategory(category.id, category.nameLocale.en)
                         }
                         color='error'
                         title='Delete Category'
                         disabled={
                           category._count?.laundryServiceItem &&
-                          category._count.laundryServiceItem > 0 ? true : false
+                          category._count.laundryServiceItem > 0
+                            ? true
+                            : false
                         }
                       >
                         <Delete />
@@ -342,19 +361,12 @@ const Categories: React.FC = () => {
           </DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 1 }}>
-              <Controller
-                name='name'
+              <TranslationFields
                 control={control}
-                rules={{ required: 'Category name is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Category Name'
-                    fullWidth
-                    error={!!errors.name}
-                    helperText={errors.name?.message}
-                  />
-                )}
+                fieldName='nameLocale'
+                label='Category Name'
+                errors={errors}
+                required={true}
               />
 
               <Controller

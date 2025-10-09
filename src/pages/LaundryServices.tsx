@@ -18,7 +18,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Breadcrumbs,
   Link,
   Alert,
@@ -46,11 +45,18 @@ import {
   useEditLaundryService,
 } from '../hooks/Admin/mutation';
 import IconPicker from '../components/IconPicker';
+import TranslationFields from '../components/TranslationFields';
 
 interface Service {
   id: string;
-  name: string;
-  description?: string;
+  nameLocale: {
+    en: string;
+    ar: string;
+  };
+  descriptionLocale: {
+    en: string;
+    ar: string;
+  };
   iconId?: number;
   icon?: {
     id: number;
@@ -69,8 +75,14 @@ interface Service {
 }
 
 interface ServiceFormData {
-  name: string;
-  description: string;
+  nameLocale: {
+    en: string;
+    ar: string;
+  };
+  descriptionLocale?: {
+    en: string;
+    ar: string;
+  };
   iconId?: number;
 }
 
@@ -99,23 +111,33 @@ const LaundryServices: React.FC = () => {
     formState: { errors },
   } = useForm<ServiceFormData>({
     defaultValues: {
-      name: '',
-      description: '',
+      nameLocale: { en: '', ar: '' },
+      descriptionLocale: { en: '', ar: '' },
       iconId: undefined,
     },
   });
 
   const handleCreateService = () => {
     setEditingService(null);
-    reset({ name: '', description: '', iconId: undefined });
+    reset({
+      nameLocale: { en: '', ar: '' },
+      descriptionLocale: { en: '', ar: '' },
+      iconId: undefined,
+    });
     setOpenDialog(true);
   };
 
   const handleEditService = (service: Service) => {
     setEditingService(service);
     reset({
-      name: service.name,
-      description: service.description || '',
+      nameLocale: {
+        en: service.nameLocale.en,
+        ar: service.nameLocale?.ar,
+      },
+      descriptionLocale: {
+        en: service.descriptionLocale.en || '',
+        ar: service.descriptionLocale?.ar,
+      },
       iconId: service.iconId,
     });
     setOpenDialog(true);
@@ -141,32 +163,32 @@ const LaundryServices: React.FC = () => {
       }
     }
   };
-const onSubmit = async (data: ServiceFormData) => {
-  setIsSubmitting(true);
-  try {
-    if (editingService) {
-      await editService({
-        laundryId: laundryId!,
-        serviceId: editingService.id,
-        data,
-      });
-      toast.success('Service updated successfully');
-    } else {
-      await createService({
-        laundryId: laundryId!,
-        data,
-      });
-      toast.success('Service created successfully');
-    }
+  const onSubmit = async (data: ServiceFormData) => {
+    setIsSubmitting(true);
+    try {
+      if (editingService) {
+        await editService({
+          laundryId: laundryId!,
+          serviceId: editingService.id,
+          data,
+        });
+        toast.success('Service updated successfully');
+      } else {
+        await createService({
+          laundryId: laundryId!,
+          data,
+        });
+        toast.success('Service created successfully');
+      }
 
-    setOpenDialog(false);
-    refetch();
-  } catch (error: any) {
-    toast.error(error?.response?.data?.message || 'Failed to save service');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      setOpenDialog(false);
+      refetch();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to save service');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleViewItems = (serviceId: string) => {
     navigate(`/laundry/${laundryId}/service/${serviceId}/items`);
@@ -304,12 +326,12 @@ const onSubmit = async (data: ServiceFormData) => {
                   </TableCell>
                   <TableCell>
                     <Typography variant='body1' fontWeight='bold'>
-                      {service.name}
+                      {service.nameLocale.en}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant='body2' color='text.secondary'>
-                      {service.description || 'No description'}
+                      {service.descriptionLocale.en || 'No description'}
                     </Typography>
                   </TableCell>
                   <TableCell>
@@ -344,7 +366,7 @@ const onSubmit = async (data: ServiceFormData) => {
                       <IconButton
                         size='small'
                         onClick={() =>
-                          handleDeleteService(service.id, service.name)
+                          handleDeleteService(service.id, service.nameLocale.en)
                         }
                         color='error'
                         title='Delete Service'
@@ -381,35 +403,22 @@ const onSubmit = async (data: ServiceFormData) => {
           </DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 1 }}>
-              <Controller
-                name='name'
+              <TranslationFields
                 control={control}
-                rules={{ required: 'Service name is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Service Name'
-                    fullWidth
-                    error={!!errors.name}
-                    helperText={errors.name?.message}
-                  />
-                )}
+                fieldName='nameLocale'
+                label='Service Name'
+                errors={errors}
+                required={true}
               />
 
-              <Controller
-                name='description'
+              <TranslationFields
                 control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Description'
-                    fullWidth
-                    multiline
-                    rows={3}
-                    error={!!errors.description}
-                    helperText={errors.description?.message}
-                  />
-                )}
+                fieldName='descriptionLocale'
+                label='Description'
+                errors={errors}
+                required={false}
+                multiline={true}
+                rows={3}
               />
 
               <Controller

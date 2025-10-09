@@ -305,7 +305,7 @@ export enum DISCOUNT_TYPE {
 }
 export interface CreateCouponRequest {
     code : string;
-    name : string;
+    nameLocale : {en: string, ar: string};
     type: DISCOUNT_TYPE;
     discount : number;
     maxDiscount?: number;
