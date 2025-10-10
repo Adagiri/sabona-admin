@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -34,17 +34,20 @@ import {
 import VendorLocationMap from '../components/VendorLocationMap';
 import DynamicDocumentSection from '../components/DynamicDocumentSection';
 import VendorLaundriesSection from '../components/VendorLaundriesSection';
+import TranslationFields from '../components/TranslationFields';
+import { useForm } from 'react-hook-form';
 
 const ApplicationDetails = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-
-  const [rejectReason, setRejectReason] = useState('');
-  const [selectedMainVendor, setSelectedMainVendor] = useState<any>(null);
   const [vendorDetails, setVendorDetails] = useState({
-    address: '',
+    addressLocale: { en: '', ar: '' },
+
     contactPhone: '',
   });
+  const [rejectReason, setRejectReason] = useState('');
+  const [selectedMainVendor, setSelectedMainVendor] = useState<any>(null);
+
   const [mainVendorSearchTerm, setMainVendorSearchTerm] = useState('');
 
   // Query hooks
@@ -63,52 +66,79 @@ const ApplicationDetails = () => {
       userDetails?.data?.type === 'VENDOR' && mainVendorSearchTerm.length >= 2,
   });
 
+  // Add form control
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      addressLocale: { en: '', ar: '' },
+
+      contactPhone: '',
+    },
+  });
+
   // Mutation hooks
   const { mutateAsync: approveApplication, isPending: isApproving } =
     useApproveApplication();
   const { mutateAsync: rejectApplication, isPending: isRejecting } =
     useRejectApplication();
 
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
-    if (userDetails?.data) {
-      setVendorDetails({
-        address: userDetails.data.settings?.address || '',
+    if (userDetails?.data && !hasInitialized.current) {
+      reset({
+        addressLocale: { en: '', ar: '' },
+
         contactPhone: userDetails.data.phone || '',
       });
-      // Auto-populate search term with laundry name
-      if (userDetails.data.settings?.laundryName) {
-        setMainVendorSearchTerm(userDetails.data.settings.laundryName);
-      }
+
+      setVendorDetails({
+        addressLocale: { en: '', ar: '' },
+
+        contactPhone: userDetails.data.phone || '',
+      });
+
+      hasInitialized.current = true; // ✅ Prevent future resets
     }
-  }, [userDetails]);
+  }, [userDetails, reset]);
 
   const handleBack = () => {
     navigate('/applications');
   };
 
-  const handleApprove = async () => {
+  const handleApprove = handleSubmit(async (formData) => {
     if (!userId) return;
 
     try {
-      // For vendors, we need mainVendorId, address, and contactPhone
       if (userDetails?.data?.type === 'VENDOR') {
-        if (!vendorDetails.address || !vendorDetails.contactPhone) {
-          toast.error('Please provide all required vendor details');
+        if (
+          !formData.addressLocale.en ||
+          !formData.addressLocale.ar ||
+          !formData.contactPhone
+        ) {
+          toast.error(
+            'Please provide all required vendor details in both languages'
+          );
           return;
         }
 
         await approveApplication({
           userId,
           mainVendorId: selectedMainVendor?.id || '',
-          address: vendorDetails.address,
-          contactPhone: vendorDetails.contactPhone,
+          addressLocale: formData.addressLocale,
+          contactPhone: formData.contactPhone,
         });
       } else {
-        // For riders, we might not need additional details
+        // For riders
         await approveApplication({
           userId,
-          mainVendorId: '', // Not applicable for riders
-          address: '',
+          mainVendorId: '',
+          addressLocale: { en: '', ar: '' },
+
           contactPhone: userDetails?.data?.phone || '',
         });
       }
@@ -122,7 +152,7 @@ const ApplicationDetails = () => {
         error?.response?.data?.message || 'Failed to approve application'
       );
     }
-  };
+  });
 
   const handleReject = async () => {
     if (!userId || !rejectReason.trim()) {
@@ -352,18 +382,12 @@ const ApplicationDetails = () => {
                       Vendor Details (Required for Approval)
                     </Typography>
                     <Grid container spacing={2} mb={3}>
-                      <Grid item xs={12} md={6}>
-                        <TextField
-                          fullWidth
+                      <Grid item xs={12}>
+                        <TranslationFields
+                          control={control}
+                          fieldName='addressLocale'
                           label='Business Address'
-                          value={vendorDetails.address}
-                          onChange={(e) =>
-                            setVendorDetails((prev) => ({
-                              ...prev,
-                              address: e.target.value,
-                            }))
-                          }
-                          size='small'
+                          errors={errors}
                           required
                         />
                       </Grid>

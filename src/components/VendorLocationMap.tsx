@@ -1,62 +1,13 @@
-// import React, { useEffect, useRef } from 'react';
-// import { Box } from '@mui/material';
-
-// interface VendorLocationMapProps {
-//   lat: number;
-//   lng: number;
-//   laundryName: string;
-// }
-
-// const VendorLocationMap: React.FC<VendorLocationMapProps> = ({
-//   lat,
-//   lng,
-//   laundryName,
-// }) => {
-//   const mapRef = useRef<HTMLDivElement>(null);
-
-//   useEffect(() => {
-//     if (!mapRef.current) return;
-
-//     // Initialize Google Maps
-//     const map = new window.google.maps.Map(mapRef.current, {
-//       center: { lat, lng },
-//       zoom: 15,
-//     });
-
-//     // Add marker
-//     new window.google.maps.Marker({
-//       position: { lat, lng },
-//       map,
-//       title: laundryName,
-//     });
-//   }, [lat, lng, laundryName]);
-
-//   return (
-//     <Box
-//       ref={mapRef}
-//       sx={{
-//         height: 300,
-//         width: '100%',
-//         borderRadius: 1,
-//         border: '1px solid #ddd',
-//       }}
-//     />
-//   );
-// };
-
-// export default VendorLocationMap;
-
-
-// File: src/components/VendorLocationMap.tsx
-
-import React from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Box, Typography, CircularProgress } from '@mui/material';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import { GoogleMap, LoadScriptNext, Marker } from '@react-google-maps/api';
 
 interface VendorLocationMapProps {
   lat: number;
   lng: number;
   laundryName: string;
+  editable?: boolean;
+  onLocationChange?: (lat: number, lng: number) => void;
 }
 
 const containerStyle = {
@@ -69,15 +20,47 @@ const VendorLocationMap: React.FC<VendorLocationMapProps> = ({
   lat,
   lng,
   laundryName,
+  editable = false,
+  onLocationChange,
 }) => {
-  const center = {
-    lat: lat,
-    lng: lng,
-  };
+  const [markerPosition, setMarkerPosition] = useState({ lat, lng });
 
-  // If you don't have a Google Maps API key, return a fallback
+  useEffect(() => {
+    setMarkerPosition({ lat, lng });
+  }, [lat, lng]);
+
+  const handleMapClick = useCallback(
+    (event: google.maps.MapMouseEvent) => {
+      if (!editable || !onLocationChange) return;
+
+      const newLat = event.latLng?.lat();
+      const newLng = event.latLng?.lng();
+
+      if (newLat !== undefined && newLng !== undefined) {
+        setMarkerPosition({ lat: newLat, lng: newLng });
+        onLocationChange(newLat, newLng);
+      }
+    },
+    [editable, onLocationChange]
+  );
+
+  const handleMarkerDrag = useCallback(
+    (event: google.maps.MapMouseEvent) => {
+      if (!editable || !onLocationChange) return;
+
+      const newLat = event.latLng?.lat();
+      const newLng = event.latLng?.lng();
+
+      if (newLat !== undefined && newLng !== undefined) {
+        setMarkerPosition({ lat: newLat, lng: newLng });
+        onLocationChange(newLat, newLng);
+      }
+    },
+    [editable, onLocationChange]
+  );
+
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  
+
   if (!GOOGLE_MAPS_API_KEY) {
     return (
       <Box
@@ -94,13 +77,13 @@ const VendorLocationMap: React.FC<VendorLocationMapProps> = ({
           p: 2,
         }}
       >
-        <Typography variant="body2" color="text.secondary" gutterBottom>
+        <Typography variant='body2' color='text.secondary' gutterBottom>
           📍 {laundryName}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant='body2' color='text.secondary'>
           Lat: {lat.toFixed(6)}, Lng: {lng.toFixed(6)}
         </Typography>
-        <Typography variant="caption" color="text.secondary" mt={1}>
+        <Typography variant='caption' color='text.secondary' mt={1}>
           Google Maps API key not configured
         </Typography>
       </Box>
@@ -108,7 +91,7 @@ const VendorLocationMap: React.FC<VendorLocationMapProps> = ({
   }
 
   return (
-    <LoadScript 
+    <LoadScriptNext
       googleMapsApiKey={GOOGLE_MAPS_API_KEY}
       loadingElement={
         <Box
@@ -123,25 +106,32 @@ const VendorLocationMap: React.FC<VendorLocationMapProps> = ({
           }}
         >
           <CircularProgress size={24} />
+          <Typography variant='body2' ml={2}>
+            Loading map...
+          </Typography>
         </Box>
       }
     >
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={center}
+        center={markerPosition}
         zoom={15}
+        onClick={handleMapClick}
         options={{
           streetViewControl: false,
           mapTypeControl: false,
           fullscreenControl: false,
+          clickableIcons: false,
         }}
       >
         <Marker
-          position={center}
+          position={markerPosition}
           title={laundryName}
+          draggable={editable}
+          onDragEnd={handleMarkerDrag}
         />
       </GoogleMap>
-    </LoadScript>
+    </LoadScriptNext>
   );
 };
 

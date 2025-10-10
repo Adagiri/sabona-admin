@@ -131,17 +131,19 @@ export const useApproveApplication = () => {
     mutationFn: async ({
       userId,
       mainVendorId,
-      address,
+      addressLocale,
+
       contactPhone,
     }: {
       userId: string;
       mainVendorId: string;
-      address: string;
+      addressLocale: { en: string; ar: string };
       contactPhone: string;
     }) => {
       const response = await api.post(`/admin/application/approve/${userId}`, {
         mainVendorId,
-        address,
+        addressLocale,
+
         contactPhone,
       });
       return response.data;

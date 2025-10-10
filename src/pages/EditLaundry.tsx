@@ -1,6 +1,4 @@
-// File: src/pages/EditLaundry.tsx
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -12,20 +10,30 @@ import {
   Link,
   IconButton,
   Alert,
+  Grid,
 } from '@mui/material';
-import { ArrowBack, NavigateNext, Save, LocationOn } from '@mui/icons-material';
+import { ArrowBack, NavigateNext, Save, MyLocation } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import { useForm, Controller } from 'react-hook-form';
 import { useFetchLaundryById } from '../hooks/Admin/query';
 import VendorLocationMap from '../components/VendorLocationMap';
 import { useEditLaundry } from '../hooks/Admin/mutation';
+import TranslationFields from '../components/TranslationFields';
 
 interface LaundryFormData {
-  name: string;
-  address: string;
+  nameLocale: {
+    en: string;
+    ar: string;
+  };
+  addressLocale: {
+    en: string;
+    ar: string;
+  };
   lat: number;
   long: number;
+  vendorName: string;
+  vendorEmail: string;
 }
 
 const EditLaundry: React.FC = () => {
@@ -39,42 +47,62 @@ const EditLaundry: React.FC = () => {
     control,
     handleSubmit,
     watch,
-    setValue, // Added setValue
-    trigger, // Added trigger
+    setValue,
+    trigger,
     formState: { errors, isDirty },
   } = useForm<LaundryFormData>({
     defaultValues: {
-      name: '',
-      address: '',
+      nameLocale: { en: '', ar: '' },
+      addressLocale: { en: '', ar: '' },
       lat: 0,
       long: 0,
+      vendorName: '',
+      vendorEmail: '',
     },
-    values: laundry?.data
-      ? {
-          name: laundry.data.name,
-          address: laundry.data.address || '',
-          lat: laundry.data.lat,
-          long: laundry.data.long,
-        }
-      : undefined,
   });
 
+  // Populate form when laundry data loads
+  useEffect(() => {
+    if (laundry?.data) {
+      const { nameLocale, addressLocale, name, address, lat, long, vendor } =
+        laundry.data;
+
+      // Use locale fields if available, otherwise fallback to name/address
+      setValue('nameLocale', nameLocale || { en: name || '', ar: name || '' });
+      setValue(
+        'addressLocale',
+        addressLocale || { en: address || '', ar: address || '' }
+      );
+      setValue('lat', lat);
+      setValue('long', long);
+
+      // Combine firstName and lastName into a single name field
+      const fullName = [vendor?.firstName, vendor?.lastName]
+        .filter(Boolean)
+        .join(' ');
+      setValue('vendorName', fullName);
+      setValue('vendorEmail', vendor?.email || '');
+    }
+  }, [laundry, setValue]);
+
+  const nameEn = watch('nameLocale.en');
   const currentLat = watch('lat');
   const currentLong = watch('long');
-  const currentName = watch('name');
 
   const onSubmit = async (data: LaundryFormData) => {
     try {
       await editLaundry({
         laundryId: laundryId!,
         data: {
-          name: data.name,
-          address: data.address,
+          nameLocale: data.nameLocale,
+          addressLocale: data.addressLocale,
           lat: Number(data.lat),
           long: Number(data.long),
+          vendorName: data.vendorName,
+          vendorEmail: data.vendorEmail,
         },
       });
-      toast.success('Laundry updated successfully');
+      toast.success('Laundry and vendor updated successfully');
       navigate('/laundry');
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Failed to update laundry');
@@ -86,10 +114,8 @@ const EditLaundry: React.FC = () => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          // Update form values using setValue
-          setValue('lat', latitude);
-          setValue('long', longitude);
-          // Trigger validation for these fields
+          setValue('lat', latitude, { shouldDirty: true });
+          setValue('long', longitude, { shouldDirty: true });
           trigger(['lat', 'long']);
           toast.success('Location updated to current position');
         },
@@ -100,6 +126,13 @@ const EditLaundry: React.FC = () => {
     } else {
       toast.error('Geolocation is not supported by this browser');
     }
+  };
+
+  const handleMapLocationChange = (lat: number, lng: number) => {
+    setValue('lat', lat, { shouldDirty: true });
+    setValue('long', lng, { shouldDirty: true });
+    trigger(['lat', 'long']);
+    toast.info('Location updated. Click Save to apply changes.');
   };
 
   if (isLoading) {
@@ -160,7 +193,7 @@ const EditLaundry: React.FC = () => {
                 Edit Laundry
               </Typography>
               <Typography variant='body2' color='text.secondary'>
-                Update laundry details and location
+                Update laundry and owner information
               </Typography>
             </Box>
           </Stack>
@@ -171,43 +204,35 @@ const EditLaundry: React.FC = () => {
         <Stack spacing={4}>
           {/* Laundry Information */}
           <Paper sx={{ p: 3 }}>
-            <Typography variant='h6' gutterBottom fontWeight='bold'>
+            <Typography variant='h6' gutterBottom fontWeight='bold' mb={3}>
               Laundry Information
             </Typography>
 
-            <Stack spacing={3}>
-              <Controller
-                name='name'
-                control={control}
-                rules={{ required: 'Laundry name is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Laundry Name'
-                    fullWidth
-                    error={!!errors.name}
-                    helperText={errors.name?.message}
-                  />
-                )}
-              />
+            <Grid container spacing={3}>
+              {/* Laundry Name - Translation Fields */}
+              <Grid item xs={12}>
+                <TranslationFields
+                  control={control}
+                  fieldName='nameLocale'
+                  label='Laundry Name'
+                  errors={errors}
+                  required
+                />
+              </Grid>
 
-              <Controller
-                name='address'
-                control={control}
-                rules={{ required: 'Address is required' }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Address'
-                    fullWidth
-                    multiline
-                    rows={2}
-                    error={!!errors.address}
-                    helperText={errors.address?.message}
-                  />
-                )}
-              />
-            </Stack>
+              {/* Business Address - Translation Fields */}
+              <Grid item xs={12}>
+                <TranslationFields
+                  control={control}
+                  fieldName='addressLocale'
+                  label='Business Address'
+                  errors={errors}
+                  required
+                  multiline
+                  rows={2}
+                />
+              </Grid>
+            </Grid>
           </Paper>
 
           {/* Location Information */}
@@ -216,95 +241,144 @@ const EditLaundry: React.FC = () => {
               direction='row'
               justifyContent='space-between'
               alignItems='center'
-              mb={3}
+              mb={2}
             >
               <Typography variant='h6' fontWeight='bold'>
-                Location Coordinates
+                Location
               </Typography>
               <Button
                 variant='outlined'
-                startIcon={<LocationOn />}
+                size='small'
+                startIcon={<MyLocation />}
                 onClick={handleGetCurrentLocation}
               >
-                Get Current Location
+                Use Current Location
               </Button>
             </Stack>
 
-            <Stack direction='row' spacing={2} mb={3}>
-              <Controller
-                name='lat'
-                control={control}
-                rules={{
-                  required: 'Latitude is required',
-                  min: { value: -90, message: 'Invalid latitude' },
-                  max: { value: 90, message: 'Invalid latitude' },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Latitude'
-                    type='number'
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                    error={!!errors.lat}
-                    helperText={errors.lat?.message}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
-                )}
-              />
+            <Typography variant='body2' color='text.secondary' mb={3}>
+              Click on the map or drag the marker to update the location
+            </Typography>
 
-              <Controller
-                name='long'
-                control={control}
-                rules={{
-                  required: 'Longitude is required',
-                  min: { value: -180, message: 'Invalid longitude' },
-                  max: { value: 180, message: 'Invalid longitude' },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Longitude'
-                    type='number'
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                    error={!!errors.long}
-                    helperText={errors.long?.message}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
-                )}
-              />
-            </Stack>
+            <Grid container spacing={2} mb={3}>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name='lat'
+                  control={control}
+                  rules={{
+                    required: 'Latitude is required',
+                    min: { value: -90, message: 'Latitude must be >= -90' },
+                    max: { value: 90, message: 'Latitude must be <= 90' },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label='Latitude'
+                      type='number'
+                      fullWidth
+                      error={!!errors.lat}
+                      helperText={errors.lat?.message}
+                      inputProps={{ step: 'any' }}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value))
+                      }
+                    />
+                  )}
+                />
+              </Grid>
 
-            {/* Map Preview */}
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name='long'
+                  control={control}
+                  rules={{
+                    required: 'Longitude is required',
+                    min: { value: -180, message: 'Longitude must be >= -180' },
+                    max: { value: 180, message: 'Longitude must be <= 180' },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label='Longitude'
+                      type='number'
+                      fullWidth
+                      error={!!errors.long}
+                      helperText={errors.long?.message}
+                      inputProps={{ step: 'any' }}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value))
+                      }
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+
+            {/* Interactive Map */}
             {currentLat && currentLong && (
-              <Box sx={{ height: 300, mt: 2 }}>
-                <Typography variant='body2' color='text.secondary' mb={1}>
-                  Location Preview:
-                </Typography>
+              <Box sx={{ height: 300 }}>
                 <VendorLocationMap
                   lat={currentLat}
                   lng={currentLong}
-                  laundryName={currentName || 'Laundry Location'}
+                  laundryName={nameEn || 'Laundry Location'}
+                  editable={true}
+                  onLocationChange={handleMapLocationChange}
                 />
               </Box>
             )}
           </Paper>
 
-          {/* Vendor Information (Read-only) */}
-          <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
-            <Typography variant='h6' gutterBottom fontWeight='bold'>
+          {/* Owner Information - NOW EDITABLE */}
+          <Paper sx={{ p: 3 }}>
+            <Typography variant='h6' gutterBottom fontWeight='bold' mb={3}>
               Owner Information
             </Typography>
 
-            <Stack spacing={2}>
-              <Typography variant='body2'>
-                <strong>Name:</strong> {laundry?.data?.vendor?.firstName}{' '}
-                {laundry?.data?.vendor?.lastName}
-              </Typography>
-              <Typography variant='body2'>
-                <strong>Email:</strong> {laundry?.data?.vendor?.email}
-              </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name='vendorName'
+                  control={control}
+                  rules={{ required: 'Owner name is required' }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label='Owner Name'
+                      fullWidth
+                      error={!!errors.vendorName}
+                      helperText={errors.vendorName?.message}
+                      placeholder='Full name'
+                    />
+                  )}
+                />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Controller
+                  name='vendorEmail'
+                  control={control}
+                  rules={{
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address',
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label='Email'
+                      type='email'
+                      fullWidth
+                      error={!!errors.vendorEmail}
+                      helperText={errors.vendorEmail?.message}
+                    />
+                  )}
+                />
+              </Grid>
+            </Grid>
+
+            <Box mt={2}>
               <Button
                 variant='text'
                 onClick={() =>
@@ -312,9 +386,9 @@ const EditLaundry: React.FC = () => {
                 }
                 sx={{ alignSelf: 'flex-start' }}
               >
-                View Vendor Details
+                View Full Vendor Profile
               </Button>
-            </Stack>
+            </Box>
           </Paper>
 
           {/* Action Buttons */}
