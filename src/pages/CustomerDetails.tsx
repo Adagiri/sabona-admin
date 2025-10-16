@@ -109,6 +109,7 @@ const CustomerDetails = () => {
   //   }, [customerError]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    console.log(typeof event)
     setTabValue(newValue);
   };
 

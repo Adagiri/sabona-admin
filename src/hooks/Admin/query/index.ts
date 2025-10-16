@@ -582,6 +582,7 @@ export const useUpdateUserStatus = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data)
       queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
