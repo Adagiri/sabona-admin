@@ -41,6 +41,7 @@ import CustomOrders from './pages/CustomOrders';
 // NEW: Import the new order detail pages
 import RegularOrderDetails from './pages/RegularOrderDetails';
 import CustomOrderDetails from './pages/CustomOrderDetails';
+import CustomerDetails from './pages/CustomerDetails';
 
 const App: React.FC = () => {
   return (
@@ -76,7 +77,11 @@ const AppContent: React.FC = () => {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path='/' element={<Home />} />
-            <Route path='/customer/:pageNumber?' element={<Customer />} />
+            <Route path='/customers' element={<Customer />} />
+            <Route
+              path='/customer/:customerId'
+              element={<CustomerDetails />}
+            />
             <Route path='/vendor/:pageNumber?' element={<Vendor />} />
 
             {/* Laundry Management Routes */}

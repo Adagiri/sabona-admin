@@ -1,6 +1,11 @@
 // File: src/hooks/Admin/query.ts
 
-import { useQuery, UseQueryResult } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  UseQueryResult,
+} from '@tanstack/react-query';
 import api from '../../../services/api-service';
 import {
   FetchApplicationsParams,
@@ -473,7 +478,7 @@ export const useFetchAllCustomOrders = (params: FetchCustomOrdersParams) => {
 
 const getAllOrders = async ({
   type,
-  orderType, 
+  orderType,
   page,
   limit,
   column,
@@ -515,5 +520,70 @@ export const useFetchAllOrders = ({
       column,
       direction,
     ],
+  });
+};
+
+// Fetch single user by ID
+export const useFetchUserById = (userId: string) => {
+  return useQuery({
+    queryKey: ['user', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
+      const response = await api.get(`/user/${userId}`);
+      return response.data;
+    },
+    enabled: !!userId,
+  });
+};
+
+// Fetch user orders
+export const useFetchUserOrders = (userId: string, page = 1, limit = 10) => {
+  return useQuery({
+    queryKey: ['userOrders', userId, page, limit],
+    queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
+      const response = await api.get(`/orders/user/${userId}`, {
+        params: { page, limit },
+      });
+      return response.data;
+    },
+    enabled: !!userId,
+  });
+};
+
+// Fetch user addresses
+export const useFetchUserAddresses = (userId: string) => {
+  return useQuery({
+    queryKey: ['userAddresses', userId],
+    queryFn: async () => {
+      if (!userId) throw new Error('User ID is required');
+      const response = await api.get(`/user/${userId}/addresses`);
+      return response.data;
+    },
+    enabled: !!userId,
+  });
+};
+
+// Update user status
+export const useUpdateUserStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      status,
+    }: {
+      userId: string;
+      status: string;
+    }) => {
+      const response = await api.patch(`/user/${userId}/status`, {
+        status,
+      });
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
   });
 };

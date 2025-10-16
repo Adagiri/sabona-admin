@@ -28,7 +28,7 @@ const menuItems = [
   { text: 'Home', icon: <Home />, route: '/' },
   { text: 'Order', icon: <Inventory />, route: '/order' },
   { text: 'Custom Orders', icon: <PinDrop />, route: '/custom-orders' },
-  { text: 'Customer', icon: <People />, route: '/customer' },
+  { text: 'Customer', icon: <People />, route: '/customers' },
   { text: 'Vendor', icon: <Business />, route: '/vendor' },
   { text: 'Laundry', icon: <LocalLaundryService />, route: '/laundry' },
   { text: 'Icons', icon: <ImageOutlined />, route: '/icons' },
