@@ -55,6 +55,7 @@ const RegularOrderDetails = () => {
     isLoading,
     isError,
   } = useFetchOrderDetails(orderId || '');
+  
 
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
@@ -296,9 +297,26 @@ const RegularOrderDetails = () => {
                   {order.delivery?.deliveryAddress}
                 </Typography>
               </Box>
-              <Typography variant='body2' color='text.secondary'>
-                Type: {order.delivery?.deliveryType}
-              </Typography>
+              <Box display='flex' alignItems='center' gap={1} mb={1}>
+                <LocalShipping fontSize='small' color='action' />
+                <Box>
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
+                    display='block'
+                  >
+                    Delivery Type
+                  </Typography>
+                  <Chip
+                    label={order.deliveryType || 'NORMAL'}
+                    size='small'
+                    color={
+                      order.deliveryType === 'EXPRESS' ? 'error' : 'primary'
+                    }
+                    sx={{ mt: 0.5 }}
+                  />
+                </Box>
+              </Box>
               {order.delivery?.rider && (
                 <Typography variant='body2' color='text.secondary'>
                   Driver: {order.delivery.rider.firstName}{' '}
@@ -349,8 +367,9 @@ const RegularOrderDetails = () => {
                             </TableCell>
                             <TableCell align='right'>
                               $
-                              {item.laundryServiceItem?.platformPrice?.toFixed(2) ||
-                                '0.00'}
+                              {item.laundryServiceItem?.platformPrice?.toFixed(
+                                2
+                              ) || '0.00'}
                             </TableCell>
                             <TableCell align='right'>{item.quantity}</TableCell>
                             <TableCell align='right'>

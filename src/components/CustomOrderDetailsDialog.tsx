@@ -54,6 +54,7 @@ interface CustomOrder {
   customPaymentMethod?: string;
   payTabsTransactionRef?: string;
   customerPaymentDate?: string;
+  deliveryType: string;
   createdAt: string;
   customer: {
     name?: string;
@@ -420,10 +421,10 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                     primary='Delivery Type'
                     secondary={
                       <Chip
-                        label={order.delivery.deliveryType}
+                        label={order.deliveryType}
                         size='small'
                         color={
-                          order.delivery.deliveryType === 'EXPRESS'
+                          order.deliveryType === 'EXPRESS'
                             ? 'warning'
                             : 'default'
                         }

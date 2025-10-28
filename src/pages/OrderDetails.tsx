@@ -497,9 +497,21 @@ const OrderDetails: React.FC = () => {
                   <Stack spacing={1}>
                     <Stack direction='row' spacing={0.5} alignItems='center'>
                       <LocalShipping fontSize='small' color='action' />
-                      <Typography variant='body2'>
-                        {orderDetails?.deliveryType || 'Standard Delivery'}
-                      </Typography>
+                      <Box>
+                        <Typography variant='caption' color='text.secondary'>
+                          Delivery Type
+                        </Typography>
+                        <Chip
+                          label={orderDetails?.deliveryType || 'NORMAL'}
+                          size='small'
+                          color={
+                            orderDetails?.deliveryType === 'EXPRESS'
+                              ? 'error'
+                              : 'primary'
+                          }
+                          sx={{ mt: 0.5 }}
+                        />
+                      </Box>
                     </Stack>
                     <Stack
                       direction='row'
