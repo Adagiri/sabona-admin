@@ -20,9 +20,11 @@ import {
   LocalLaundryService,
   ImageOutlined,
   PinDrop,
+  Settings,
+  AccountBalance, // Icon for Withdrawals
+  PendingActions, // Icon for Pre-Withdrawal
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
-import { Settings } from 'lucide-react';
 
 const menuItems = [
   { text: 'Home', icon: <Home />, route: '/' },
@@ -38,6 +40,12 @@ const menuItems = [
   { text: 'Voucher', icon: <Discount />, route: '/voucher' },
   { text: 'Tips', icon: <Paid />, route: '/tip' },
   { text: 'Settings', icon: <Settings />, route: '/admin-settings' },
+  {
+    text: 'Pre-Withdrawal',
+    icon: <PendingActions />,
+    route: '/pre-withdrawals',
+  },
+  { text: 'Withdrawals', icon: <AccountBalance />, route: '/withdrawals' },
 ];
 
 const Sidebar: React.FC = () => {

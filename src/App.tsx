@@ -42,6 +42,8 @@ import CustomOrders from './pages/CustomOrders';
 import RegularOrderDetails from './pages/RegularOrderDetails';
 import CustomOrderDetails from './pages/CustomOrderDetails';
 import CustomerDetails from './pages/CustomerDetails';
+import Withdrawals from './pages/Withdrawal';
+import PreWithdrawal from './pages/PreWithdrawal';
 
 const App: React.FC = () => {
   return (
@@ -78,10 +80,7 @@ const AppContent: React.FC = () => {
           <Route element={<ProtectedRoute />}>
             <Route path='/' element={<Home />} />
             <Route path='/customers' element={<Customer />} />
-            <Route
-              path='/customer/:customerId'
-              element={<CustomerDetails />}
-            />
+            <Route path='/customer/:customerId' element={<CustomerDetails />} />
             <Route path='/vendor/:pageNumber?' element={<Vendor />} />
 
             {/* Laundry Management Routes */}
@@ -140,6 +139,8 @@ const AppContent: React.FC = () => {
             />
             <Route path='/icons' element={<Icons />} />
             <Route path='/admin-settings' element={<AdminSettings />} />
+            <Route path='/withdrawals' element={<Withdrawals />} />
+            <Route path='/pre-withdrawals' element={<PreWithdrawal />} />
           </Route>
         </Routes>
       </Box>
