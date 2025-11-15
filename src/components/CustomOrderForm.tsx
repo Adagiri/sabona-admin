@@ -26,7 +26,7 @@ interface CustomOrderFormData {
   pickupDate: string;
   deliveryAddress: string;
   deliveryType: 'NORMAL' | 'EXPRESS';
-  paymentType: 'CASH' | 'CARD';
+  paymentType: 'CASH' | 'CARD' | 'APPLEPAY';
   note?: string;
 }
 
@@ -61,7 +61,7 @@ const customOrderSchema = yup.object({
   pickupDate: yup.string().required('Pickup date is required'),
   deliveryAddress: yup.string().required('Delivery address is required'),
   deliveryType: yup.string().oneOf(['NORMAL', 'EXPRESS']).required(),
-  paymentType: yup.string().oneOf(['CASH', 'CARD']).required(),
+  paymentType: yup.string().oneOf(['CASH', 'CARD', 'APPLEPAY']).required(),
   note: yup.string().optional(),
 });
 

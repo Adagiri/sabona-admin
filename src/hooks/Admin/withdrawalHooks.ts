@@ -196,21 +196,24 @@ export const useDownloadLaundryReport = () => {
       const response = await api.get(
         `/admin/withdrawals/${withdrawalId}/laundry/${laundryId}/report`,
         {
-          responseType: 'blob',
+          responseType: 'blob', // CRITICAL: Tell axios to expect binary data
         }
       );
 
-      // Create download link
+      // Create a download link and trigger download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `${laundryName}-earnings.xlsx`);
+      link.setAttribute('download', `${laundryName}-earnings-report.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
 
       return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Report downloaded successfully');
     },
     onError: (error: any) => {
       const message =
