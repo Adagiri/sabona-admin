@@ -12,7 +12,6 @@ import {
   Paper,
   Button,
   IconButton,
-  Chip,
   Stack,
   Dialog,
   DialogTitle,
@@ -28,6 +27,7 @@ import {
   InputLabel,
   FormHelperText,
   Avatar,
+  CircularProgress,
 } from '@mui/material';
 import {
   Edit,
@@ -171,25 +171,6 @@ function SortableItemRow({
         </Typography>
       </TableCell>
       <TableCell>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          {item.category.icon?.media?.path && (
-            <Avatar
-              src={item.category.icon.media.path}
-              sx={{ width: 24, height: 24 }}
-              variant="rounded"
-            >
-              <ImageOutlined fontSize="small" />
-            </Avatar>
-          )}
-          <Chip
-            label={item.category.nameLocale.en}
-            size="small"
-            color="primary"
-            variant="outlined"
-          />
-        </Stack>
-      </TableCell>
-      <TableCell>
         <Typography variant="body1">{item.vendorPrice.toFixed(2)} SAR</Typography>
       </TableCell>
       <TableCell>
@@ -238,6 +219,7 @@ const LaundryServiceItems: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<ServiceItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
   const [localItems, setLocalItems] = useState<ServiceItem[]>([]);
 
   const { data: laundry } = useFetchLaundryById(laundryId!);
@@ -321,6 +303,7 @@ const LaundryServiceItems: React.FC = () => {
     setLocalItems(reordered);
 
     // Send to backend (category-scoped)
+    setIsReordering(true);
     try {
       const itemIds = reordered.map((item) => item.id);
       await reorderItems({
@@ -335,6 +318,8 @@ const LaundryServiceItems: React.FC = () => {
       toast.error(error?.response?.data?.message || 'Failed to reorder items');
       // Revert on error
       setLocalItems([...filteredItems]);
+    } finally {
+      setIsReordering(false);
     }
   };
 
@@ -522,9 +507,14 @@ const LaundryServiceItems: React.FC = () => {
               <Typography variant="h4" fontWeight="bold">
                 {currentCategory?.nameLocale.en || 'Category'} - Items
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Manage items for this category (drag to reorder)
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography variant="body2" color="text.secondary">
+                  Manage items for this category (drag to reorder)
+                </Typography>
+                {isReordering && (
+                  <CircularProgress size={14} thickness={5} />
+                )}
+              </Stack>
             </Box>
           </Stack>
         </Box>
@@ -586,9 +576,6 @@ const LaundryServiceItems: React.FC = () => {
                 <strong>Item Name</strong>
               </TableCell>
               <TableCell>
-                <strong>Category</strong>
-              </TableCell>
-              <TableCell>
                 <strong>Vendor Price</strong>
               </TableCell>
               <TableCell>
@@ -628,7 +615,7 @@ const LaundryServiceItems: React.FC = () => {
               </DndContext>
             ) : (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={7} align="center">
                   <Typography variant="body1" color="text.secondary" py={4}>
                     No items found in this category. Create your first item to get
                     started.
