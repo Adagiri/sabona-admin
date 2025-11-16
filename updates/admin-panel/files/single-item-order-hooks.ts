@@ -1,19 +1,21 @@
-// Reordering Hooks
+// Single-Item Order Change Hooks
 
-export const useReorderLaundryServices = () => {
+export const useChangeLaundryServiceOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({
       laundryId,
-      serviceIds,
+      serviceId,
+      newPosition,
     }: {
       laundryId: string;
-      serviceIds: string[];
+      serviceId: string;
+      newPosition: number;
     }) => {
       const response = await api.patch(
-        `/admin/laundry/${laundryId}/services/reorder`,
-        { serviceIds }
+        `/admin/laundry/${laundryId}/service/${serviceId}/change-order`,
+        { newPosition }
       );
       return response.data;
     },
@@ -25,7 +27,7 @@ export const useReorderLaundryServices = () => {
   });
 };
 
-export const useReorderLaundryServiceItems = () => {
+export const useChangeLaundryServiceItemOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -33,16 +35,18 @@ export const useReorderLaundryServiceItems = () => {
       laundryId,
       serviceId,
       categoryId,
-      itemIds,
+      itemId,
+      newPosition,
     }: {
       laundryId: string;
       serviceId: string;
       categoryId: string;
-      itemIds: string[];
+      itemId: string;
+      newPosition: number;
     }) => {
       const response = await api.patch(
-        `/admin/laundry/${laundryId}/service/${serviceId}/category/${categoryId}/items/reorder`,
-        { itemIds }
+        `/admin/laundry/${laundryId}/service/${serviceId}/category/${categoryId}/item/${itemId}/change-order`,
+        { newPosition }
       );
       return response.data;
     },
