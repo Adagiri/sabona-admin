@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Drawer,
   List,
@@ -6,6 +6,8 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
+  Collapse,
+  ListItemButton,
 } from '@mui/material';
 import {
   Home,
@@ -21,19 +23,41 @@ import {
   ImageOutlined,
   PinDrop,
   Settings,
-  AccountBalance, // Icon for Withdrawals
-  PendingActions, // Icon for Pre-Withdrawal
+  AccountBalance,
+  PendingActions,
+  ExpandLess,
+  ExpandMore,
+  Category,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
-const menuItems = [
+interface MenuItem {
+  text: string;
+  icon: React.ReactNode;
+  route: string;
+}
+
+interface MenuSection {
+  section: string;
+  icon: React.ReactNode;
+  items: MenuItem[];
+}
+
+const menuStructure: (MenuItem | MenuSection)[] = [
   { text: 'Home', icon: <Home />, route: '/' },
   { text: 'Order', icon: <Inventory />, route: '/order' },
   { text: 'Custom Orders', icon: <PinDrop />, route: '/custom-orders' },
   { text: 'Customer', icon: <People />, route: '/customers' },
   { text: 'Vendor', icon: <Business />, route: '/vendor' },
-  { text: 'Laundry', icon: <LocalLaundryService />, route: '/laundry' },
-  { text: 'Icons', icon: <ImageOutlined />, route: '/icons' },
+  {
+    section: 'Laundry',
+    icon: <LocalLaundryService />,
+    items: [
+      { text: 'Laundry', icon: <Business />, route: '/laundry' },
+      { text: 'Categories', icon: <Category />, route: '/laundry/categories' },
+      { text: 'Icons', icon: <ImageOutlined />, route: '/icons' },
+    ],
+  },
   { text: 'Driver', icon: <LocalShipping />, route: '/driver' },
   { text: 'Application', icon: <Apps />, route: '/application' },
   { text: 'Map Stats', icon: <Map />, route: '/map-stats' },
@@ -50,6 +74,30 @@ const menuItems = [
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>(() => {
+    // Auto-expand section if current route is within it
+    const initial: { [key: string]: boolean } = {};
+    menuStructure.forEach((item) => {
+      if ('section' in item) {
+        const isActive = item.items.some((subItem) =>
+          location.pathname.startsWith(subItem.route)
+        );
+        initial[item.section] = isActive;
+      }
+    });
+    return initial;
+  });
+
+  const toggleSection = (section: string) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const isActiveRoute = (route: string) => {
+    if (route === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(route);
+  };
 
   return (
     <Drawer
@@ -62,28 +110,83 @@ const Sidebar: React.FC = () => {
     >
       <Toolbar />
       <List>
-        {menuItems.map((item) => (
-          <ListItem
-            key={item.text}
-            component={Link}
-            to={item.route}
-            sx={{
-              backgroundColor:
-                `/${location.pathname.split('/')[1]}` === item.route
+        {menuStructure.map((item) => {
+          // Section with subitems
+          if ('section' in item) {
+            const isOpen = openSections[item.section];
+            const hasActiveChild = item.items.some((subItem) =>
+              isActiveRoute(subItem.route)
+            );
+
+            return (
+              <React.Fragment key={item.section}>
+                <ListItemButton
+                  onClick={() => toggleSection(item.section)}
+                  sx={{
+                    backgroundColor: hasActiveChild ? '#E3F2FD' : 'transparent',
+                    '&:hover': { backgroundColor: '#BBDEFB' },
+                    borderRadius: 1,
+                  }}
+                >
+                  <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.section} />
+                  {isOpen ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+                <Collapse in={isOpen} timeout='auto' unmountOnExit>
+                  <List component='div' disablePadding>
+                    {item.items.map((subItem) => (
+                      <ListItem
+                        key={subItem.text}
+                        component={Link}
+                        to={subItem.route}
+                        sx={{
+                          pl: 4,
+                          backgroundColor: isActiveRoute(subItem.route)
+                            ? '#E3F2FD'
+                            : 'transparent',
+                          '&:hover': { backgroundColor: '#BBDEFB' },
+                          textDecoration: 'none',
+                          color: 'inherit',
+                          borderRadius: 1,
+                        }}
+                      >
+                        <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
+                          {subItem.icon}
+                        </ListItemIcon>
+                        <ListItemText primary={subItem.text} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
+              </React.Fragment>
+            );
+          }
+
+          // Regular menu item
+          return (
+            <ListItem
+              key={item.text}
+              component={Link}
+              to={item.route}
+              sx={{
+                backgroundColor: isActiveRoute(item.route)
                   ? '#E3F2FD'
                   : 'transparent',
-              '&:hover': { backgroundColor: '#BBDEFB' },
-              textDecoration: 'none',
-              color: 'inherit',
-              borderRadius: 1,
-            }}
-          >
-            <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
-              {item.icon}
-            </ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
-        ))}
+                '&:hover': { backgroundColor: '#BBDEFB' },
+                textDecoration: 'none',
+                color: 'inherit',
+                borderRadius: 1,
+              }}
+            >
+              <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItem>
+          );
+        })}
       </List>
     </Drawer>
   );

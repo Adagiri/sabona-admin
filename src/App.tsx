@@ -30,6 +30,7 @@ import ApplicationDetails from './pages/ApplicationDetails';
 import Laundry from './pages/Laundry';
 import LaundryServices from './pages/LaundryServices';
 import LaundryServiceItems from './pages/LaundryServiceItems';
+import LaundryServiceCategories from './pages/LaundryServiceCategories';
 import Categories from './pages/Categories';
 import EditLaundry from './pages/EditLaundry';
 import Icons from './pages/Icons';
@@ -92,7 +93,11 @@ const AppContent: React.FC = () => {
               element={<LaundryServices />}
             />
             <Route
-              path='/laundry/:laundryId/service/:serviceId/items'
+              path='/laundry/:laundryId/service/:serviceId/categories'
+              element={<LaundryServiceCategories />}
+            />
+            <Route
+              path='/laundry/:laundryId/service/:serviceId/category/:categoryId/items'
               element={<LaundryServiceItems />}
             />
 
