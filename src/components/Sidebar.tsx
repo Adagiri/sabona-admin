@@ -28,6 +28,9 @@ import {
   ExpandLess,
   ExpandMore,
   Category,
+  PersonOutline,
+  AttachMoney,
+  SettingsApplications,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -44,32 +47,63 @@ interface MenuSection {
 }
 
 const menuStructure: (MenuItem | MenuSection)[] = [
-  { text: 'Home', icon: <Home />, route: '/' },
-  { text: 'Order', icon: <Inventory />, route: '/order' },
-  { text: 'Custom Orders', icon: <PinDrop />, route: '/custom-orders' },
-  { text: 'Customer', icon: <People />, route: '/customers' },
-  { text: 'Vendor', icon: <Business />, route: '/vendor' },
+  // Top-level items
+  { text: 'Dashboard', icon: <Home />, route: '/' },
+
+  // Orders Section
+  {
+    section: 'Orders',
+    icon: <Inventory />,
+    items: [
+      { text: 'All Orders', icon: <Inventory />, route: '/order' },
+      { text: 'Custom Orders', icon: <PinDrop />, route: '/custom-orders' },
+    ],
+  },
+
+  // Users Section
+  {
+    section: 'Users',
+    icon: <People />,
+    items: [
+      { text: 'Customers', icon: <PersonOutline />, route: '/customers' },
+      { text: 'Vendors', icon: <Business />, route: '/vendor' },
+      { text: 'Drivers', icon: <LocalShipping />, route: '/driver' },
+    ],
+  },
+
+  // Laundry Section
   {
     section: 'Laundry',
     icon: <LocalLaundryService />,
     items: [
-      { text: 'Laundry', icon: <Business />, route: '/laundry' },
+      { text: 'Laundries', icon: <Business />, route: '/laundry' },
       { text: 'Categories', icon: <Category />, route: '/laundry/categories' },
       { text: 'Icons', icon: <ImageOutlined />, route: '/icons' },
     ],
   },
-  { text: 'Driver', icon: <LocalShipping />, route: '/driver' },
-  { text: 'Application', icon: <Apps />, route: '/application' },
-  { text: 'Map Stats', icon: <Map />, route: '/map-stats' },
-  { text: 'Voucher', icon: <Discount />, route: '/voucher' },
-  { text: 'Tips', icon: <Paid />, route: '/tip' },
-  { text: 'Settings', icon: <Settings />, route: '/admin-settings' },
+
+  // Finance Section
   {
-    text: 'Pre-Withdrawal',
-    icon: <PendingActions />,
-    route: '/pre-withdrawals',
+    section: 'Finance',
+    icon: <AttachMoney />,
+    items: [
+      { text: 'Vouchers', icon: <Discount />, route: '/voucher' },
+      { text: 'Tips', icon: <Paid />, route: '/tip' },
+      { text: 'Pre-Withdrawals', icon: <PendingActions />, route: '/pre-withdrawals' },
+      { text: 'Withdrawals', icon: <AccountBalance />, route: '/withdrawals' },
+    ],
   },
-  { text: 'Withdrawals', icon: <AccountBalance />, route: '/withdrawals' },
+
+  // System Section
+  {
+    section: 'System',
+    icon: <SettingsApplications />,
+    items: [
+      { text: 'Applications', icon: <Apps />, route: '/application' },
+      { text: 'Map Stats', icon: <Map />, route: '/map-stats' },
+      { text: 'Settings', icon: <Settings />, route: '/admin-settings' },
+    ],
+  },
 ];
 
 const Sidebar: React.FC = () => {
@@ -126,6 +160,7 @@ const Sidebar: React.FC = () => {
                     backgroundColor: hasActiveChild ? '#E3F2FD' : 'transparent',
                     '&:hover': { backgroundColor: '#BBDEFB' },
                     borderRadius: 1,
+                    mb: 0.5,
                   }}
                 >
                   <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
@@ -150,6 +185,7 @@ const Sidebar: React.FC = () => {
                           textDecoration: 'none',
                           color: 'inherit',
                           borderRadius: 1,
+                          mb: 0.5,
                         }}
                       >
                         <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
@@ -178,6 +214,7 @@ const Sidebar: React.FC = () => {
                 textDecoration: 'none',
                 color: 'inherit',
                 borderRadius: 1,
+                mb: 0.5,
               }}
             >
               <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
