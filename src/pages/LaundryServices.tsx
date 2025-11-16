@@ -191,7 +191,7 @@ const LaundryServices: React.FC = () => {
   };
 
   const handleViewItems = (serviceId: string) => {
-    navigate(`/laundry/${laundryId}/service/${serviceId}/items`);
+    navigate(`/laundry/${laundryId}/service/${serviceId}/categories`);
   };
 
   if (isLoading) {
