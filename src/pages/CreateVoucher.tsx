@@ -32,10 +32,10 @@ interface FormDataInterface {
   };
   type: DISCOUNT_TYPE;
   discount: number;
-  maxDiscount?: number;
+  maxDiscount?: number | null;
   minOrderAmount?: number;
   expiryDate: Dayjs;
-  usageLimit?: number | any;
+  usageLimit?: number | null;
   singleUse: boolean;
   isActive: boolean;
   startDate?: Dayjs;
@@ -168,7 +168,15 @@ const CreateVoucher = () => {
   const onSubmit = useCallback(
     async (data: FormDataInterface) => {
       const payload = {
-        ...data,
+        code: data.code,
+        nameLocale: data.nameLocale,
+        type: data.type,
+        discount: data.discount,
+        ...(data.maxDiscount !== null && data.maxDiscount !== undefined && { maxDiscount: data.maxDiscount }),
+        ...(data.minOrderAmount !== null && data.minOrderAmount !== undefined && { minOrderAmount: data.minOrderAmount }),
+        ...(data.usageLimit !== null && data.usageLimit !== undefined && { usageLimit: data.usageLimit }),
+        singleUse: data.singleUse,
+        isActive: data.isActive,
         startDate: data.isActive
           ? dayjs().toISOString()
           : data.startDate?.toISOString(),
