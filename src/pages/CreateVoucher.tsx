@@ -32,17 +32,17 @@ interface FormDataInterface {
   };
   type: DISCOUNT_TYPE;
   discount: number;
-  maxDiscount?: number;
+  maxDiscount?: number | null;
   minOrderAmount?: number;
   expiryDate: Dayjs;
-  usageLimit?: number | any;
+  usageLimit?: number | null;
   singleUse: boolean;
   isActive: boolean;
   startDate?: Dayjs;
 }
 
 // Validation schema with Yup
-const schema = yup.object<FormDataInterface>().shape({
+const schema = yup.object().shape({
   code: yup.string().required('Coupon Code is required'),
   nameLocale: yup.object().shape({
     en: yup.string().required('Coupon Name (English) is required'),
@@ -65,7 +65,8 @@ const schema = yup.object<FormDataInterface>().shape({
   maxDiscount: yup
     .number()
     .optional()
-    .transform((value) => (isNaN(value) ? undefined : value)),
+    .nullable()
+    .transform((value) => (value === null || isNaN(value) ? undefined : value)),
   minOrderAmount: yup
     .number()
     .positive('Min Order Amount must be greater than 0')
@@ -80,7 +81,11 @@ const schema = yup.object<FormDataInterface>().shape({
     .test('is-future', 'Expiry Date must be in the future', (value) => {
       return value ? value.isAfter(dayjs()) : false;
     }),
-  usageLimit: yup.number().optional().nullable(), // Transform null/empty to undefined
+  usageLimit: yup
+    .number()
+    .optional()
+    .nullable()
+    .transform((value) => (value === null || isNaN(value) ? undefined : value)),
   singleUse: yup.boolean().required(),
   isActive: yup.boolean().required(),
   startDate: yup
@@ -145,7 +150,15 @@ const CreateVoucher = () => {
   const onSubmit = useCallback(
     async (data: FormDataInterface) => {
       const payload = {
-        ...data,
+        code: data.code,
+        nameLocale: data.nameLocale,
+        type: data.type,
+        discount: data.discount,
+        ...(data.maxDiscount !== null && data.maxDiscount !== undefined && { maxDiscount: data.maxDiscount }),
+        ...(data.minOrderAmount !== null && data.minOrderAmount !== undefined && { minOrderAmount: data.minOrderAmount }),
+        ...(data.usageLimit !== null && data.usageLimit !== undefined && { usageLimit: data.usageLimit }),
+        singleUse: data.singleUse,
+        isActive: data.isActive,
         startDate: data.isActive
           ? dayjs().toISOString()
           : data.startDate?.toISOString(),
