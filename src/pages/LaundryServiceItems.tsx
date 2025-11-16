@@ -61,7 +61,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   useFetchLaundryById,
-  useFetchLaundryServiceItems,
+  useFetchLaundryServiceItemsByCategory,
   useFetchCategories,
 } from '../hooks/Admin/query';
 import {
@@ -247,18 +247,15 @@ const LaundryServiceItems: React.FC = () => {
     isLoading,
     error,
     refetch,
-  } = useFetchLaundryServiceItems(laundryId!, serviceId!);
+  } = useFetchLaundryServiceItemsByCategory(laundryId!, serviceId!, categoryId!);
   const { data: categories } = useFetchCategories();
   const { mutateAsync: createItem } = useCreateLaundryServiceItem();
   const { mutateAsync: editItem } = useEditLaundryServiceItem();
   const { mutateAsync: deleteItem } = useDeleteLaundryServiceItem();
   const { mutateAsync: reorderItems } = useReorderLaundryServiceItems();
 
-  // *** CRITICAL FIX: Filter items by categoryId ***
-  const filteredItems = React.useMemo(() => {
-    if (!items?.data || !categoryId) return [];
-    return items.data.filter((item: ServiceItem) => item.categoryId === categoryId);
-  }, [items?.data, categoryId]);
+  // Items are now filtered by backend, no need for frontend filtering
+  const filteredItems = items?.data || [];
 
   // Get category name for breadcrumbs
   const currentCategory = React.useMemo(() => {

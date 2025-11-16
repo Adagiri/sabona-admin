@@ -339,6 +339,28 @@ export const useFetchLaundryServiceItems = (
   });
 };
 
+export const useFetchLaundryServiceItemsByCategory = (
+  laundryId: string,
+  serviceId: string,
+  categoryId: string
+) => {
+  return useQuery({
+    queryKey: [
+      FETCH_ORDER_QUERIES.FETCH_LAUNDRY_SERVICE_ITEMS,
+      laundryId,
+      serviceId,
+      categoryId,
+    ],
+    queryFn: async () => {
+      const response = await api.get(
+        `/admin/laundry/${laundryId}/service/${serviceId}/category/${categoryId}/items`
+      );
+      return response.data;
+    },
+    enabled: !!laundryId && !!serviceId && !!categoryId,
+  });
+};
+
 const getRiderDocumentsAction = async (userId: string) => {
   const response = await api.get(`/admin/rider/documents/${userId}`);
   return response.data;
