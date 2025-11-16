@@ -1,5 +1,4 @@
 // File: src/pages/LaundryServiceItems.tsx
-// Enhanced with CRITICAL FIX (category filtering) + Drag & Drop functionality
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -254,8 +253,12 @@ const LaundryServiceItems: React.FC = () => {
   const { mutateAsync: deleteItem } = useDeleteLaundryServiceItem();
   const { mutateAsync: reorderItems } = useReorderLaundryServiceItems();
 
-  // Items are now filtered by backend, no need for frontend filtering
-  const filteredItems = items?.data || [];
+  // *** CRITICAL FIX: Filter items by categoryId ***
+  const filteredItems = React.useMemo(() => {
+    console.log(items, categoryId)
+    if (!items?.data || !categoryId) return [];
+    return items.data.filter((item: ServiceItem) => item.category.id === categoryId);
+  }, [items?.data, categoryId]);
 
   // Get category name for breadcrumbs
   const currentCategory = React.useMemo(() => {
