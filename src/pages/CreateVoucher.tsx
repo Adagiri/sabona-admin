@@ -41,75 +41,98 @@ interface FormDataInterface {
   startDate?: Dayjs;
 }
 
-// Validation schema with Yup
-const schema = yup.object<FormDataInterface>().shape({
-  code: yup.string().required('Coupon Code is required'),
-  nameLocale: yup.object().shape({
-    en: yup.string().required('Coupon Name (English) is required'),
-    ar: yup.string().required('Coupon Name (Arabic) is required'),
-  }),
-  type: yup
-    .mixed<DISCOUNT_TYPE>()
-    .required()
-    .oneOf([DISCOUNT_TYPE.PERCENTAGE, DISCOUNT_TYPE.FIXED]),
-  discount: yup
-    .number()
-    .positive('Discount value must be greater than 0')
-    .required('Discount value is required')
-    .when('type', {
-      is: DISCOUNT_TYPE.PERCENTAGE,
-      then: (schema) =>
-        schema.max(100, 'Discount value must not be greater than 100'),
-      otherwise: (schema) => schema, // Leave unchanged for FIXED type
-    }),
-  maxDiscount: yup
-    .number()
-    .optional()
-    .transform((value) => (isNaN(value) ? undefined : value)),
-  minOrderAmount: yup
-    .number()
-    .positive('Min Order Amount must be greater than 0')
-    .optional()
-    .when('type', {
-      is: DISCOUNT_TYPE.FIXED,
-      then: (schema) => schema.required('Min Order Amount is required'),
-    }),
-  expiryDate: yup
-    .mixed<Dayjs>()
-    .required('Expiry Date is required')
-    .test('is-future', 'Expiry Date must be in the future', (value) => {
-      return value ? value.isAfter(dayjs()) : false;
-    }),
-  usageLimit: yup.number().optional().nullable(), // Transform null/empty to undefined
-  singleUse: yup.boolean().required(),
-  isActive: yup.boolean().required(),
-  startDate: yup
-    .mixed<Dayjs>()
-    .optional()
-    .test(
-      'conditional-validation',
-      'Start Date must be in the future and before Expiry Date',
-      function (value) {
-        const { isActive, expiryDate } = this.parent;
-        if (!isActive) {
-          if (!value) {
+type SchemaOf<T> = yup.ObjectSchema<T>;
+
+const schema: SchemaOf<FormDataInterface> = yup
+  .object({
+    code: yup.string().required('Coupon Code is required'),
+    nameLocale: yup
+      .object({
+        en: yup.string().required('Coupon Name (English) is required'),
+        ar: yup.string().required('Coupon Name (Arabic) is required'),
+      })
+      // TS/Yup generic mismatch for nested objects is common; cast to any to satisfy compiler
+      .required() as any,
+
+    type: yup
+      .mixed<DISCOUNT_TYPE>()
+      .oneOf([DISCOUNT_TYPE.PERCENTAGE, DISCOUNT_TYPE.FIXED])
+      .required() as any,
+
+    discount: yup
+      .number()
+      .typeError('Discount must be a number')
+      .positive('Discount value must be greater than 0')
+      .required('Discount value is required')
+      .when('type', {
+        is: DISCOUNT_TYPE.PERCENTAGE,
+        then: (s: any) =>
+          s.max(100, 'Discount value must not be greater than 100'),
+      }) as any,
+
+    maxDiscount: yup
+      .number()
+      .nullable()
+      .transform((value, originalValue) =>
+        originalValue === '' || originalValue === null ? null : value
+      ),
+
+    minOrderAmount: yup
+      .number()
+      .nullable()
+      .transform((value, originalValue) =>
+        originalValue === '' || originalValue === null ? null : value
+      )
+      .when('type', {
+        is: DISCOUNT_TYPE.FIXED,
+        then: (s: any) => s.required('Min Order Amount is required'),
+        otherwise: (s: any) => s,
+      }) as any,
+
+    expiryDate: yup
+      .mixed<Dayjs>()
+      .nullable()
+      .required('Expiry Date is required')
+      .test('is-future', 'Expiry Date must be in the future', (value) => {
+        return value ? (value as Dayjs).isAfter(dayjs()) : false;
+      }) as any,
+
+    usageLimit: yup
+      .number()
+      .nullable()
+      .transform((value, originalValue) =>
+        originalValue === '' || originalValue === null ? null : value
+      ),
+
+    singleUse: yup.boolean().required(),
+    isActive: yup.boolean().required(),
+
+    startDate: yup
+      .mixed<Dayjs>()
+      .nullable()
+      .test(
+        'conditional-validation',
+        'Start Date must be in the future and before Expiry Date',
+        function (value) {
+          const { isActive, expiryDate } = this.parent as any;
+          // if active, startDate is optional (we'll set startDate to now in submit)
+          if (isActive) return true;
+          // not active -> startDate is required and must be future and before expiry
+          if (!value)
             return this.createError({ message: 'Start Date is required' });
-          }
-          if (value && value.isBefore(dayjs())) {
+          if ((value as Dayjs).isBefore(dayjs()))
             return this.createError({
               message: 'Start Date must be in the future',
             });
-          }
-          if (value && expiryDate && value.isAfter(expiryDate)) {
+          if (expiryDate && (value as Dayjs).isAfter(expiryDate))
             return this.createError({
               message: 'Start Date must be before Expiry Date',
             });
-          }
+          return true;
         }
-        return true;
-      }
-    ),
-});
+      ) as any,
+  })
+  .required();
 
 const CreateVoucher = () => {
   const { mutateAsync: createCoupon, isPending: isCreatingCoupon } =
@@ -124,7 +147,7 @@ const CreateVoucher = () => {
     resolver: yupResolver(schema),
     defaultValues: {
       code: '',
-      nameLocale: {en: '', ar: ''},
+      nameLocale: { en: '', ar: '' },
       type: DISCOUNT_TYPE.PERCENTAGE,
       discount: 0,
       maxDiscount: undefined,

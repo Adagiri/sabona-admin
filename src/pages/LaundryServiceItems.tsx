@@ -159,46 +159,48 @@ function SortableItemRow({
         <IconButton
           {...attributes}
           {...listeners}
-          size="small"
+          size='small'
           sx={{ cursor: 'grab', '&:active': { cursor: 'grabbing' } }}
         >
           <DragIndicator />
         </IconButton>
       </TableCell>
       <TableCell>
-        <Typography variant="body1" fontWeight="bold">
+        <Typography variant='body1' fontWeight='bold'>
           {item.nameLocale.en}
         </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="body1">{item.vendorPrice.toFixed(2)} SAR</Typography>
+        <Typography variant='body1'>
+          {item.vendorPrice.toFixed(2)} SAR
+        </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="body1">
+        <Typography variant='body1'>
           {item.platformPrice.toFixed(2)} SAR
         </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="body1">
+        <Typography variant='body1'>
           {item.expressPrice.toFixed(2)} SAR
         </Typography>
       </TableCell>
       <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
       <TableCell>
-        <Stack direction="row" spacing={1}>
+        <Stack direction='row' spacing={1}>
           <IconButton
-            size="small"
+            size='small'
             onClick={() => onEdit(item)}
-            color="warning"
-            title="Edit Item"
+            color='warning'
+            title='Edit Item'
           >
             <Edit />
           </IconButton>
           <IconButton
-            size="small"
+            size='small'
             onClick={() => onDelete(item.id, item.nameLocale.en)}
-            color="error"
-            title="Delete Item"
+            color='error'
+            title='Delete Item'
           >
             <Delete />
           </IconButton>
@@ -228,7 +230,11 @@ const LaundryServiceItems: React.FC = () => {
     isLoading,
     error,
     refetch,
-  } = useFetchLaundryServiceItemsByCategory(laundryId!, serviceId!, categoryId!);
+  } = useFetchLaundryServiceItemsByCategory(
+    laundryId!,
+    serviceId!,
+    categoryId!
+  );
   const { data: categories } = useFetchCategories();
   const { mutateAsync: createItem } = useCreateLaundryServiceItem();
   const { mutateAsync: editItem } = useEditLaundryServiceItem();
@@ -237,9 +243,11 @@ const LaundryServiceItems: React.FC = () => {
 
   // *** CRITICAL FIX: Filter items by categoryId ***
   const filteredItems = React.useMemo(() => {
-    console.log(items, categoryId)
+    console.log(items, categoryId);
     if (!items?.data || !categoryId) return [];
-    return items.data.filter((item: ServiceItem) => item.category.id === categoryId);
+    return items.data.filter(
+      (item: ServiceItem) => item.category.id === categoryId
+    );
   }, [items?.data, categoryId]);
 
   // Get category name for breadcrumbs
@@ -275,49 +283,44 @@ const LaundryServiceItems: React.FC = () => {
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
+      activationConstraint: { distance: 8 },
+      disabled: isReordering,
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
+      disabled: isReordering,
     })
   );
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
+    if (isReordering) return; //
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
     const oldIndex = localItems.findIndex((item) => item.id === active.id);
     const newIndex = localItems.findIndex((item) => item.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
 
-    if (oldIndex === -1 || newIndex === -1) {
-      return;
-    }
-
-    // Optimistic update
     const reordered = arrayMove(localItems, oldIndex, newIndex);
     setLocalItems(reordered);
 
-    // Send to backend (category-scoped)
     setIsReordering(true);
+
     try {
       const itemIds = reordered.map((item) => item.id);
       await reorderItems({
         laundryId: laundryId!,
         serviceId: serviceId!,
-        categoryId: categoryId!, // Category scope
+        categoryId: categoryId!,
         itemIds,
       });
+
       toast.success('Items reordered successfully');
       refetch();
     } catch (error: any) {
       toast.error(error?.response?.data?.message || 'Failed to reorder items');
-      // Revert on error
-      setLocalItems([...filteredItems]);
+      setLocalItems([...filteredItems]); // rollback
     } finally {
       setIsReordering(false);
     }
@@ -429,10 +432,10 @@ const LaundryServiceItems: React.FC = () => {
   if (isLoading) {
     return (
       <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="60vh"
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight='60vh'
       >
         <Typography>Loading items...</Typography>
       </Box>
@@ -442,7 +445,7 @@ const LaundryServiceItems: React.FC = () => {
   if (error) {
     return (
       <Box p={3}>
-        <Alert severity="error">
+        <Alert severity='error'>
           Failed to load items:{' '}
           {(error as any)?.response?.data?.message || 'Unknown error'}
         </Alert>
@@ -455,26 +458,26 @@ const LaundryServiceItems: React.FC = () => {
       <ToastContainer />
 
       {/* Breadcrumbs - UPDATED to show category name */}
-      <Breadcrumbs separator={<NavigateNext fontSize="small" />} sx={{ mb: 2 }}>
+      <Breadcrumbs separator={<NavigateNext fontSize='small' />} sx={{ mb: 2 }}>
         <Link
-          component="button"
-          variant="body1"
+          component='button'
+          variant='body1'
           onClick={() => navigate('/laundry')}
           sx={{ textDecoration: 'none' }}
         >
           Laundry Management
         </Link>
         <Link
-          component="button"
-          variant="body1"
+          component='button'
+          variant='body1'
           onClick={() => navigate(`/laundry/${laundryId}/services`)}
           sx={{ textDecoration: 'none' }}
         >
           {laundry?.data?.name || 'Services'}
         </Link>
         <Link
-          component="button"
-          variant="body1"
+          component='button'
+          variant='body1'
           onClick={() =>
             navigate(`/laundry/${laundryId}/service/${serviceId}/categories`)
           }
@@ -482,44 +485,44 @@ const LaundryServiceItems: React.FC = () => {
         >
           {serviceName}
         </Link>
-        <Typography color="text.primary">
+        <Typography color='text.primary'>
           {currentCategory?.nameLocale.en || 'Items'}
         </Typography>
       </Breadcrumbs>
 
       {/* Header */}
       <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
+        direction='row'
+        justifyContent='space-between'
+        alignItems='center'
         mb={3}
       >
         <Box>
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack direction='row' alignItems='center' spacing={2}>
             <IconButton
               onClick={() =>
-                navigate(`/laundry/${laundryId}/service/${serviceId}/categories`)
+                navigate(
+                  `/laundry/${laundryId}/service/${serviceId}/categories`
+                )
               }
             >
               <ArrowBack />
             </IconButton>
             <Box>
-              <Typography variant="h4" fontWeight="bold">
+              <Typography variant='h4' fontWeight='bold'>
                 {currentCategory?.nameLocale.en || 'Category'} - Items
               </Typography>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography variant="body2" color="text.secondary">
+              <Stack direction='row' alignItems='center' spacing={1}>
+                <Typography variant='body2' color='text.secondary'>
                   Manage items for this category (drag to reorder)
                 </Typography>
-                {isReordering && (
-                  <CircularProgress size={14} thickness={5} />
-                )}
+                {isReordering && <CircularProgress size={14} thickness={5} />}
               </Stack>
             </Box>
           </Stack>
         </Box>
         <Button
-          variant="contained"
+          variant='contained'
           startIcon={<Add />}
           onClick={handleCreateItem}
         >
@@ -529,14 +532,15 @@ const LaundryServiceItems: React.FC = () => {
 
       {/* Check if categories exist before allowing item creation */}
       {(!categories?.data || categories.data.length === 0) && (
-        <Alert severity="warning" sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" gutterBottom>
+        <Alert severity='warning' sx={{ mb: 3 }}>
+          <Typography variant='subtitle2' gutterBottom>
             No Categories Available
           </Typography>
-          <Typography variant="body2">
-            You need to create at least one category before adding service items.
+          <Typography variant='body2'>
+            You need to create at least one category before adding service
+            items.
             <Button
-              size="small"
+              size='small'
               sx={{ ml: 1 }}
               onClick={() => navigate('/laundry/categories')}
             >
@@ -548,17 +552,17 @@ const LaundryServiceItems: React.FC = () => {
 
       {/* Service Info */}
       <Paper sx={{ p: 2, mb: 3, bgcolor: 'grey.50' }}>
-        <Stack direction="row" spacing={3}>
-          <Typography variant="body2">
+        <Stack direction='row' spacing={3}>
+          <Typography variant='body2'>
             <strong>Laundry:</strong> {laundry?.data?.name}
           </Typography>
-          <Typography variant="body2">
+          <Typography variant='body2'>
             <strong>Service:</strong> {serviceName}
           </Typography>
-          <Typography variant="body2">
+          <Typography variant='body2'>
             <strong>Category:</strong> {currentCategory?.nameLocale.en || 'N/A'}
           </Typography>
-          <Typography variant="body2">
+          <Typography variant='body2'>
             <strong>Items in Category:</strong> {localItems?.length || 0}
           </Typography>
         </Stack>
@@ -615,10 +619,10 @@ const LaundryServiceItems: React.FC = () => {
               </DndContext>
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center">
-                  <Typography variant="body1" color="text.secondary" py={4}>
-                    No items found in this category. Create your first item to get
-                    started.
+                <TableCell colSpan={7} align='center'>
+                  <Typography variant='body1' color='text.secondary' py={4}>
+                    No items found in this category. Create your first item to
+                    get started.
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -631,7 +635,7 @@ const LaundryServiceItems: React.FC = () => {
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
-        maxWidth="sm"
+        maxWidth='sm'
         fullWidth
       >
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -642,14 +646,14 @@ const LaundryServiceItems: React.FC = () => {
             <Stack spacing={3} sx={{ mt: 1 }}>
               <TranslationFields
                 control={control}
-                fieldName="nameLocale"
-                label="Item Name"
+                fieldName='nameLocale'
+                label='Item Name'
                 errors={errors}
                 required={true}
               />
 
               <Controller
-                name="vendorPrice"
+                name='vendorPrice'
                 control={control}
                 rules={{
                   required: 'Vendor price is required',
@@ -658,8 +662,8 @@ const LaundryServiceItems: React.FC = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Vendor Price (SAR)"
-                    type="number"
+                    label='Vendor Price (SAR)'
+                    type='number'
                     fullWidth
                     inputProps={{ step: '0.01', min: '0.01' }}
                     error={!!errors.vendorPrice}
@@ -669,7 +673,7 @@ const LaundryServiceItems: React.FC = () => {
               />
 
               <Controller
-                name="platformPrice"
+                name='platformPrice'
                 control={control}
                 rules={{
                   required: 'Platform price is required',
@@ -678,8 +682,8 @@ const LaundryServiceItems: React.FC = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Platform Price (SAR)"
-                    type="number"
+                    label='Platform Price (SAR)'
+                    type='number'
                     fullWidth
                     inputProps={{ step: '0.01', min: '0.01' }}
                     error={!!errors.platformPrice}
@@ -689,7 +693,7 @@ const LaundryServiceItems: React.FC = () => {
               />
 
               <Controller
-                name="expressPrice"
+                name='expressPrice'
                 control={control}
                 rules={{
                   required: 'Express price is required',
@@ -698,8 +702,8 @@ const LaundryServiceItems: React.FC = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Express Price (SAR)"
-                    type="number"
+                    label='Express Price (SAR)'
+                    type='number'
                     fullWidth
                     inputProps={{ step: '0.01', min: '0.01' }}
                     error={!!errors.expressPrice}
@@ -709,7 +713,7 @@ const LaundryServiceItems: React.FC = () => {
               />
 
               <Controller
-                name="categoryId"
+                name='categoryId'
                 control={control}
                 rules={{ required: 'Category is required' }}
                 render={({ field }) => (
@@ -719,18 +723,22 @@ const LaundryServiceItems: React.FC = () => {
                       value={field.value}
                       onChange={field.onChange}
                       onBlur={field.onBlur}
-                      label="Category *"
+                      label='Category *'
                     >
                       {categories?.data?.map((category: Category) => (
                         <MenuItem key={category.id} value={category.id}>
-                          <Stack direction="row" alignItems="center" spacing={1}>
+                          <Stack
+                            direction='row'
+                            alignItems='center'
+                            spacing={1}
+                          >
                             {category.icon?.media?.path && (
                               <Avatar
                                 src={category.icon.media.path}
                                 sx={{ width: 20, height: 20 }}
-                                variant="rounded"
+                                variant='rounded'
                               >
-                                <ImageOutlined fontSize="small" />
+                                <ImageOutlined fontSize='small' />
                               </Avatar>
                             )}
                             <Typography>{category.nameLocale.en}</Typography>
@@ -739,7 +747,9 @@ const LaundryServiceItems: React.FC = () => {
                       ))}
                     </Select>
                     {errors.categoryId && (
-                      <FormHelperText>{errors.categoryId.message}</FormHelperText>
+                      <FormHelperText>
+                        {errors.categoryId.message}
+                      </FormHelperText>
                     )}
                     {!categories?.data?.length && (
                       <FormHelperText>
@@ -754,8 +764,8 @@ const LaundryServiceItems: React.FC = () => {
           <DialogActions>
             <Button onClick={handleCloseDialog}>Cancel</Button>
             <Button
-              type="submit"
-              variant="contained"
+              type='submit'
+              variant='contained'
               disabled={!categories?.data?.length || isSubmitting}
             >
               {isSubmitting
