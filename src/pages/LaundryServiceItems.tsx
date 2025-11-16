@@ -60,7 +60,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   useFetchLaundryById,
-  useFetchLaundryServiceItems,
+  useFetchLaundryServiceItemsByCategory,
   useFetchCategories,
 } from '../hooks/Admin/query';
 import {
@@ -246,7 +246,7 @@ const LaundryServiceItems: React.FC = () => {
     isLoading,
     error,
     refetch,
-  } = useFetchLaundryServiceItems(laundryId!, serviceId!);
+  } = useFetchLaundryServiceItemsByCategory(laundryId!, serviceId!, categoryId!);
   const { data: categories } = useFetchCategories();
   const { mutateAsync: createItem } = useCreateLaundryServiceItem();
   const { mutateAsync: editItem } = useEditLaundryServiceItem();
