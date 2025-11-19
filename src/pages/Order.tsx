@@ -93,10 +93,10 @@ const Order = () => {
     [navigate]
   );
 
-  // NEW: Navigate to regular order details for tracking
+  // Navigate to full order details page
   const handleOrderClick = useCallback(
     (orderId: string) => {
-      navigate(`/regular-order/${orderId}`);
+      navigate(`/order-details/${orderId}`);
     },
     [navigate]
   );
