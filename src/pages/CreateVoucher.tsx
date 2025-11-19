@@ -41,9 +41,7 @@ interface FormDataInterface {
   startDate?: Dayjs;
 }
 
-type SchemaOf<T> = yup.ObjectSchema<T>;
-
-const schema: SchemaOf<FormDataInterface> = yup
+const schema = yup
   .object({
     code: yup.string().required('Coupon Code is required'),
     nameLocale: yup
@@ -144,7 +142,7 @@ const CreateVoucher = () => {
     watch,
     formState: { errors },
   } = useForm<FormDataInterface>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(schema) as any,
     defaultValues: {
       code: '',
       nameLocale: { en: '', ar: '' },
