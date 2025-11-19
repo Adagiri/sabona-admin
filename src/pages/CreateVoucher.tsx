@@ -23,7 +23,6 @@ import { DISCOUNT_TYPE } from '../hooks/Admin/interface';
 import { useCreateCoupon } from '../hooks/Admin/mutation';
 import { useNavigate } from 'react-router-dom';
 import TranslationFields from '../components/TranslationFields';
-
 interface FormDataInterface {
   code: string;
   nameLocale: {
@@ -32,16 +31,17 @@ interface FormDataInterface {
   };
   type: DISCOUNT_TYPE;
   discount: number;
+  // maxDiscount?: number;
   maxDiscount?: number | null;
   minOrderAmount?: number;
   expiryDate: Dayjs;
+  // usageLimit?: number | any;
   usageLimit?: number | null;
   singleUse: boolean;
   isActive: boolean;
   startDate?: Dayjs;
 }
-
-const schema = yup
+const schema: any = yup
   .object({
     code: yup.string().required('Coupon Code is required'),
     nameLocale: yup
@@ -51,12 +51,10 @@ const schema = yup
       })
       // TS/Yup generic mismatch for nested objects is common; cast to any to satisfy compiler
       .required() as any,
-
     type: yup
       .mixed<DISCOUNT_TYPE>()
       .oneOf([DISCOUNT_TYPE.PERCENTAGE, DISCOUNT_TYPE.FIXED])
       .required() as any,
-
     discount: yup
       .number()
       .typeError('Discount must be a number')
@@ -67,14 +65,12 @@ const schema = yup
         then: (s: any) =>
           s.max(100, 'Discount value must not be greater than 100'),
       }) as any,
-
     maxDiscount: yup
       .number()
       .nullable()
       .transform((value, originalValue) =>
         originalValue === '' || originalValue === null ? null : value
       ),
-
     minOrderAmount: yup
       .number()
       .nullable()
@@ -86,7 +82,6 @@ const schema = yup
         then: (s: any) => s.required('Min Order Amount is required'),
         otherwise: (s: any) => s,
       }) as any,
-
     expiryDate: yup
       .mixed<Dayjs>()
       .nullable()
@@ -94,17 +89,14 @@ const schema = yup
       .test('is-future', 'Expiry Date must be in the future', (value) => {
         return value ? (value as Dayjs).isAfter(dayjs()) : false;
       }) as any,
-
     usageLimit: yup
       .number()
       .nullable()
       .transform((value, originalValue) =>
         originalValue === '' || originalValue === null ? null : value
       ),
-
     singleUse: yup.boolean().required(),
     isActive: yup.boolean().required(),
-
     startDate: yup
       .mixed<Dayjs>()
       .nullable()
@@ -131,7 +123,6 @@ const schema = yup
       ) as any,
   })
   .required();
-
 const CreateVoucher = () => {
   const { mutateAsync: createCoupon, isPending: isCreatingCoupon } =
     useCreateCoupon();
@@ -157,31 +148,35 @@ const CreateVoucher = () => {
       // startDate: dayjs(),
     },
   });
-
   const watchType = watch('type');
   const watchIsActive = watch('isActive');
-
   console.log('errors', errors);
-
   const onSubmit = useCallback(
     async (data: FormDataInterface) => {
-      const payload = {
-        code: data.code,
-        nameLocale: data.nameLocale,
-        type: data.type,
-        discount: data.discount,
-        ...(data.maxDiscount !== null && data.maxDiscount !== undefined && { maxDiscount: data.maxDiscount }),
-        ...(data.minOrderAmount !== null && data.minOrderAmount !== undefined && { minOrderAmount: data.minOrderAmount }),
-        ...(data.usageLimit !== null && data.usageLimit !== undefined && { usageLimit: data.usageLimit }),
-        singleUse: data.singleUse,
-        isActive: data.isActive,
-        startDate: data.isActive
-          ? dayjs().toISOString()
-          : data.startDate?.toISOString(),
-        expiryDate: data.expiryDate.toISOString(),
-      };
+      console.log(typeof data)
+      // const payload = {
+      //   ...data,
+      //   code: data.code,
+      //   nameLocale: data.nameLocale,
+      //   type: data.type,
+      //   discount: data.discount,
+      //   ...(data.maxDiscount !== null &&
+      //     data.maxDiscount !== undefined && { maxDiscount: data.maxDiscount }),
+      //   ...(data.minOrderAmount !== null &&
+      //     data.minOrderAmount !== undefined && {
+      //       minOrderAmount: data.minOrderAmount,
+      //     }),
+      //   ...(data.usageLimit !== null &&
+      //     data.usageLimit !== undefined && { usageLimit: data.usageLimit }),
+      //   singleUse: data.singleUse,
+      //   isActive: data.isActive,
+      //   startDate: data.isActive
+      //     ? dayjs().toISOString()
+      //     : data.startDate?.toISOString(),
+      //   expiryDate: data.expiryDate.toISOString(),
+      // };
       try {
-        await createCoupon(payload);
+        // await createCoupon();
         navigate('/voucher');
       } catch (e: any) {
         console.log('catch error', e);
@@ -190,11 +185,9 @@ const CreateVoucher = () => {
     },
     [createCoupon, toast, navigate]
   );
-
   const showError = (message: string) => {
     toast.error(message);
   };
-
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box pb={10}>
@@ -219,7 +212,6 @@ const CreateVoucher = () => {
                   />
                 )}
               />
-
               {/* Coupon Name */}
               <TranslationFields
                 control={control}
@@ -228,7 +220,6 @@ const CreateVoucher = () => {
                 errors={errors}
                 required={true}
               />
-
               {/* Discount Type */}
               <Controller
                 name='type'
@@ -249,7 +240,6 @@ const CreateVoucher = () => {
                   </TextField>
                 )}
               />
-
               {/* Discount Value */}
               <Controller
                 name='discount'
@@ -295,7 +285,6 @@ const CreateVoucher = () => {
                   </Box>
                 )}
               />
-
               {/* Max Discount for Percentage */}
               {watchType === DISCOUNT_TYPE.PERCENTAGE && (
                 <Controller
@@ -313,7 +302,6 @@ const CreateVoucher = () => {
                   )}
                 />
               )}
-
               {/* Min Order Amount for Fixed */}
               {watchType === DISCOUNT_TYPE.FIXED && (
                 <Controller
@@ -331,7 +319,6 @@ const CreateVoucher = () => {
                   )}
                 />
               )}
-
               {/* Usage Limit */}
               <Controller
                 name='usageLimit'
@@ -351,7 +338,6 @@ const CreateVoucher = () => {
                   />
                 )}
               />
-
               {/* Expiry Date */}
               <Controller
                 name='expiryDate'
@@ -372,7 +358,6 @@ const CreateVoucher = () => {
                   </>
                 )}
               />
-
               {/* Start Date (Optional) */}
               {!watchIsActive && (
                 <Controller
@@ -395,7 +380,6 @@ const CreateVoucher = () => {
                   )}
                 />
               )}
-
               {/* Single Use & Active */}
               <Box display={'flex'} justifyContent={'center'}>
                 <Controller
@@ -419,7 +403,6 @@ const CreateVoucher = () => {
                   )}
                 />
               </Box>
-
               <Button variant='contained' type='submit'>
                 {isCreatingCoupon ? (
                   <CircularProgress color='primary' />
@@ -434,5 +417,4 @@ const CreateVoucher = () => {
     </LocalizationProvider>
   );
 };
-
 export default CreateVoucher;
