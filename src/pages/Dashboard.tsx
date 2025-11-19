@@ -14,7 +14,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   LinearProgress,
 } from '@mui/material';
 import {
@@ -284,7 +283,7 @@ const Dashboard: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={({ status, count }) => `${status}: ${count}`}
+                      label={({ status, count }: any) => `${status}: ${count}`}
                     >
                       {metrics.orderStatusDistribution.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
