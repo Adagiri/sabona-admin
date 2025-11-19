@@ -591,6 +591,8 @@ export interface UpdateAdminSettingsRequest {
   freeDeliveryThreshold?: number;
   expressMultiplier?: number;
   maxDeliveryDistance?: number;
+  transferChargeType?: string;
+  transferChargeRate?: number;
 }
 
 export const useUpdateAdminSettings = () => {

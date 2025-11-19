@@ -51,7 +51,6 @@ import {
   Edit,
   LocalLaundryService,
   StarRate,
-  ContentCopy,
 } from '@mui/icons-material';
 import { useFetchOrderDetails } from '../hooks/Admin/query';
 import { toast } from 'react-toastify';
@@ -108,13 +107,6 @@ const OrderDetails: React.FC = () => {
     refetch();
     toast.success('Order details refreshed');
   }, [refetch]);
-
-  const handleCopyOrderId = useCallback(() => {
-    if (orderDetails?.id) {
-      navigator.clipboard.writeText(orderDetails.id);
-      toast.success('Order number copied to clipboard');
-    }
-  }, [orderDetails?.id]);
 
   const handleSaveNotes = useCallback(() => {
     // TODO: Implement API call to save admin notes
@@ -285,45 +277,10 @@ const OrderDetails: React.FC = () => {
               <Typography variant='h6' gutterBottom>
                 Order Summary
               </Typography>
-
-              {/* Prominent Order Number Display */}
-              <Box
-                display='flex'
-                alignItems='center'
-                gap={1}
-                mb={2}
-                sx={{
-                  bgcolor: 'grey.100',
-                  p: 1.5,
-                  borderRadius: 1,
-                  cursor: 'pointer',
-                  '&:hover': { bgcolor: 'grey.200' },
-                }}
-                width="220px"
-                onClick={handleCopyOrderId}
-                title='Click to copy'
-              >
-                <Typography variant='body2' color='text.secondary'>
-                  Order Number:
-                </Typography>
-                <Typography
-                  variant='body1'
-                  fontWeight='bold'
-                  sx={{ fontFamily: 'monospace' }}
-                >
-                  {orderDetails.orderNumber}
-                </Typography>
-                <ContentCopy
-                  fontSize='small'
-                  color='action'
-                  sx={{ ml: 'auto' }}
-                />
-              </Box>
-
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6} md={3}>
                   <Typography variant='body2' color='text.secondary'>
-                    Order ID (Short)
+                    Order ID
                   </Typography>
                   <Typography variant='body1' fontWeight='bold'>
                     #{orderDetails.id.slice(-8)}
@@ -461,16 +418,12 @@ const OrderDetails: React.FC = () => {
                           <TableRow key={`${service.id}-${itemIndex}`}>
                             <TableCell>
                               <Typography variant='body2' fontWeight='medium'>
-                                {item.serviceName ||
-                                  service.laundryService?.name ||
-                                  'Service'}
+                                {item.serviceName || service.laundryService?.name || 'Service'}
                               </Typography>
                             </TableCell>
                             <TableCell>
                               <Typography variant='body2'>
-                                {item.itemName ||
-                                  item.laundryServiceItem?.name ||
-                                  'Item'}
+                                {item.itemName || item.laundryServiceItem?.name || 'Item'}
                               </Typography>
                             </TableCell>
                             <TableCell align='center'>
@@ -484,10 +437,7 @@ const OrderDetails: React.FC = () => {
                               </Typography>
                             </TableCell>
                             <TableCell align='right'>
-                              <Typography
-                                variant='body2'
-                                color='text.secondary'
-                              >
+                              <Typography variant='body2' color='text.secondary'>
                                 {formatCurrency(vendorPrice)}
                               </Typography>
                             </TableCell>
