@@ -154,6 +154,23 @@ const OrderDetails: React.FC = () => {
 
   const formatCurrency = (amount: number) => `${amount.toFixed(2)} SAR`;
 
+  // Helper function to get the correct price based on delivery type
+  const getItemPrice = (item: any) => {
+    // Use snapshot values (price at time of purchase)
+    if (orderDetails?.deliveryType === 'EXPRESS') {
+      return item.expressPlatformPriceSnapshot || item.platformPriceSnapshot || 0;
+    }
+    return item.platformPriceSnapshot || 0;
+  };
+
+  // Helper function to get vendor price based on delivery type
+  const getVendorPrice = (item: any) => {
+    if (orderDetails?.deliveryType === 'EXPRESS') {
+      return item.expressVendorPriceSnapshot || item.vendorPriceSnapshot || 0;
+    }
+    return item.vendorPriceSnapshot || 0;
+  };
+
   const getOrderWorkflowSteps = () => [
     {
       label: 'Order Placed',
@@ -371,6 +388,14 @@ const OrderDetails: React.FC = () => {
             <CardContent>
               <Typography variant='h6' gutterBottom>
                 Order Items
+                {orderDetails.deliveryType === 'EXPRESS' && (
+                  <Chip
+                    label='Express Pricing'
+                    size='small'
+                    color='error'
+                    sx={{ ml: 1 }}
+                  />
+                )}
               </Typography>
               <TableContainer>
                 <Table>
@@ -380,48 +405,53 @@ const OrderDetails: React.FC = () => {
                       <TableCell>Item</TableCell>
                       <TableCell align='center'>Quantity</TableCell>
                       <TableCell align='right'>Unit Price</TableCell>
+                      <TableCell align='right'>Vendor Gets</TableCell>
                       <TableCell align='right'>Total</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {orderDetails.services?.map((service: any) =>
-                      service.items?.map((item: any, itemIndex: number) => (
-                        <TableRow key={`${service.id}-${itemIndex}`}>
-                          <TableCell>
-                            <Typography variant='body2' fontWeight='medium'>
-                              {service.laundryService?.name || 'Service'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant='body2'>
-                              {item.laundryServiceItem?.name || 'Item'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align='center'>
-                            <Typography variant='body2' fontWeight='bold'>
-                              {item.quantity}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align='right'>
-                            <Typography variant='body2'>
-                              {formatCurrency(
-                                item.laundryServiceItem?.platformPrice || 0
-                              )}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align='right'>
-                            <Typography variant='body2' fontWeight='bold'>
-                              {formatCurrency(
-                                (item.laundryServiceItem?.platformPrice || 0) *
-                                  item.quantity
-                              )}
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      service.items?.map((item: any, itemIndex: number) => {
+                        const unitPrice = getItemPrice(item);
+                        const vendorPrice = getVendorPrice(item);
+                        return (
+                          <TableRow key={`${service.id}-${itemIndex}`}>
+                            <TableCell>
+                              <Typography variant='body2' fontWeight='medium'>
+                                {item.serviceName || service.laundryService?.name || 'Service'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant='body2'>
+                                {item.itemName || item.laundryServiceItem?.name || 'Item'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align='center'>
+                              <Typography variant='body2' fontWeight='bold'>
+                                {item.quantity}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align='right'>
+                              <Typography variant='body2'>
+                                {formatCurrency(unitPrice)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align='right'>
+                              <Typography variant='body2' color='text.secondary'>
+                                {formatCurrency(vendorPrice)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align='right'>
+                              <Typography variant='body2' fontWeight='bold'>
+                                {formatCurrency(unitPrice * item.quantity)}
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                     <TableRow>
-                      <TableCell colSpan={4}>
+                      <TableCell colSpan={5}>
                         <Typography variant='body1' fontWeight='bold'>
                           Total Amount
                         </Typography>
