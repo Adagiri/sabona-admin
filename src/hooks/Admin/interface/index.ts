@@ -1,82 +1,78 @@
 export enum USER_TYPES {
-    USER = "USER",
-    VENDOR = "VENDOR",
-    RIDER = "RIDER",
-    ADMIN = "ADMIN"
+  USER = 'USER',
+  VENDOR = 'VENDOR',
+  RIDER = 'RIDER',
+  ADMIN = 'ADMIN',
 }
 export interface FetchUsersParams {
-    type: keyof typeof USER_TYPES;
-    page?: number;
-    limit?: number;
-    column?: string;
-    direction?: "ASC" | "DESC";
-    dateFilter?: keyof Filter;
+  type: keyof typeof USER_TYPES;
+  page?: number;
+  limit?: number;
+  column?: string;
+  direction?: 'ASC' | 'DESC';
+  dateFilter?: keyof Filter;
 }
 
 export enum USER_TYPES_APPLICATIONS {
-    VENDOR = "VENDOR",
-    RIDER = "RIDER",
+  VENDOR = 'VENDOR',
+  RIDER = 'RIDER',
 }
 
 export interface FetchApplicationsParams {
-    type: keyof typeof USER_TYPES_APPLICATIONS;
-    page?: number;
-    limit?: number;
-    column?: string;
-    direction?: "ASC" | "DESC";
+  type: keyof typeof USER_TYPES_APPLICATIONS;
+  page?: number;
+  limit?: number;
+  column?: string;
+  direction?: 'ASC' | 'DESC';
 }
 
 export type Filter = {
-    Today: string,
-    ByWeek: string,
-    ByMonth: string,
-    BySixMonths: string,
-    ByYear: string,
-}
+  Today: string;
+  ByWeek: string;
+  ByMonth: string;
+  BySixMonths: string;
+  ByYear: string;
+};
 
 export enum ORDER_STATUSES {
-    PENDING = 'PENDING',
-    ACCEPTED = 'ACCEPTED',
-    REJECTED = 'REJECTED',
-    CANCELLED = 'CANCELLED',
-    IN_PROGRESS = 'IN_PROGRESS',
-    READY_FOR_PICKUP = 'READY_FOR_PICKUP',
-    COMPLETED = 'COMPLETED',
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  READY_FOR_PICKUP = 'READY_FOR_PICKUP',
+  COMPLETED = 'COMPLETED',
 }
 
 export const ORDER_STATUSES_ARRAY = [
-    { value: ORDER_STATUSES.PENDING, status: "PENDING" },
-    { value: ORDER_STATUSES.ACCEPTED, status: "ACCEPTED" },
-    // {value: ORDER_STATUSES.REJECTED, status: "REJECTED"},
-    { value: ORDER_STATUSES.CANCELLED, status: "CANCELLED" },
-    { value: ORDER_STATUSES.IN_PROGRESS, status: "IN PROGRESS" },
-    { value: ORDER_STATUSES.READY_FOR_PICKUP, status: "READY FOR PICKUP" },
-    { value: ORDER_STATUSES.COMPLETED, status: "COMPLETED" },
-
-]
+  { value: ORDER_STATUSES.PENDING, status: 'PENDING' },
+  { value: ORDER_STATUSES.ACCEPTED, status: 'ACCEPTED' },
+  // {value: ORDER_STATUSES.REJECTED, status: "REJECTED"},
+  { value: ORDER_STATUSES.CANCELLED, status: 'CANCELLED' },
+  { value: ORDER_STATUSES.IN_PROGRESS, status: 'IN PROGRESS' },
+  { value: ORDER_STATUSES.READY_FOR_PICKUP, status: 'READY FOR PICKUP' },
+  { value: ORDER_STATUSES.COMPLETED, status: 'COMPLETED' },
+];
 
 export interface FetchOrdersParams {
   page?: number;
   limit?: number;
   column?: string;
   direction?: 'ASC' | 'DESC';
-  type?: keyof typeof ORDER_STATUSES | null; 
-  orderType?: 'REGISTERED_LAUNDRY' | 'CUSTOM_LAUNDRY'; 
+  type?: keyof typeof ORDER_STATUSES | null;
+  orderType?: 'REGISTERED_LAUNDRY' | 'CUSTOM_LAUNDRY';
 }
 
 export const STATUSES = {
-    ACTIVE: "ACTIVE",
-    INACTIVE: "INACTIVE"
-}
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+};
 
 export enum LEVELS {
-    BASIC = "BASIC",
-    LOYAL = "LOYAL",
-    ELITE = "ELITE",
+  BASIC = 'BASIC',
+  LOYAL = 'LOYAL',
+  ELITE = 'ELITE',
 }
-
-
-
 
 // export type MediaFile = {
 //     id: number;
@@ -85,88 +81,87 @@ export enum LEVELS {
 // }
 
 export type UserResponse = {
-    data: User[],
-    count: number,
-}
+  data: User[];
+  count: number;
+};
 
 export interface UploadImage {
-    name: string;
-    size: number;
-    type: string;
-    public: boolean;
+  name: string;
+  size: number;
+  type: string;
+  public: boolean;
 }
 
 export interface MediaId {
-    id: number;
+  id: number;
 }
 
 export type UserCredentials = {
-    phone: string,
-    password: string
-}
+  phone: string;
+  password: string;
+};
 
 export type UserLoginResponse = {
-    token: string
-}
+  token: string;
+};
 
 export type Vendor = {
-    phone: string
-}
+  phone: string;
+};
 
 export type Laundry = {
-    name: string,
-    vendor: Vendor,
-}
+  name: string;
+  vendor: Vendor;
+};
 
 export type pickup = {
-    rider: rider
-    pickupAddress: string,
-    pickupLat: string,
-    pickupLong: string,
-
-}
+  rider: rider;
+  pickupAddress: string;
+  pickupLat: string;
+  pickupLong: string;
+};
 
 type rider = {
-    firstName: string,
-    lastName: string,
-    phone: string,
-}
+  firstName: string;
+  lastName: string;
+  phone: string;
+};
 
 export type Order = {
-    id: string,
-    status: keyof typeof ORDER_STATUSES;
-    user: User,
-    totalAmount: number,
-    totalQuantity: number,
-    laundry: Laundry,
-    pickup: pickup,
-    delivery: {
-        rider: rider
-    },
-    coupon?: {
-        code: string;
-        id: string;
-    }
-}
+  id: string;
+  status: keyof typeof ORDER_STATUSES;
+  user: User;
+  totalAmount: number;
+  totalQuantity: number;
+  laundry: Laundry;
+  pickup: pickup;
+  delivery: {
+    rider: rider;
+  };
+  coupon?: {
+    code: string;
+    id: string;
+  };
+};
 
 export type OrdersResponse = {
-    data: Order[],
-    count: number
-}
+  data: Order[];
+  count: number;
+};
 
 type userSettingCorrds = {
-    lat: number,
-    long: number
-}
+  lat: number;
+  long: number;
+};
 
 type coords = {
-    id: string;
-    settings: userSettingCorrds,
-}
+  id: string;
+  settings: userSettingCorrds;
+};
 
 export type UserCoords = {
-    data: coords[]
-}
+  data: coords[];
+};
 
 export interface OrderDetails {
   // Basic order info
@@ -177,7 +172,7 @@ export interface OrderDetails {
   createdAt: string; // Add this for order date
   updatedAt: string; // Add this for last update
   deliveryType?: string;
-
+  orderNumber: number;
   // Customer information
   user: {
     id: string;
@@ -294,39 +289,38 @@ export interface OrderDetails {
 }
 
 export enum TIP_TYPE {
-    RIDER_PICKUP=  "RIDER_PICKUP",
-    RIDER_DELIVERY= "RIDER_DELIVERY"
+  RIDER_PICKUP = 'RIDER_PICKUP',
+  RIDER_DELIVERY = 'RIDER_DELIVERY',
 }
 
 export enum DISCOUNT_TYPE {
-    FIXED = "FIXED",
-    PERCENTAGE = "PERCENTAGE"
-
+  FIXED = 'FIXED',
+  PERCENTAGE = 'PERCENTAGE',
 }
 export interface CreateCouponRequest {
-    code : string;
-    nameLocale : {en: string, ar: string};
-    type: DISCOUNT_TYPE;
-    discount : number;
-    maxDiscount?: number;
-    minOrderAmount?:number;
-    expiryDate:string;
-    usageLimit?: number;
-    singleUse: boolean;
-    isActive:boolean;
-    startDate?:string
+  code: string;
+  nameLocale: { en: string; ar: string };
+  type: DISCOUNT_TYPE;
+  discount: number;
+  maxDiscount?: number;
+  minOrderAmount?: number;
+  expiryDate: string;
+  usageLimit?: number;
+  singleUse: boolean;
+  isActive: boolean;
+  startDate?: string;
 }
 
 export interface FetchCouponParams {
-    page: number;
-    limit: number;
-    column?: string;
-    direction?: "ASC" | "DESC";
+  page: number;
+  limit: number;
+  column?: string;
+  direction?: 'ASC' | 'DESC';
 }
 
 export interface getRiderTipsParams {
-    startDate: string;
-    endDate: string;
+  startDate: string;
+  endDate: string;
 }
 
 // Based on your Prisma schema and backend responses
@@ -346,7 +340,7 @@ export interface Media {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
-//   user?: UserData;
+  //   user?: UserData;
 }
 
 // Enums from your Prisma schema
@@ -355,18 +349,18 @@ export enum MediaType {
   VIDEO = 'VIDEO',
   DOCUMENT = 'DOCUMENT',
   ARCHIVE = 'ARCHIVE',
-  OTHER = 'OTHER'
+  OTHER = 'OTHER',
 }
 
 export enum MediaAccess {
   PUBLIC = 'PUBLIC',
-  PRIVATE = 'PRIVATE'
+  PRIVATE = 'PRIVATE',
 }
 
 export enum MediaStatus {
   UPLOADING = 'UPLOADING',
   READY = 'READY',
-  STALE = 'STALE'
+  STALE = 'STALE',
 }
 
 // Simplified version for lists (what you currently have)
@@ -374,7 +368,7 @@ export type MediaFile = {
   id: number;
   location: string;
   status: string;
-}
+};
 
 export type User = {
   id: string;
