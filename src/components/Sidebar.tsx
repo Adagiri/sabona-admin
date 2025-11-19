@@ -31,6 +31,8 @@ import {
   PersonOutline,
   AttachMoney,
   SettingsApplications,
+  Dashboard,
+  Assessment,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -48,7 +50,8 @@ interface MenuSection {
 
 const menuStructure: (MenuItem | MenuSection)[] = [
   // Top-level items
-  { text: 'Dashboard', icon: <Home />, route: '/' },
+  { text: 'Home', icon: <Home />, route: '/' },
+  { text: 'Dashboard', icon: <Dashboard />, route: '/dashboard' },
 
   // Orders Section
   {
@@ -87,6 +90,7 @@ const menuStructure: (MenuItem | MenuSection)[] = [
     section: 'Finance',
     icon: <AttachMoney />,
     items: [
+      { text: 'Finance Overview', icon: <Assessment />, route: '/finance' },
       { text: 'Vouchers', icon: <Discount />, route: '/voucher' },
       { text: 'Tips', icon: <Paid />, route: '/tip' },
       { text: 'Pre-Withdrawals', icon: <PendingActions />, route: '/pre-withdrawals' },

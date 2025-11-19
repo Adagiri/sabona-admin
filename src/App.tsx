@@ -35,6 +35,8 @@ import Categories from './pages/Categories';
 import EditLaundry from './pages/EditLaundry';
 import Icons from './pages/Icons';
 import AdminSettings from './pages/AdminSettings';
+import Dashboard from './pages/Dashboard';
+import Finance from './pages/Finance';
 
 // Import custom orders management page
 import CustomOrders from './pages/CustomOrders';
@@ -80,6 +82,8 @@ const AppContent: React.FC = () => {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path='/' element={<Home />} />
+            <Route path='/dashboard' element={<Dashboard />} />
+            <Route path='/finance' element={<Finance />} />
             <Route path='/customers' element={<Customer />} />
             <Route path='/customer/:customerId' element={<CustomerDetails />} />
             <Route path='/vendor/:pageNumber?' element={<Vendor />} />

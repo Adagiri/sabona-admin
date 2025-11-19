@@ -24,6 +24,7 @@ import {
   AttachMoney,
   LocalShipping,
   Receipt,
+  SwapHoriz,
 } from '@mui/icons-material';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { toast, ToastContainer } from 'react-toastify';
@@ -55,13 +56,21 @@ const AdminSettings: React.FC = () => {
       freeDeliveryThreshold: 100.0,
       expressMultiplier: 2.0,
       maxDeliveryDistance: 50.0,
+      transferChargeType: 'PERCENTAGE',
+      transferChargeRate: 1.0,
     },
   });
 
-  // Watch service charge type for dynamic input labels
+  // Watch charge types for dynamic input labels
   const serviceChargeType = useWatch({
     control,
     name: 'serviceChargeType',
+    defaultValue: 'PERCENTAGE',
+  });
+
+  const transferChargeType = useWatch({
+    control,
+    name: 'transferChargeType',
     defaultValue: 'PERCENTAGE',
   });
 
@@ -73,13 +82,14 @@ const AdminSettings: React.FC = () => {
         vatEnabled: settings.data.vatEnabled,
         serviceChargeType: settings.data.serviceChargeType,
         serviceChargeRate: settings.data.serviceChargeRate,
-        customOrderServiceChargeRate:
-          settings.data.customOrderServiceChargeRate,
+        customOrderServiceChargeRate: settings.data.customOrderServiceChargeRate,
         deliveryBaseRate: settings.data.deliveryBaseRate,
         deliveryPerKmRate: settings.data.deliveryPerKmRate,
         freeDeliveryThreshold: settings.data.freeDeliveryThreshold,
         expressMultiplier: settings.data.expressMultiplier,
         maxDeliveryDistance: settings.data.maxDeliveryDistance,
+        transferChargeType: settings.data.transferChargeType || 'PERCENTAGE',
+        transferChargeRate: settings.data.transferChargeRate || 1.0,
       });
     }
   }, [settings, reset]);
@@ -96,12 +106,7 @@ const AdminSettings: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Box
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-        height='400px'
-      >
+      <Box display='flex' justifyContent='center' alignItems='center' height='400px'>
         <CircularProgress />
       </Box>
     );
@@ -148,13 +153,7 @@ const AdminSettings: React.FC = () => {
                       control={control}
                       render={({ field }) => (
                         <FormControlLabel
-                          control={
-                            <Switch
-                              {...field}
-                              checked={field.value}
-                              color='primary'
-                            />
-                          }
+                          control={<Switch {...field} checked={field.value} color='primary' />}
                           label='Enable VAT'
                         />
                       )}
@@ -178,18 +177,11 @@ const AdminSettings: React.FC = () => {
                           type='number'
                           inputProps={{ step: 0.01, min: 0, max: 1 }}
                           InputProps={{
-                            endAdornment: (
-                              <InputAdornment position='end'>%</InputAdornment>
-                            ),
+                            endAdornment: <InputAdornment position='end'>%</InputAdornment>,
                           }}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           error={!!errors.vatRate}
-                          helperText={
-                            errors.vatRate?.message ||
-                            'Enter as decimal (0.15 = 15%)'
-                          }
+                          helperText={errors.vatRate?.message || 'Enter as decimal (0.15 = 15%)'}
                         />
                       )}
                     />
@@ -218,16 +210,8 @@ const AdminSettings: React.FC = () => {
                         <FormControl>
                           <FormLabel>Service Charge Type</FormLabel>
                           <RadioGroup {...field} row>
-                            <FormControlLabel
-                              value='PERCENTAGE'
-                              control={<Radio />}
-                              label='Percentage'
-                            />
-                            <FormControlLabel
-                              value='FIXED'
-                              control={<Radio />}
-                              label='Fixed Amount'
-                            />
+                            <FormControlLabel value='PERCENTAGE' control={<Radio />} label='Percentage' />
+                            <FormControlLabel value='FIXED' control={<Radio />} label='Fixed Amount' />
                           </RadioGroup>
                         </FormControl>
                       )}
@@ -252,15 +236,11 @@ const AdminSettings: React.FC = () => {
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position='end'>
-                                {serviceChargeType === 'PERCENTAGE'
-                                  ? '%'
-                                  : 'SAR'}
+                                {serviceChargeType === 'PERCENTAGE' ? '%' : 'SAR'}
                               </InputAdornment>
                             ),
                           }}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           error={!!errors.serviceChargeRate}
                           helperText={errors.serviceChargeRate?.message}
                         />
@@ -286,18 +266,76 @@ const AdminSettings: React.FC = () => {
                           InputProps={{
                             endAdornment: (
                               <InputAdornment position='end'>
-                                {serviceChargeType === 'PERCENTAGE'
-                                  ? '%'
-                                  : 'SAR'}
+                                {serviceChargeType === 'PERCENTAGE' ? '%' : 'SAR'}
                               </InputAdornment>
                             ),
                           }}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           error={!!errors.customOrderServiceChargeRate}
+                          helperText={errors.customOrderServiceChargeRate?.message}
+                        />
+                      )}
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Transfer Charge Configuration */}
+          <Grid item xs={12}>
+            <Card elevation={3}>
+              <CardContent>
+                <Typography variant='h6' gutterBottom>
+                  <SwapHoriz sx={{ mr: 1, verticalAlign: 'middle' }} />
+                  Transfer Charges (Withdrawal Fee)
+                </Typography>
+                <Divider sx={{ mb: 3 }} />
+
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <Controller
+                      name='transferChargeType'
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl>
+                          <FormLabel>Transfer Charge Type</FormLabel>
+                          <RadioGroup {...field} row>
+                            <FormControlLabel value='PERCENTAGE' control={<Radio />} label='Percentage' />
+                            <FormControlLabel value='FIXED' control={<Radio />} label='Fixed Amount' />
+                          </RadioGroup>
+                        </FormControl>
+                      )}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Controller
+                      name='transferChargeRate'
+                      control={control}
+                      rules={{
+                        required: 'Transfer charge rate is required',
+                        min: { value: 0, message: 'Rate must be positive' },
+                      }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          fullWidth
+                          label='Transfer Charge Rate'
+                          type='number'
+                          inputProps={{ step: 0.01, min: 0 }}
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position='end'>
+                                {transferChargeType === 'PERCENTAGE' ? '%' : 'SAR'}
+                              </InputAdornment>
+                            ),
+                          }}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          error={!!errors.transferChargeRate}
                           helperText={
-                            errors.customOrderServiceChargeRate?.message
+                            errors.transferChargeRate?.message ||
+                            'Fee deducted from vendor earnings during withdrawal'
                           }
                         />
                       )}
@@ -335,15 +373,9 @@ const AdminSettings: React.FC = () => {
                           type='number'
                           inputProps={{ step: 0.01, min: 0 }}
                           InputProps={{
-                            endAdornment: (
-                              <InputAdornment position='end'>
-                                SAR
-                              </InputAdornment>
-                            ),
+                            endAdornment: <InputAdornment position='end'>SAR</InputAdornment>,
                           }}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           error={!!errors.deliveryBaseRate}
                           helperText={errors.deliveryBaseRate?.message}
                         />
@@ -367,15 +399,9 @@ const AdminSettings: React.FC = () => {
                           type='number'
                           inputProps={{ step: 0.01, min: 0 }}
                           InputProps={{
-                            endAdornment: (
-                              <InputAdornment position='end'>
-                                SAR/km
-                              </InputAdornment>
-                            ),
+                            endAdornment: <InputAdornment position='end'>SAR/km</InputAdornment>,
                           }}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           error={!!errors.deliveryPerKmRate}
                           helperText={errors.deliveryPerKmRate?.message}
                         />
@@ -399,13 +425,9 @@ const AdminSettings: React.FC = () => {
                           type='number'
                           inputProps={{ step: 0.1, min: 0 }}
                           InputProps={{
-                            endAdornment: (
-                              <InputAdornment position='end'>km</InputAdornment>
-                            ),
+                            endAdornment: <InputAdornment position='end'>km</InputAdornment>,
                           }}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           error={!!errors.maxDeliveryDistance}
                           helperText={errors.maxDeliveryDistance?.message}
                         />
@@ -419,10 +441,7 @@ const AdminSettings: React.FC = () => {
                       control={control}
                       rules={{
                         required: 'Free delivery threshold is required',
-                        min: {
-                          value: 0,
-                          message: 'Threshold must be positive',
-                        },
+                        min: { value: 0, message: 'Threshold must be positive' },
                       }}
                       render={({ field }) => (
                         <TextField
@@ -432,15 +451,9 @@ const AdminSettings: React.FC = () => {
                           type='number'
                           inputProps={{ step: 0.01, min: 0 }}
                           InputProps={{
-                            endAdornment: (
-                              <InputAdornment position='end'>
-                                SAR
-                              </InputAdornment>
-                            ),
+                            endAdornment: <InputAdornment position='end'>SAR</InputAdornment>,
                           }}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 0)
-                          }
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           error={!!errors.freeDeliveryThreshold}
                           helperText={
                             errors.freeDeliveryThreshold?.message ||
@@ -467,17 +480,12 @@ const AdminSettings: React.FC = () => {
                           type='number'
                           inputProps={{ step: 0.1, min: 1 }}
                           InputProps={{
-                            endAdornment: (
-                              <InputAdornment position='end'>x</InputAdornment>
-                            ),
+                            endAdornment: <InputAdornment position='end'>x</InputAdornment>,
                           }}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value) || 1)
-                          }
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
                           error={!!errors.expressMultiplier}
                           helperText={
-                            errors.expressMultiplier?.message ||
-                            'Express delivery cost multiplier'
+                            errors.expressMultiplier?.message || 'Express delivery cost multiplier'
                           }
                         />
                       )}
@@ -492,21 +500,13 @@ const AdminSettings: React.FC = () => {
           <Grid item xs={12}>
             <Card elevation={3}>
               <CardContent>
-                <Box
-                  display='flex'
-                  justifyContent='space-between'
-                  alignItems='center'
-                >
+                <Box display='flex' justifyContent='space-between' alignItems='center'>
                   <Typography variant='body2' color='text.secondary'>
                     {isDirty ? 'You have unsaved changes' : 'All changes saved'}
                   </Typography>
 
                   <Box display='flex' gap={2}>
-                    <Button
-                      variant='outlined'
-                      onClick={() => reset()}
-                      disabled={!isDirty || isUpdating}
-                    >
+                    <Button variant='outlined' onClick={() => reset()} disabled={!isDirty || isUpdating}>
                       Reset
                     </Button>
 
@@ -514,9 +514,7 @@ const AdminSettings: React.FC = () => {
                       type='submit'
                       variant='contained'
                       disabled={!isDirty || isUpdating}
-                      startIcon={
-                        isUpdating ? <CircularProgress size={20} /> : <Save />
-                      }
+                      startIcon={isUpdating ? <CircularProgress size={20} /> : <Save />}
                     >
                       {isUpdating ? 'Saving...' : 'Save Settings'}
                     </Button>
@@ -540,6 +538,8 @@ const AdminSettings: React.FC = () => {
                 3. VAT is applied to (subtotal + service charge + delivery fee)
                 <br />
                 4. Express delivery multiplies the delivery fee only
+                <br />
+                5. Transfer charge is deducted from vendor earnings during withdrawal
               </Typography>
             </Alert>
           </Grid>
