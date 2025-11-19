@@ -297,18 +297,27 @@ const OrderDetails: React.FC = () => {
                   p: 1.5,
                   borderRadius: 1,
                   cursor: 'pointer',
-                  '&:hover': { bgcolor: 'grey.200' }
+                  '&:hover': { bgcolor: 'grey.200' },
                 }}
+                width="220px"
                 onClick={handleCopyOrderId}
                 title='Click to copy'
               >
                 <Typography variant='body2' color='text.secondary'>
                   Order Number:
                 </Typography>
-                <Typography variant='body1' fontWeight='bold' sx={{ fontFamily: 'monospace' }}>
-                  {orderDetails.id}
+                <Typography
+                  variant='body1'
+                  fontWeight='bold'
+                  sx={{ fontFamily: 'monospace' }}
+                >
+                  {orderDetails.orderNumber}
                 </Typography>
-                <ContentCopy fontSize='small' color='action' sx={{ ml: 'auto' }} />
+                <ContentCopy
+                  fontSize='small'
+                  color='action'
+                  sx={{ ml: 'auto' }}
+                />
               </Box>
 
               <Grid container spacing={2}>
@@ -452,12 +461,16 @@ const OrderDetails: React.FC = () => {
                           <TableRow key={`${service.id}-${itemIndex}`}>
                             <TableCell>
                               <Typography variant='body2' fontWeight='medium'>
-                                {item.serviceName || service.laundryService?.name || 'Service'}
+                                {item.serviceName ||
+                                  service.laundryService?.name ||
+                                  'Service'}
                               </Typography>
                             </TableCell>
                             <TableCell>
                               <Typography variant='body2'>
-                                {item.itemName || item.laundryServiceItem?.name || 'Item'}
+                                {item.itemName ||
+                                  item.laundryServiceItem?.name ||
+                                  'Item'}
                               </Typography>
                             </TableCell>
                             <TableCell align='center'>
@@ -471,7 +484,10 @@ const OrderDetails: React.FC = () => {
                               </Typography>
                             </TableCell>
                             <TableCell align='right'>
-                              <Typography variant='body2' color='text.secondary'>
+                              <Typography
+                                variant='body2'
+                                color='text.secondary'
+                              >
                                 {formatCurrency(vendorPrice)}
                               </Typography>
                             </TableCell>
