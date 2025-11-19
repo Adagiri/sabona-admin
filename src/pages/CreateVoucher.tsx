@@ -133,7 +133,7 @@ const CreateVoucher = () => {
     watch,
     formState: { errors },
   } = useForm<FormDataInterface>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(schema) as any,
     defaultValues: {
       code: '',
       nameLocale: { en: '', ar: '' },

@@ -79,7 +79,8 @@ interface ServiceItem {
   };
   vendorPrice: number;
   platformPrice: number;
-  expressPrice: number;
+  expressVendorPrice: number;
+  expressPlatformPrice: number;
   categoryId: string;
   category: {
     id: string;
@@ -124,7 +125,8 @@ interface ItemFormData {
   };
   vendorPrice: number;
   platformPrice: number;
-  expressPrice: number;
+  expressVendorPrice: number;
+  expressPlatformPrice: number;
   categoryId: string;
 }
 
@@ -182,7 +184,12 @@ function SortableItemRow({
       </TableCell>
       <TableCell>
         <Typography variant='body1'>
-          {item.expressPrice.toFixed(2)} SAR
+          {item.expressVendorPrice.toFixed(2)} SAR
+        </Typography>
+      </TableCell>
+      <TableCell>
+        <Typography variant='body1'>
+          {item.expressPlatformPrice.toFixed(2)} SAR
         </Typography>
       </TableCell>
       <TableCell>{new Date(item.createdAt).toLocaleDateString()}</TableCell>
@@ -241,14 +248,8 @@ const LaundryServiceItems: React.FC = () => {
   const { mutateAsync: deleteItem } = useDeleteLaundryServiceItem();
   const { mutateAsync: reorderItems } = useReorderLaundryServiceItems();
 
-  // *** CRITICAL FIX: Filter items by categoryId ***
-  const filteredItems = React.useMemo(() => {
-    console.log(items, categoryId);
-    if (!items?.data || !categoryId) return [];
-    return items.data.filter(
-      (item: ServiceItem) => item.category.id === categoryId
-    );
-  }, [items?.data, categoryId]);
+  // Items are now filtered by backend, no need for frontend filtering
+  const filteredItems = items?.data || [];
 
   // Get category name for breadcrumbs
   const currentCategory = React.useMemo(() => {
@@ -275,7 +276,8 @@ const LaundryServiceItems: React.FC = () => {
       nameLocale: { en: '', ar: '' },
       vendorPrice: 0,
       platformPrice: 0,
-      expressPrice: 0,
+      expressVendorPrice: 0,
+      expressPlatformPrice: 0,
       categoryId: categoryId || '', // Pre-fill with current category
     },
   });
@@ -333,7 +335,8 @@ const LaundryServiceItems: React.FC = () => {
       setValue('nameLocale.ar', editingItem.nameLocale?.ar);
       setValue('vendorPrice', editingItem.vendorPrice);
       setValue('platformPrice', editingItem.platformPrice);
-      setValue('expressPrice', editingItem.expressPrice);
+      setValue('expressVendorPrice', editingItem.expressVendorPrice);
+      setValue('expressPlatformPrice', editingItem.expressPlatformPrice);
       setTimeout(() => {
         setValue('categoryId', editingItem.categoryId);
       }, 500);
@@ -350,7 +353,8 @@ const LaundryServiceItems: React.FC = () => {
       nameLocale: { en: '', ar: '' },
       vendorPrice: 0,
       platformPrice: 0,
-      expressPrice: 0,
+      expressVendorPrice: 0,
+      expressPlatformPrice: 0,
       categoryId: categoryId || '', // Pre-fill with current category
     });
     setOpenDialog(true);
@@ -388,7 +392,8 @@ const LaundryServiceItems: React.FC = () => {
       nameLocale: { en: '', ar: '' },
       vendorPrice: 0,
       platformPrice: 0,
-      expressPrice: 0,
+      expressVendorPrice: 0,
+      expressPlatformPrice: 0,
       categoryId: categoryId || '',
     });
   };
@@ -400,7 +405,8 @@ const LaundryServiceItems: React.FC = () => {
         nameLocale: data.nameLocale,
         vendorPrice: Number(data.vendorPrice),
         platformPrice: Number(data.platformPrice),
-        expressPrice: Number(data.expressPrice),
+        expressVendorPrice: Number(data.expressVendorPrice),
+        expressPlatformPrice: Number(data.expressPlatformPrice),
         categoryId: data.categoryId,
       };
 
@@ -586,7 +592,10 @@ const LaundryServiceItems: React.FC = () => {
                 <strong>Platform Price</strong>
               </TableCell>
               <TableCell>
-                <strong>Express Price</strong>
+                <strong>Exp. Vendor Price</strong>
+              </TableCell>
+              <TableCell>
+                <strong>Exp. Platform Price</strong>
               </TableCell>
               <TableCell>
                 <strong>Created</strong>
@@ -619,7 +628,7 @@ const LaundryServiceItems: React.FC = () => {
               </DndContext>
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align='center'>
+                <TableCell colSpan={8} align='center'>
                   <Typography variant='body1' color='text.secondary' py={4}>
                     No items found in this category. Create your first item to
                     get started.
@@ -693,21 +702,41 @@ const LaundryServiceItems: React.FC = () => {
               />
 
               <Controller
-                name='expressPrice'
+                name='expressVendorPrice'
                 control={control}
                 rules={{
-                  required: 'Express price is required',
+                  required: 'Express vendor price is required',
                   min: { value: 0.01, message: 'Price must be greater than 0' },
                 }}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label='Express Price (SAR)'
+                    label='Express Vendor Price (SAR)'
                     type='number'
                     fullWidth
                     inputProps={{ step: '0.01', min: '0.01' }}
-                    error={!!errors.expressPrice}
-                    helperText={errors.expressPrice?.message}
+                    error={!!errors.expressVendorPrice}
+                    helperText={errors.expressVendorPrice?.message}
+                  />
+                )}
+              />
+
+              <Controller
+                name='expressPlatformPrice'
+                control={control}
+                rules={{
+                  required: 'Express platform price is required',
+                  min: { value: 0.01, message: 'Price must be greater than 0' },
+                }}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label='Express Platform Price (SAR)'
+                    type='number'
+                    fullWidth
+                    inputProps={{ step: '0.01', min: '0.01' }}
+                    error={!!errors.expressPlatformPrice}
+                    helperText={errors.expressPlatformPrice?.message}
                   />
                 )}
               />
