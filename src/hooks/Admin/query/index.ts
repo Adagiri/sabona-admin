@@ -45,6 +45,13 @@ export const FETCH_ORDER_QUERIES = {
   FETCH_CUSTOM_ORDER_STATS: 'FETCH_CUSTOM_ORDER_STATS',
   FETCH_AVAILABLE_DRIVERS: 'FETCH_AVAILABLE_DRIVERS',
   FETCH_ALL_CUSTOM_ORDERS: 'FETCH_ALL_CUSTOM_ORDERS',
+  // Dashboard and Finance queries
+  FETCH_DASHBOARD_METRICS: 'FETCH_DASHBOARD_METRICS',
+  FETCH_ORDER_TRENDS: 'FETCH_ORDER_TRENDS',
+  FETCH_FINANCE_OVERVIEW: 'FETCH_FINANCE_OVERVIEW',
+  FETCH_MONTHLY_FINANCE: 'FETCH_MONTHLY_FINANCE',
+  FETCH_VENDOR_EARNINGS: 'FETCH_VENDOR_EARNINGS',
+  FETCH_DAILY_REVENUE: 'FETCH_DAILY_REVENUE',
 };
 
 const getAllUsers = async ({
@@ -607,6 +614,204 @@ export const useUpdateUserStatus = () => {
       console.log(typeof data)
       queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
       queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+};
+
+// ==================== DASHBOARD QUERIES ====================
+
+export interface DashboardMetrics {
+  orders: {
+    total: number;
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+    completed: number;
+    cancelled: number;
+    pending: number;
+    inProgress: number;
+    normalDelivery: number;
+    expressDelivery: number;
+    completionRate: string | number;
+    cancellationRate: string | number;
+  };
+  revenue: {
+    total: number;
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+    lastMonth: number;
+    growthPercentage: number;
+    averageOrderValue: number;
+  };
+  platformEarnings: {
+    serviceCharges: number;
+    deliveryFees: number;
+    vatCollected: number;
+    total: number;
+  };
+  customers: {
+    total: number;
+    active: number;
+    newToday: number;
+    newThisMonth: number;
+  };
+  vendors: {
+    total: number;
+    active: number;
+    laundries: number;
+    activeLaundries: number;
+  };
+  drivers: {
+    total: number;
+    active: number;
+  };
+  topLaundries: Array<{
+    id: string;
+    name: string;
+    orderCount: number;
+    revenue: number;
+  }>;
+  orderStatusDistribution: Array<{
+    status: string;
+    count: number;
+  }>;
+  recentOrders: Array<{
+    id: string;
+    orderNumber: number;
+    status: string;
+    totalAmount: number;
+    deliveryType: string;
+    customerName: string;
+    laundryName: string;
+    createdAt: string;
+  }>;
+}
+
+export const useFetchDashboardMetrics = () => {
+  return useQuery<DashboardMetrics, AxiosError>({
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_DASHBOARD_METRICS],
+    queryFn: async () => {
+      const response = await api.get('/admin/dashboard/metrics');
+      return response.data;
+    },
+    refetchInterval: 60000, // Refresh every minute
+  });
+};
+
+export const useFetchOrderTrends = (days: number = 30) => {
+  return useQuery({
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_TRENDS, days],
+    queryFn: async () => {
+      const response = await api.get(`/admin/dashboard/trends?days=${days}`);
+      return response.data;
+    },
+  });
+};
+
+// ==================== FINANCE QUERIES ====================
+
+export interface FinanceOverview {
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+  inflow: {
+    totalRevenue: number;
+    itemRevenue: number;
+    serviceCharges: number;
+    deliveryFees: number;
+    vatCollected: number;
+    transferCharges: number;
+    orderCount: number;
+  };
+  outflow: {
+    vendorEarnings: number;
+    withdrawalsCompleted: number;
+    pendingWithdrawals: number;
+    withdrawalCount: number;
+  };
+  platformGains: {
+    grossProfit: number;
+    itemMarkup: number;
+    serviceCharges: number;
+    deliveryFees: number;
+    transferCharges: number;
+    netProfit: number;
+  };
+  summary: {
+    totalInflow: number;
+    totalOutflow: number;
+    netCashflow: number;
+    pendingPayables: number;
+  };
+}
+
+export interface MonthlyFinanceData {
+  month: number;
+  monthName: string;
+  year: number;
+  revenue: number;
+  serviceCharges: number;
+  deliveryFees: number;
+  vatCollected: number;
+  withdrawals: number;
+  orderCount: number;
+}
+
+export interface VendorEarning {
+  laundryId: string;
+  laundryName: string;
+  vendorName: string;
+  vendorPhone: string;
+  orderCount: number;
+  totalEarning: number;
+  disbursedEarning: number;
+  pendingEarning: number;
+}
+
+export const useFetchFinanceOverview = (startDate: Date | null, endDate: Date | null) => {
+  return useQuery<FinanceOverview, AxiosError>({
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_FINANCE_OVERVIEW, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate.toISOString());
+      if (endDate) params.append('endDate', endDate.toISOString());
+      const response = await api.get(`/admin/dashboard/finance/overview?${params}`);
+      return response.data;
+    },
+  });
+};
+
+export const useFetchMonthlyFinance = () => {
+  return useQuery<MonthlyFinanceData[], AxiosError>({
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_MONTHLY_FINANCE],
+    queryFn: async () => {
+      const response = await api.get('/admin/dashboard/finance/monthly');
+      return response.data;
+    },
+  });
+};
+
+export const useFetchVendorEarnings = (startDate: Date | null, endDate: Date | null) => {
+  return useQuery<VendorEarning[], AxiosError>({
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_VENDOR_EARNINGS, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate.toISOString());
+      if (endDate) params.append('endDate', endDate.toISOString());
+      const response = await api.get(`/admin/dashboard/finance/vendor-earnings?${params}`);
+      return response.data;
+    },
+  });
+};
+
+export const useFetchDailyRevenue = (days: number = 30) => {
+  return useQuery({
+    queryKey: [FETCH_ORDER_QUERIES.FETCH_DAILY_REVENUE, days],
+    queryFn: async () => {
+      const response = await api.get(`/admin/dashboard/finance/daily-revenue?days=${days}`);
+      return response.data;
     },
   });
 };

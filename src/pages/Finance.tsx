@@ -16,10 +16,7 @@ import {
   Paper,
   Tabs,
   Tab,
-  TextField,
-  Button,
   Chip,
-  Divider,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -27,74 +24,17 @@ import {
   AccountBalance,
   ArrowUpward,
   ArrowDownward,
-  CalendarToday,
-  Download,
 } from '@mui/icons-material';
-import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import api from '../api';
-
-interface FinanceOverview {
-  period: {
-    startDate: string;
-    endDate: string;
-  };
-  inflow: {
-    totalRevenue: number;
-    itemRevenue: number;
-    serviceCharges: number;
-    deliveryFees: number;
-    vatCollected: number;
-    transferCharges: number;
-    orderCount: number;
-  };
-  outflow: {
-    vendorEarnings: number;
-    withdrawalsCompleted: number;
-    pendingWithdrawals: number;
-    withdrawalCount: number;
-  };
-  platformGains: {
-    grossProfit: number;
-    itemMarkup: number;
-    serviceCharges: number;
-    deliveryFees: number;
-    transferCharges: number;
-    netProfit: number;
-  };
-  summary: {
-    totalInflow: number;
-    totalOutflow: number;
-    netCashflow: number;
-    pendingPayables: number;
-  };
-}
-
-interface MonthlyData {
-  month: number;
-  monthName: string;
-  year: number;
-  revenue: number;
-  serviceCharges: number;
-  deliveryFees: number;
-  vatCollected: number;
-  withdrawals: number;
-  orderCount: number;
-}
-
-interface VendorEarning {
-  laundryId: string;
-  laundryName: string;
-  vendorName: string;
-  vendorPhone: string;
-  orderCount: number;
-  totalEarning: number;
-  disbursedEarning: number;
-  pendingEarning: number;
-}
+import {
+  useFetchFinanceOverview,
+  useFetchMonthlyFinance,
+  useFetchVendorEarnings,
+  useFetchDailyRevenue,
+} from '../hooks/Admin/query';
 
 const SummaryCard = ({ title, value, subtitle, icon, color, trend }: any) => (
   <Card elevation={3} sx={{ height: '100%' }}>
@@ -136,43 +76,10 @@ const Finance: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [endDate, setEndDate] = useState<Date | null>(new Date());
 
-  const { data: overview, isLoading: overviewLoading, error: overviewError } = useQuery<FinanceOverview>({
-    queryKey: ['finance-overview', startDate, endDate],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate.toISOString());
-      if (endDate) params.append('endDate', endDate.toISOString());
-      const response = await api.get(`/admin/dashboard/finance/overview?${params}`);
-      return response.data;
-    },
-  });
-
-  const { data: monthlyData } = useQuery<MonthlyData[]>({
-    queryKey: ['finance-monthly'],
-    queryFn: async () => {
-      const response = await api.get('/admin/dashboard/finance/monthly');
-      return response.data;
-    },
-  });
-
-  const { data: vendorEarnings } = useQuery<VendorEarning[]>({
-    queryKey: ['vendor-earnings', startDate, endDate],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate.toISOString());
-      if (endDate) params.append('endDate', endDate.toISOString());
-      const response = await api.get(`/admin/dashboard/finance/vendor-earnings?${params}`);
-      return response.data;
-    },
-  });
-
-  const { data: dailyRevenue } = useQuery({
-    queryKey: ['daily-revenue'],
-    queryFn: async () => {
-      const response = await api.get('/admin/dashboard/finance/daily-revenue?days=30');
-      return response.data;
-    },
-  });
+  const { data: overview, isLoading: overviewLoading, error: overviewError } = useFetchFinanceOverview(startDate, endDate);
+  const { data: monthlyData } = useFetchMonthlyFinance();
+  const { data: vendorEarnings } = useFetchVendorEarnings(startDate, endDate);
+  const { data: dailyRevenue } = useFetchDailyRevenue(30);
 
   if (overviewLoading) {
     return (

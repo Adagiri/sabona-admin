@@ -29,77 +29,8 @@ import {
   CheckCircle,
   Cancel,
 } from '@mui/icons-material';
-import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import api from '../api';
-
-interface DashboardMetrics {
-  orders: {
-    total: number;
-    today: number;
-    thisWeek: number;
-    thisMonth: number;
-    completed: number;
-    cancelled: number;
-    pending: number;
-    inProgress: number;
-    normalDelivery: number;
-    expressDelivery: number;
-    completionRate: string | number;
-    cancellationRate: string | number;
-  };
-  revenue: {
-    total: number;
-    today: number;
-    thisWeek: number;
-    thisMonth: number;
-    lastMonth: number;
-    growthPercentage: number;
-    averageOrderValue: number;
-  };
-  platformEarnings: {
-    serviceCharges: number;
-    deliveryFees: number;
-    vatCollected: number;
-    total: number;
-  };
-  customers: {
-    total: number;
-    active: number;
-    newToday: number;
-    newThisMonth: number;
-  };
-  vendors: {
-    total: number;
-    active: number;
-    laundries: number;
-    activeLaundries: number;
-  };
-  drivers: {
-    total: number;
-    active: number;
-  };
-  topLaundries: Array<{
-    id: string;
-    name: string;
-    orderCount: number;
-    revenue: number;
-  }>;
-  orderStatusDistribution: Array<{
-    status: string;
-    count: number;
-  }>;
-  recentOrders: Array<{
-    id: string;
-    orderNumber: number;
-    status: string;
-    totalAmount: number;
-    deliveryType: string;
-    customerName: string;
-    laundryName: string;
-    createdAt: string;
-  }>;
-}
+import { useFetchDashboardMetrics, useFetchOrderTrends } from '../hooks/Admin/query';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -153,22 +84,8 @@ const StatCard = ({ title, value, subtitle, icon, color = 'primary', trend }: an
 );
 
 const Dashboard: React.FC = () => {
-  const { data: metrics, isLoading, error } = useQuery<DashboardMetrics>({
-    queryKey: ['dashboard-metrics'],
-    queryFn: async () => {
-      const response = await api.get('/admin/dashboard/metrics');
-      return response.data;
-    },
-    refetchInterval: 60000, // Refresh every minute
-  });
-
-  const { data: trends } = useQuery({
-    queryKey: ['order-trends'],
-    queryFn: async () => {
-      const response = await api.get('/admin/dashboard/trends?days=30');
-      return response.data;
-    },
-  });
+  const { data: metrics, isLoading, error } = useFetchDashboardMetrics();
+  const { data: trends } = useFetchOrderTrends(30);
 
   if (isLoading) {
     return (
