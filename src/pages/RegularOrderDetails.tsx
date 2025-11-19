@@ -34,6 +34,7 @@ import {
   AccessTime,
   Receipt,
   Cancel,
+  ContentCopy,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchOrderDetails } from '../hooks/Admin/query';
@@ -55,6 +56,13 @@ const RegularOrderDetails = () => {
     isLoading,
     isError,
   } = useFetchOrderDetails(orderId || '');
+
+  const handleCopyOrderId = () => {
+    if (order?.id) {
+      navigator.clipboard.writeText(order.id);
+      toast.success('Order number copied to clipboard');
+    }
+  };
   
 
   const handleCancelOrder = async () => {
@@ -165,6 +173,32 @@ const RegularOrderDetails = () => {
             <Typography variant='h6' gutterBottom>
               Order Status
             </Typography>
+
+            {/* Order Number Display */}
+            <Box
+              display='flex'
+              alignItems='center'
+              gap={1}
+              mb={2}
+              sx={{
+                bgcolor: 'grey.100',
+                p: 1.5,
+                borderRadius: 1,
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'grey.200' }
+              }}
+              onClick={handleCopyOrderId}
+              title='Click to copy'
+            >
+              <Typography variant='body2' color='text.secondary'>
+                Order Number:
+              </Typography>
+              <Typography variant='body1' fontWeight='bold' sx={{ fontFamily: 'monospace' }}>
+                {order.id}
+              </Typography>
+              <ContentCopy fontSize='small' color='action' sx={{ ml: 'auto' }} />
+            </Box>
+
             <Box display='flex' alignItems='center' gap={2}>
               <Chip
                 label={order.status}
