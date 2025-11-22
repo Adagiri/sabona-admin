@@ -266,6 +266,8 @@ export interface OrderDetails {
   paid?: boolean;
   baseAmount?: number;
   discountAmount?: number;
+  paymentLink?: string;
+  payTabsInvoiceUrl?: string;
 
   // Coupon info
   coupon?: {
