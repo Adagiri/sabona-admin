@@ -15,6 +15,7 @@ import {
   TableHead,
   TableRow,
   LinearProgress,
+  Button,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -83,7 +84,7 @@ const StatCard = ({ title, value, subtitle, icon, color = 'primary', trend }: an
 );
 
 const Dashboard: React.FC = () => {
-  const { data: metrics, isLoading, error } = useFetchDashboardMetrics();
+  const { data: metrics, isLoading, error, refetch } = useFetchDashboardMetrics();
   const { data: trends } = useFetchOrderTrends(30);
 
   if (isLoading) {
@@ -95,10 +96,21 @@ const Dashboard: React.FC = () => {
   }
 
   if (error || !metrics) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load dashboard data';
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
-        Failed to load dashboard data. Please try refreshing the page.
-      </Alert>
+      <Box p={3}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          <Typography variant="body1" gutterBottom>
+            {errorMessage}
+          </Typography>
+          <Typography variant="body2">
+            Please try refreshing the page or contact support if the issue persists.
+          </Typography>
+        </Alert>
+        <Button variant="contained" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </Box>
     );
   }
 

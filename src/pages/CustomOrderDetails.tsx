@@ -67,6 +67,8 @@ const CustomOrderDetails = () => {
     data: order,
     isLoading,
     isError,
+    error,
+    refetch,
   } = useFetchCustomOrderById(orderId || '');
   console.log(order);
   const handleCancelOrder = async () => {
@@ -112,20 +114,25 @@ const CustomOrderDetails = () => {
   }
 
   if (isError || !order) {
+    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load custom order details';
     return (
-      <Box
-        display='flex'
-        justifyContent='center'
-        alignItems='center'
-        height='50vh'
-        flexDirection='column'
-      >
+      <Box p={3}>
         <Alert severity='error' sx={{ mb: 2 }}>
-          Failed to load custom order details
+          <Typography variant='body1' gutterBottom>
+            {errorMessage}
+          </Typography>
+          <Typography variant='body2'>
+            Please try again or contact support if the issue persists.
+          </Typography>
         </Alert>
-        <Button variant='contained' onClick={() => navigate('/custom-orders')}>
-          Back to Custom Orders
-        </Button>
+        <Stack direction='row' spacing={2}>
+          <Button variant='contained' onClick={() => refetch()}>
+            Retry
+          </Button>
+          <Button variant='outlined' onClick={() => navigate('/custom-orders')}>
+            Back to Custom Orders
+          </Button>
+        </Stack>
       </Box>
     );
   }
