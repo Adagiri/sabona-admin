@@ -54,9 +54,9 @@ import {
 } from '@mui/icons-material';
 import { useFetchOrderDetails } from '../hooks/Admin/query';
 import { toast } from 'react-toastify';
-import { Cancel } from '@mui/icons-material';
+import { Cancel, Refresh, Link as LinkIcon } from '@mui/icons-material';
 import { FormControlLabel, Checkbox } from '@mui/material';
-import { useCancelOrder } from '../hooks/Admin/mutations/customOrders';
+import { useCancelOrder, useRegeneratePaymentLink } from '../hooks/Admin/mutations/customOrders';
 
 const OrderDetails: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -77,6 +77,7 @@ const OrderDetails: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [refundCustomer, setRefundCustomer] = useState(false);
   const cancelMutation = useCancelOrder();
+  const regeneratePaymentLinkMutation = useRegeneratePaymentLink();
 
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
@@ -95,6 +96,15 @@ const OrderDetails: React.FC = () => {
       setRefundCustomer(false);
     } catch (error) {
       console.error('Failed to cancel order:', error);
+    }
+  };
+
+  const handleRegeneratePaymentLink = async () => {
+    if (!orderId) return;
+    try {
+      await regeneratePaymentLinkMutation.mutateAsync(orderId);
+    } catch (error) {
+      console.error('Failed to regenerate payment link:', error);
     }
   };
 
@@ -603,6 +613,44 @@ const OrderDetails: React.FC = () => {
                       {formatCurrency(orderDetails.discountAmount || 0)}{' '}
                       discount
                     </Typography>
+                  </Grid>
+                )}
+                {(orderDetails.paymentLink || orderDetails.payTabsInvoiceUrl) && (
+                  <Grid item xs={12}>
+                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                      Payment Link
+                    </Typography>
+                    <Stack direction='row' spacing={1} alignItems='center'>
+                      <Button
+                        variant='outlined'
+                        size='small'
+                        startIcon={<LinkIcon />}
+                        onClick={() =>
+                          window.open(
+                            orderDetails.paymentLink || orderDetails.payTabsInvoiceUrl,
+                            '_blank'
+                          )
+                        }
+                      >
+                        Open Payment Link
+                      </Button>
+                      {!orderDetails.paid && (
+                        <Button
+                          variant='contained'
+                          size='small'
+                          color='primary'
+                          startIcon={<Refresh />}
+                          onClick={handleRegeneratePaymentLink}
+                          disabled={regeneratePaymentLinkMutation.isPending}
+                        >
+                          {regeneratePaymentLinkMutation.isPending ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            'Regenerate Link'
+                          )}
+                        </Button>
+                      )}
+                    </Stack>
                   </Grid>
                 )}
               </Grid>
