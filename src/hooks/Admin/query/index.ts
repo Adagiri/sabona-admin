@@ -7,6 +7,7 @@ import {
   UseQueryResult,
 } from '@tanstack/react-query';
 import api from '../../../services/api-service';
+import { toast } from 'react-toastify';
 import {
   FetchApplicationsParams,
   FetchCouponParams,
@@ -696,6 +697,10 @@ export const useFetchDashboardMetrics = () => {
       return response.data;
     },
     refetchInterval: 60000, // Refresh every minute
+    onError: (error: AxiosError) => {
+      const message = (error?.response?.data as any)?.message || error?.message || 'Failed to load dashboard metrics';
+      toast.error(message);
+    },
   });
 };
 
@@ -705,6 +710,10 @@ export const useFetchOrderTrends = (days: number = 30) => {
     queryFn: async () => {
       const response = await api.get(`/admin/dashboard/trends?days=${days}`);
       return response.data;
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to load order trends';
+      toast.error(message);
     },
   });
 };
@@ -780,6 +789,10 @@ export const useFetchFinanceOverview = (startDate: Date | null, endDate: Date | 
       const response = await api.get(`/admin/dashboard/finance/overview?${params}`);
       return response.data;
     },
+    onError: (error: AxiosError) => {
+      const message = (error?.response?.data as any)?.message || error?.message || 'Failed to load finance overview';
+      toast.error(message);
+    },
   });
 };
 
@@ -789,6 +802,10 @@ export const useFetchMonthlyFinance = () => {
     queryFn: async () => {
       const response = await api.get('/admin/dashboard/finance/monthly');
       return response.data;
+    },
+    onError: (error: AxiosError) => {
+      const message = (error?.response?.data as any)?.message || error?.message || 'Failed to load monthly finance data';
+      toast.error(message);
     },
   });
 };
@@ -803,6 +820,10 @@ export const useFetchVendorEarnings = (startDate: Date | null, endDate: Date | n
       const response = await api.get(`/admin/dashboard/finance/vendor-earnings?${params}`);
       return response.data;
     },
+    onError: (error: AxiosError) => {
+      const message = (error?.response?.data as any)?.message || error?.message || 'Failed to load vendor earnings';
+      toast.error(message);
+    },
   });
 };
 
@@ -812,6 +833,10 @@ export const useFetchDailyRevenue = (days: number = 30) => {
     queryFn: async () => {
       const response = await api.get(`/admin/dashboard/finance/daily-revenue?days=${days}`);
       return response.data;
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to load daily revenue';
+      toast.error(message);
     },
   });
 };
