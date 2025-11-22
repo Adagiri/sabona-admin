@@ -339,21 +339,21 @@ export const useCancelOrder = () => {
   });
 };
 
-// Regenerate payment link for an order
+// Regenerate payment link for a custom order
 export const useRegeneratePaymentLink = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (orderId: string) => {
       const response = await api.post(
-        `/admin/orders/${orderId}/regenerate-payment-link`
+        `/admin/custom-order/${orderId}/regenerate-payment-link`
       );
       return response.data;
     },
     onSuccess: (data, orderId) => {
       console.log(typeof data);
       queryClient.invalidateQueries({
-        queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
+        queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
       });
       toast.success('Payment link regenerated successfully');
     },

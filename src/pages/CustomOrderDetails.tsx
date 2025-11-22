@@ -24,6 +24,7 @@ import {
   Upload,
   ContentCopy,
   OpenInNew,
+  Refresh,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
@@ -42,7 +43,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { useCancelCustomOrder } from '../hooks/Admin/mutations/customOrders';
+import { useCancelCustomOrder, useRegeneratePaymentLink } from '../hooks/Admin/mutations/customOrders';
 
 const CustomOrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -57,6 +58,7 @@ const CustomOrderDetails = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [refundCustomer, setRefundCustomer] = useState(false);
   const cancelMutation = useCancelCustomOrder();
+  const regeneratePaymentLinkMutation = useRegeneratePaymentLink();
 
   const {
     data: order,
@@ -81,6 +83,15 @@ const CustomOrderDetails = () => {
       setRefundCustomer(false);
     } catch (error) {
       console.error('Failed to cancel order:', error);
+    }
+  };
+
+  const handleRegeneratePaymentLink = async () => {
+    if (!orderId) return;
+    try {
+      await regeneratePaymentLinkMutation.mutateAsync(orderId);
+    } catch (error) {
+      console.error('Failed to regenerate payment link:', error);
     }
   };
 
@@ -546,6 +557,17 @@ const CustomOrderDetails = () => {
                     >
                       Open
                     </Button>
+                    {!order.customerPaid && (
+                      <Button
+                        variant='contained'
+                        color='primary'
+                        onClick={handleRegeneratePaymentLink}
+                        disabled={regeneratePaymentLinkMutation.isPending}
+                        startIcon={regeneratePaymentLinkMutation.isPending ? <CircularProgress size={16} /> : <Refresh />}
+                      >
+                        Regenerate
+                      </Button>
+                    )}
                   </Box>
                 </Box>
 
