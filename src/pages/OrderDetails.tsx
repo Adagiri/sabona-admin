@@ -634,7 +634,7 @@ const OrderDetails: React.FC = () => {
                       >
                         Open Payment Link
                       </Button>
-                      {!orderDetails.paid && (
+                      {orderDetails.paid && (
                         <Button
                           variant='contained'
                           size='small'
