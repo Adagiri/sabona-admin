@@ -9,7 +9,6 @@ import {
 import { Box, CssBaseline, Toolbar } from '@mui/material';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
 import Customer from './pages/Customer';
 import Vendor from './pages/Vendor';
 import Driver from './pages/Driver';
@@ -81,8 +80,8 @@ const AppContent: React.FC = () => {
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
-            <Route path='/' element={<Home />} />
-            <Route path='/dashboard' element={<Dashboard />} />
+            <Route path='/' element={<Dashboard />} />
+            {/* <Route path='/dashboard' element={<Dashboard />} /> */}
             <Route path='/finance' element={<Finance />} />
             <Route path='/customers' element={<Customer />} />
             <Route path='/customer/:customerId' element={<CustomerDetails />} />

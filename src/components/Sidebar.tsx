@@ -10,7 +10,6 @@ import {
   ListItemButton,
 } from '@mui/material';
 import {
-  Home,
   People,
   Business,
   LocalShipping,
@@ -50,8 +49,7 @@ interface MenuSection {
 
 const menuStructure: (MenuItem | MenuSection)[] = [
   // Top-level items
-  { text: 'Home', icon: <Home />, route: '/' },
-  { text: 'Dashboard', icon: <Dashboard />, route: '/dashboard' },
+  { text: 'Dashboard', icon: <Dashboard />, route: '/' },
 
   // Orders Section
   {
@@ -93,7 +91,11 @@ const menuStructure: (MenuItem | MenuSection)[] = [
       { text: 'Finance Overview', icon: <Assessment />, route: '/finance' },
       { text: 'Vouchers', icon: <Discount />, route: '/voucher' },
       { text: 'Tips', icon: <Paid />, route: '/tip' },
-      { text: 'Pre-Withdrawals', icon: <PendingActions />, route: '/pre-withdrawals' },
+      {
+        text: 'Pre-Withdrawals',
+        icon: <PendingActions />,
+        route: '/pre-withdrawals',
+      },
       { text: 'Withdrawals', icon: <AccountBalance />, route: '/withdrawals' },
     ],
   },
@@ -112,19 +114,21 @@ const menuStructure: (MenuItem | MenuSection)[] = [
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
-  const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>(() => {
-    // Auto-expand section if current route is within it
-    const initial: { [key: string]: boolean } = {};
-    menuStructure.forEach((item) => {
-      if ('section' in item) {
-        const isActive = item.items.some((subItem) =>
-          location.pathname.startsWith(subItem.route)
-        );
-        initial[item.section] = isActive;
-      }
-    });
-    return initial;
-  });
+  const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>(
+    () => {
+      // Auto-expand section if current route is within it
+      const initial: { [key: string]: boolean } = {};
+      menuStructure.forEach((item) => {
+        if ('section' in item) {
+          const isActive = item.items.some((subItem) =>
+            location.pathname.startsWith(subItem.route)
+          );
+          initial[item.section] = isActive;
+        }
+      });
+      return initial;
+    }
+  );
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -192,7 +196,9 @@ const Sidebar: React.FC = () => {
                           mb: 0.5,
                         }}
                       >
-                        <ListItemIcon sx={{ color: 'inherit', minWidth: '40px' }}>
+                        <ListItemIcon
+                          sx={{ color: 'inherit', minWidth: '40px' }}
+                        >
                           {subItem.icon}
                         </ListItemIcon>
                         <ListItemText primary={subItem.text} />
