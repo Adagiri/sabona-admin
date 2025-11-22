@@ -63,9 +63,6 @@ const CustomOrderDetails = () => {
   const {
     data: order,
     isLoading,
-    isError,
-    error,
-    refetch,
   } = useFetchCustomOrderById(orderId || '');
 
   const handleCancelOrder = async () => {
@@ -110,28 +107,8 @@ const CustomOrderDetails = () => {
     );
   }
 
-  if (isError || !order) {
-    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to load custom order details';
-    return (
-      <Box p={3}>
-        <Alert severity='error' sx={{ mb: 2 }}>
-          <Typography variant='body1' gutterBottom>
-            {errorMessage}
-          </Typography>
-          <Typography variant='body2'>
-            Please try again or contact support if the issue persists.
-          </Typography>
-        </Alert>
-        <Stack direction='row' spacing={2}>
-          <Button variant='contained' onClick={() => refetch()}>
-            Retry
-          </Button>
-          <Button variant='outlined' onClick={() => navigate('/custom-orders')}>
-            Back to Custom Orders
-          </Button>
-        </Stack>
-      </Box>
-    );
+  if (!order) {
+    return null;
   }
 
   const getStatusColor = (status: string) => {

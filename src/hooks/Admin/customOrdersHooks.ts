@@ -22,6 +22,10 @@ export const useFetchCustomOrderById = (orderId: string) => {
       return response.data.data;
     },
     enabled: !!orderId,
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to load custom order details';
+      toast.error(message);
+    },
   });
 };
 
