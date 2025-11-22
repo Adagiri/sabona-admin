@@ -514,21 +514,21 @@ export default class AdminCustomOrderService {
         }
 
         // Check if payment link exists
-        if (!order.payTabsInvoiceUrl || !order.payTabsInvoiceDateCreated) {
-            throw new BadRequestException('No payment link exists for this order');
-        }
+        // if (!order.payTabsInvoiceUrl || !order.payTabsInvoiceDateCreated) {
+        //     throw new BadRequestException('No payment link exists for this order');
+        // }
 
         // Check if payment link is older than 20 minutes
         const now = new Date();
         const linkCreatedAt = new Date(order.payTabsInvoiceDateCreated);
         const timeDifferenceInMinutes = (now.getTime() - linkCreatedAt.getTime()) / (1000 * 60);
 
-        if (timeDifferenceInMinutes < 20) {
-            const remainingMinutes = Math.ceil(20 - timeDifferenceInMinutes);
-            throw new BadRequestException(
-                `Payment link can only be regenerated after 20 minutes. Please wait ${remainingMinutes} more minute(s)`,
-            );
-        }
+        // if (timeDifferenceInMinutes < 20) {
+        //     const remainingMinutes = Math.ceil(20 - timeDifferenceInMinutes);
+        //     throw new BadRequestException(
+        //         `Payment link can only be regenerated after 20 minutes. Please wait ${remainingMinutes} more minute(s)`,
+        //     );
+        // }
 
         // Generate new PayTabs invoice
         const payTabsInvoice = await this.generatePayTabsInvoice(order, order.totalAmount);

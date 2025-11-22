@@ -43,7 +43,10 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { useCancelCustomOrder, useRegeneratePaymentLink } from '../hooks/Admin/mutations/customOrders';
+import {
+  useCancelCustomOrder,
+  useRegeneratePaymentLink,
+} from '../hooks/Admin/mutations/customOrders';
 
 const CustomOrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -65,7 +68,7 @@ const CustomOrderDetails = () => {
     isLoading,
     isError,
   } = useFetchCustomOrderById(orderId || '');
-
+  console.log(order);
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
       toast.error('Please provide a cancellation reason');
@@ -530,11 +533,14 @@ const CustomOrderDetails = () => {
                     sx={{ mt: 1 }}
                   >
                     <TextField
-                      fullWidth
                       value={order.payTabsInvoiceUrl}
                       InputProps={{
                         readOnly: true,
-                        sx: { fontFamily: 'monospace', fontSize: '0.875rem' },
+                        sx: {
+                          fontFamily: 'monospace',
+                          fontSize: '0.875rem',
+                          width: '500px',
+                        },
                       }}
                       size='small'
                     />
@@ -557,13 +563,21 @@ const CustomOrderDetails = () => {
                     >
                       Open
                     </Button>
-                    {!order.customerPaid && (
+                    {(!order.customerPaid &&
+                      order.status !== 'CANCELLED' &&
+                      order.status !== 'COMPLETED') && (
                       <Button
                         variant='contained'
                         color='primary'
                         onClick={handleRegeneratePaymentLink}
                         disabled={regeneratePaymentLinkMutation.isPending}
-                        startIcon={regeneratePaymentLinkMutation.isPending ? <CircularProgress size={16} /> : <Refresh />}
+                        startIcon={
+                          regeneratePaymentLinkMutation.isPending ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <Refresh />
+                          )
+                        }
                       >
                         Regenerate
                       </Button>
