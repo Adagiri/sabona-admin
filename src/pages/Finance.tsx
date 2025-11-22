@@ -17,6 +17,7 @@ import {
   Tabs,
   Tab,
   Chip,
+  Button,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -76,7 +77,7 @@ const Finance: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [endDate, setEndDate] = useState<Date | null>(new Date());
 
-  const { data: overview, isLoading: overviewLoading, error: overviewError } = useFetchFinanceOverview(startDate, endDate);
+  const { data: overview, isLoading: overviewLoading, error: overviewError, refetch } = useFetchFinanceOverview(startDate, endDate);
   const { data: monthlyData } = useFetchMonthlyFinance();
   const { data: vendorEarnings } = useFetchVendorEarnings(startDate, endDate);
   const { data: dailyRevenue } = useFetchDailyRevenue(30);
@@ -90,10 +91,21 @@ const Finance: React.FC = () => {
   }
 
   if (overviewError || !overview) {
+    const errorMessage = overviewError?.response?.data?.message || overviewError?.message || 'Failed to load finance data';
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
-        Failed to load finance data. Please try refreshing the page.
-      </Alert>
+      <Box p={3}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          <Typography variant="body1" gutterBottom>
+            {errorMessage}
+          </Typography>
+          <Typography variant="body2">
+            Please try refreshing the page or contact support if the issue persists.
+          </Typography>
+        </Alert>
+        <Button variant="contained" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </Box>
     );
   }
 
