@@ -94,7 +94,6 @@ const CustomOrders: React.FC = () => {
 
   type StatusColor = Exclude<ChipProps['color'], undefined>;
 
-
   const getOrderStatus = (
     order: CustomOrder
   ): { label: string; color: StatusColor } => {
