@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../services/api-service';
 import useAuthStore from '../../../store/Auth';
+import { toast } from 'react-toastify';
 import {
   CreateCouponRequest,
   MediaId,
@@ -29,6 +30,10 @@ export const useLoginUser = () => {
     onSuccess: (res) => {
       setToken(res.token);
     },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Login failed';
+      toast.error(message);
+    },
   });
 };
 
@@ -43,6 +48,10 @@ const uploadImage = async (body: UploadImage) => {
 export const useUploadImage = () => {
   return useMutation({
     mutationFn: async (body: UploadImage) => uploadImage(body),
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to upload image';
+      toast.error(message);
+    },
   });
 };
 
@@ -62,8 +71,9 @@ export const useDeleteMedia = () => {
         ],
       });
     },
-    onError: (err) => {
-      console.error(err.message);
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to delete media';
+      toast.error(message);
     },
   });
 };
@@ -88,6 +98,10 @@ export const useFinaliseUploadImage = () => {
         });
       }, 2000);
     },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to finalize image upload';
+      toast.error(message);
+    },
   });
 };
 
@@ -100,13 +114,14 @@ export const useCreateCoupon = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: CreateCouponRequest) => createCouponAction(body),
-    onError: (err) => {
-      console.error(err.message);
-    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_COUPONS],
       });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to create coupon';
+      toast.error(message);
     },
   });
 };
@@ -122,6 +137,10 @@ export const useFinaliseApplicationDocument = () => {
         }
       );
       return response.data;
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to finalize document';
+      toast.error(message);
     },
   });
 };
@@ -236,6 +255,10 @@ export const useDeleteLaundry = () => {
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_LAUNDRIES],
       });
     },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to delete laundry';
+      toast.error(message);
+    },
   });
 };
 
@@ -328,6 +351,10 @@ export const useDeleteLaundryService = () => {
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_LAUNDRIES],
       });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to delete service';
+      toast.error(message);
     },
   });
 };
@@ -436,6 +463,10 @@ export const useDeleteLaundryServiceItem = () => {
           variables.laundryId,
         ],
       });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || error?.message || 'Failed to delete service item';
+      toast.error(message);
     },
   });
 };
