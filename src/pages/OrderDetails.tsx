@@ -624,37 +624,19 @@ const OrderDetails: React.FC = () => {
                     <Typography variant='body2' color='text.secondary' gutterBottom>
                       Payment Link
                     </Typography>
-                    <Stack direction='row' spacing={1} alignItems='center'>
-                      <Button
-                        variant='outlined'
-                        size='small'
-                        startIcon={<LinkIcon />}
-                        onClick={() =>
-                          window.open(
-                            orderDetails.paymentLink || orderDetails.payTabsInvoiceUrl,
-                            '_blank'
-                          )
-                        }
-                      >
-                        Open Payment Link
-                      </Button>
-                      {orderDetails.paid && (
-                        <Button
-                          variant='contained'
-                          size='small'
-                          color='primary'
-                          startIcon={<Refresh />}
-                          onClick={handleRegeneratePaymentLink}
-                          disabled={regeneratePaymentLinkMutation.isPending}
-                        >
-                          {regeneratePaymentLinkMutation.isPending ? (
-                            <CircularProgress size={16} />
-                          ) : (
-                            'Regenerate Link'
-                          )}
-                        </Button>
-                      )}
-                    </Stack>
+                    <Button
+                      variant='outlined'
+                      size='small'
+                      startIcon={<LinkIcon />}
+                      onClick={() =>
+                        window.open(
+                          orderDetails.paymentLink || orderDetails.payTabsInvoiceUrl,
+                          '_blank'
+                        )
+                      }
+                    >
+                      Open Payment Link
+                    </Button>
                   </Grid>
                 )}
               </Grid>

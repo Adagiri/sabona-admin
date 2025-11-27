@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -6,7 +6,6 @@ import {
   CardContent,
   Grid,
   CircularProgress,
-  Alert,
   Chip,
   Table,
   TableBody,
@@ -15,7 +14,6 @@ import {
   TableHead,
   TableRow,
   LinearProgress,
-  Button,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -31,6 +29,7 @@ import {
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useFetchDashboardMetrics, useFetchOrderTrends } from '../hooks/Admin/query';
+import { toast } from 'react-toastify';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
 
@@ -84,8 +83,15 @@ const StatCard = ({ title, value, subtitle, icon, color = 'primary', trend }: an
 );
 
 const Dashboard: React.FC = () => {
-  const { data: metrics, isLoading } = useFetchDashboardMetrics();
+  const { data: metrics, isLoading, error } = useFetchDashboardMetrics();
   const { data: trends } = useFetchOrderTrends(30);
+
+  useEffect(() => {
+    if (error) {
+      const message = (error as any)?.response?.data?.message || error?.message || 'Failed to load dashboard metrics';
+      toast.error(message);
+    }
+  }, [error]);
 
   if (isLoading) {
     return (

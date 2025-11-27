@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -6,7 +6,6 @@ import {
   CardContent,
   Grid,
   CircularProgress,
-  Alert,
   Table,
   TableBody,
   TableCell,
@@ -17,8 +16,8 @@ import {
   Tabs,
   Tab,
   Chip,
-  Button,
 } from '@mui/material';
+import { toast } from 'react-toastify';
 import {
   TrendingUp,
   TrendingDown,
@@ -77,10 +76,17 @@ const Finance: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [endDate, setEndDate] = useState<Date | null>(new Date());
 
-  const { data: overview, isLoading: overviewLoading } = useFetchFinanceOverview(startDate, endDate);
+  const { data: overview, isLoading: overviewLoading, error: overviewError } = useFetchFinanceOverview(startDate, endDate);
   const { data: monthlyData } = useFetchMonthlyFinance();
   const { data: vendorEarnings } = useFetchVendorEarnings(startDate, endDate);
   const { data: dailyRevenue } = useFetchDailyRevenue(30);
+
+  useEffect(() => {
+    if (overviewError) {
+      const message = (overviewError as any)?.response?.data?.message || overviewError?.message || 'Failed to load finance overview';
+      toast.error(message);
+    }
+  }, [overviewError]);
 
   if (overviewLoading) {
     return (
