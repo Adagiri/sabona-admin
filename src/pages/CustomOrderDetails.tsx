@@ -31,7 +31,7 @@ import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
 import CustomOrderDetailsDialog from '../components/CustomOrderDetailsDialog';
 import DriverAssignmentDialog from '../components/DriverAssignmentDialog';
 import ReceiptUploadDialog from '../components/ReceiptUploadDialog';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import DeliveryDriverAssignmentDialog from '../components/DeliveryDriverAssignmentDialog';
 import { toast } from 'react-toastify';
 import { Cancel } from '@mui/icons-material';
@@ -68,7 +68,7 @@ const CustomOrderDetails = () => {
     isLoading,
     error,
   } = useFetchCustomOrderById(orderId || '');
-  console.log(order);
+  console.log(order, typeof error);
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
       toast.error('Please provide a cancellation reason');

@@ -51,13 +51,12 @@ import {
   Edit,
   LocalLaundryService,
   StarRate,
-  Refresh,
 } from '@mui/icons-material';
 import { useFetchOrderDetails } from '../hooks/Admin/query';
 import { toast } from 'react-toastify';
 import { Cancel } from '@mui/icons-material';
 import { FormControlLabel, Checkbox } from '@mui/material';
-import { useCancelOrder, useRegeneratePaymentLink } from '../hooks/Admin/mutations/customOrders';
+import { useCancelOrder } from '../hooks/Admin/mutations/customOrders';
 import { LinkIcon } from 'lucide-react';
 
 const OrderDetails: React.FC = () => {
@@ -79,7 +78,7 @@ const OrderDetails: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [refundCustomer, setRefundCustomer] = useState(false);
   const cancelMutation = useCancelOrder();
-   const regeneratePaymentLinkMutation = useRegeneratePaymentLink();
+  //  const regeneratePaymentLinkMutation = useRegeneratePaymentLink();
 
 
   const handleCancelOrder = async () => {
@@ -253,14 +252,14 @@ const OrderDetails: React.FC = () => {
   const workflowSteps = getOrderWorkflowSteps();
 
 
-    const handleRegeneratePaymentLink = async () => {
-      if (!orderId) return;
-      try {
-        await regeneratePaymentLinkMutation.mutateAsync(orderId);
-      } catch (error) {
-        console.error('Failed to regenerate payment link:', error);
-      }
-    };
+    // const handleRegeneratePaymentLink = async () => {
+    //   if (!orderId) return;
+    //   try {
+    //     await regeneratePaymentLinkMutation.mutateAsync(orderId);
+    //   } catch (error) {
+    //     console.error('Failed to regenerate payment link:', error);
+    //   }
+    // };
 
   return (
     <Box p={4}>
