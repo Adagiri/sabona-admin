@@ -22,7 +22,6 @@ import { Search, Refresh, ArrowForward, LocationOn } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import CustomOrdersStats from '../components/CustomOrdersStats';
 import { useFetchCustomOrders } from '../hooks/Admin/customOrdersHooks';
-import { useRegeneratePaymentLink } from '../hooks/Admin/mutations/customOrders';
 
 interface CustomOrder {
   id: string;
@@ -53,7 +52,6 @@ const CustomOrders: React.FC = () => {
     error,
     refetch,
   } = useFetchCustomOrders();
-  const regeneratePaymentLinkMutation = useRegeneratePaymentLink();
 
   const customOrders = customOrdersData?.data || [];
 
@@ -72,15 +70,6 @@ const CustomOrders: React.FC = () => {
     refetch();
   };
 
-  const handleRegeneratePaymentLink = async () => {
-    if (!orderId) return;
-    try {
-      await regeneratePaymentLinkMutation.mutateAsync(orderId);
-    } catch (error) {
-      console.error('Failed to regenerate payment link:', error);
-    }
-  };
-  
   const filterOrders = () => {
     let filtered = customOrders;
 
