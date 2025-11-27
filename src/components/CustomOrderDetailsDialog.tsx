@@ -67,6 +67,8 @@ interface CustomOrder {
     pickupDate: string;
     pickupTime: string;
     pickupAddress: string;
+    pickupLat?: number;
+    pickupLong?: number;
   };
   delivery: {
     deliveryAddress: string;
@@ -400,7 +402,34 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                   </ListItemIcon>
                   <ListItemText
                     primary='Pickup Address'
-                    secondary={order.pickup.pickupAddress}
+                    secondary={
+                      <Box>
+                        <Typography variant='body2' gutterBottom>
+                          {order.pickup.pickupAddress}
+                        </Typography>
+                        {order.pickup.pickupLat && order.pickup.pickupLong && (
+                          <Box display='flex' alignItems='center' gap={1} mt={0.5}>
+                            <Typography variant='caption' color='text.secondary'>
+                              Lat: {order.pickup.pickupLat.toFixed(6)}, Lng:{' '}
+                              {order.pickup.pickupLong.toFixed(6)}
+                            </Typography>
+                            <Button
+                              size='small'
+                              startIcon={<Launch />}
+                              onClick={() =>
+                                openMap(
+                                  order.pickup.pickupLat!,
+                                  order.pickup.pickupLong!,
+                                  'Pickup Location'
+                                )
+                              }
+                            >
+                              View on Map
+                            </Button>
+                          </Box>
+                        )}
+                      </Box>
+                    }
                   />
                 </ListItem>
               </List>
