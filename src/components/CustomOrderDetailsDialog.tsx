@@ -34,6 +34,8 @@ import {
   Money,
   Launch,
   ContentCopy,
+  WhatsApp,
+  Sms,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 
@@ -73,6 +75,8 @@ interface CustomOrder {
   delivery: {
     deliveryAddress: string;
     deliveryType: string;
+    deliveryLat?: number;
+    deliveryLong?: number;
   };
   riderOrders: Array<{
     id: string;
@@ -272,21 +276,49 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                     <ListItemText
                       primary='Phone'
                       secondary={
-                        <Box display='flex' alignItems='center' gap={1}>
-                          <Typography variant='body2'>
-                            {order.customer?.phone}
-                          </Typography>
-                          <IconButton
-                            size='small'
-                            onClick={() =>
-                              copyToClipboard(
-                                order.customer?.phone ?? '',
-                                'Phone'
-                              )
-                            }
-                          >
-                            <ContentCopy fontSize='small' />
-                          </IconButton>
+                        <Box>
+                          <Box display='flex' alignItems='center' gap={1}>
+                            <Typography variant='body2'>
+                              {order.customer?.phone}
+                            </Typography>
+                            <IconButton
+                              size='small'
+                              onClick={() =>
+                                copyToClipboard(
+                                  order.customer?.phone ?? '',
+                                  'Phone'
+                                )
+                              }
+                            >
+                              <ContentCopy fontSize='small' />
+                            </IconButton>
+                          </Box>
+                          <Box display='flex' gap={1} mt={1}>
+                            <Button
+                              size='small'
+                              variant='outlined'
+                              color='success'
+                              startIcon={<WhatsApp />}
+                              onClick={() => {
+                                const phone = order.customer?.phone?.replace(/\D/g, '');
+                                window.open(`https://wa.me/${phone}`, '_blank');
+                              }}
+                            >
+                              WhatsApp
+                            </Button>
+                            <Button
+                              size='small'
+                              variant='outlined'
+                              color='primary'
+                              startIcon={<Sms />}
+                              onClick={() => {
+                                const phone = order.customer?.phone;
+                                window.open(`sms:${phone}`, '_blank');
+                              }}
+                            >
+                              Send SMS
+                            </Button>
+                          </Box>
                         </Box>
                       }
                     />
@@ -467,7 +499,34 @@ const CustomOrderDetailsDialog: React.FC<CustomOrderDetailsDialogProps> = ({
                   </ListItemIcon>
                   <ListItemText
                     primary='Delivery Address'
-                    secondary={order.delivery.deliveryAddress}
+                    secondary={
+                      <Box>
+                        <Typography variant='body2' gutterBottom>
+                          {order.delivery.deliveryAddress}
+                        </Typography>
+                        {order.delivery.deliveryLat && order.delivery.deliveryLong && (
+                          <Box display='flex' alignItems='center' gap={1} mt={0.5}>
+                            <Typography variant='caption' color='text.secondary'>
+                              Lat: {order.delivery.deliveryLat.toFixed(6)}, Lng:{' '}
+                              {order.delivery.deliveryLong.toFixed(6)}
+                            </Typography>
+                            <Button
+                              size='small'
+                              startIcon={<Launch />}
+                              onClick={() =>
+                                openMap(
+                                  order.delivery.deliveryLat!,
+                                  order.delivery.deliveryLong!,
+                                  'Delivery Location'
+                                )
+                              }
+                            >
+                              View on Map
+                            </Button>
+                          </Box>
+                        )}
+                      </Box>
+                    }
                   />
                 </ListItem>
               </List>
