@@ -25,6 +25,8 @@ import {
   ContentCopy,
   OpenInNew,
   Refresh,
+  WhatsApp,
+  Sms,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
@@ -301,6 +303,32 @@ const CustomOrderDetails = () => {
                 <Phone fontSize='small' color='action' />
                 <Typography variant='body2'>{order.customer?.phone}</Typography>
               </Box>
+              <Stack direction='row' spacing={1} mt={1}>
+                <Button
+                  size='small'
+                  variant='outlined'
+                  color='success'
+                  startIcon={<WhatsApp />}
+                  onClick={() => {
+                    const phone = order.customer?.phone?.replace(/\D/g, '');
+                    window.open(`https://wa.me/${phone}`, '_blank');
+                  }}
+                >
+                  WhatsApp
+                </Button>
+                <Button
+                  size='small'
+                  variant='outlined'
+                  color='primary'
+                  startIcon={<Sms />}
+                  onClick={() => {
+                    const phone = order.customer?.phone;
+                    window.open(`sms:${phone}`, '_blank');
+                  }}
+                >
+                  Send SMS
+                </Button>
+              </Stack>
               {order.customer?.email && (
                 <Box display='flex' alignItems='center' gap={1} mt={1}>
                   <Email fontSize='small' color='action' />
