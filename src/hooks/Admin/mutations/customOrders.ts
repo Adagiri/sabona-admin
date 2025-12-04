@@ -257,6 +257,32 @@ export const useUpdateCustomOrderNotes = () => {
   });
 };
 
+// Regenerate payment link for custom order
+export const useRegeneratePaymentLink = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await api.post(
+        `/admin/custom-order/${orderId}/regenerate-payment-link`
+      );
+      return response.data;
+    },
+    onSuccess: (data, orderId) => {
+      console.log(typeof data);
+      queryClient.invalidateQueries({
+        queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
+      });
+      toast.success('Payment link regenerated successfully');
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || 'Failed to regenerate payment link';
+      toast.error(message);
+    },
+  });
+};
+
 // Cancel custom order
 export const useCancelCustomOrder = () => {
   const queryClient = useQueryClient();
@@ -334,36 +360,6 @@ export const useCancelOrder = () => {
     onError: (error: any) => {
       const message =
         error?.response?.data?.message || 'Failed to cancel order';
-      toast.error(message);
-    },
-  });
-};
-
-// Regenerate payment link for a custom order
-export const useRegeneratePaymentLink = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (orderId: string) => {
-      const response = await api.post(
-        `/admin/custom-order/${orderId}/regenerate-payment-link`
-      );
-      return response.data;
-    },
-    onSuccess: (data, orderId) => {
-      console.log(typeof data);
-      // Invalidate both query keys to ensure the page refreshes
-      queryClient.invalidateQueries({
-        queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ['custom-order', orderId],
-      });
-      toast.success('Payment link regenerated successfully');
-    },
-    onError: (error: any) => {
-      const message =
-        error?.response?.data?.message || 'Failed to regenerate payment link';
       toast.error(message);
     },
   });

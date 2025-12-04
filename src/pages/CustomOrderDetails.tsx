@@ -24,9 +24,6 @@ import {
   Upload,
   ContentCopy,
   OpenInNew,
-  Refresh,
-  WhatsApp,
-  Sms,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
@@ -45,10 +42,8 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import {
-  useCancelCustomOrder,
-  useRegeneratePaymentLink,
-} from '../hooks/Admin/mutations/customOrders';
+import { useCancelCustomOrder, useRegeneratePaymentLink } from '../hooks/Admin/mutations/customOrders';
+import { Refresh } from '@mui/icons-material';
 
 const CustomOrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
@@ -68,9 +63,9 @@ const CustomOrderDetails = () => {
   const {
     data: order,
     isLoading,
-    error,
+    isError,
   } = useFetchCustomOrderById(orderId || '');
-  console.log(order, typeof error);
+
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
       toast.error('Please provide a cancellation reason');
@@ -91,10 +86,44 @@ const CustomOrderDetails = () => {
     }
   };
 
+  // Check if payment link can be regenerated
+  const canRegeneratePaymentLink = () => {
+    if (!order?.payTabsInvoiceDateCreated || order.customerPaid) {
+      return false;
+    }
+
+    const now = new Date();
+    const linkCreatedAt = new Date(order.payTabsInvoiceDateCreated);
+    const timeDifferenceInMinutes = (now.getTime() - linkCreatedAt.getTime()) / (1000 * 60);
+
+    return timeDifferenceInMinutes >= 20;
+  };
+
+  // Get remaining time until regeneration is allowed
+  const getRemainingTime = () => {
+    if (!order?.payTabsInvoiceDateCreated) {
+      return 0;
+    }
+
+    const now = new Date();
+    const linkCreatedAt = new Date(order.payTabsInvoiceDateCreated);
+    const timeDifferenceInMinutes = (now.getTime() - linkCreatedAt.getTime()) / (1000 * 60);
+    const remainingMinutes = Math.max(0, Math.ceil(20 - timeDifferenceInMinutes));
+
+    return remainingMinutes;
+  };
+
   const handleRegeneratePaymentLink = async () => {
-    if (!orderId) return;
+    if (!canRegeneratePaymentLink()) {
+      const remainingMinutes = getRemainingTime();
+      toast.error(
+        `Payment link can only be regenerated after 20 minutes. Please wait ${remainingMinutes} more minute(s)`
+      );
+      return;
+    }
+
     try {
-      await regeneratePaymentLinkMutation.mutateAsync(orderId);
+      await regeneratePaymentLinkMutation.mutateAsync(orderId!);
     } catch (error) {
       console.error('Failed to regenerate payment link:', error);
     }
@@ -113,8 +142,23 @@ const CustomOrderDetails = () => {
     );
   }
 
-  if (!order) {
-    return null;
+  if (isError || !order) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        height='50vh'
+        flexDirection='column'
+      >
+        <Alert severity='error' sx={{ mb: 2 }}>
+          Failed to load custom order details
+        </Alert>
+        <Button variant='contained' onClick={() => navigate('/custom-orders')}>
+          Back to Custom Orders
+        </Button>
+      </Box>
+    );
   }
 
   const getStatusColor = (status: string) => {
@@ -303,32 +347,6 @@ const CustomOrderDetails = () => {
                 <Phone fontSize='small' color='action' />
                 <Typography variant='body2'>{order.customer?.phone}</Typography>
               </Box>
-              <Stack direction='row' spacing={1} mt={1}>
-                <Button
-                  size='small'
-                  variant='outlined'
-                  color='success'
-                  startIcon={<WhatsApp />}
-                  onClick={() => {
-                    const phone = order.customer?.phone?.replace(/\D/g, '');
-                    window.open(`https://wa.me/${phone}`, '_blank');
-                  }}
-                >
-                  WhatsApp
-                </Button>
-                <Button
-                  size='small'
-                  variant='outlined'
-                  color='primary'
-                  startIcon={<Sms />}
-                  onClick={() => {
-                    const phone = order.customer?.phone;
-                    window.open(`sms:${phone}`, '_blank');
-                  }}
-                >
-                  Send SMS
-                </Button>
-              </Stack>
               {order.customer?.email && (
                 <Box display='flex' alignItems='center' gap={1} mt={1}>
                   <Email fontSize='small' color='action' />
@@ -546,14 +564,11 @@ const CustomOrderDetails = () => {
                     sx={{ mt: 1 }}
                   >
                     <TextField
+                      fullWidth
                       value={order.payTabsInvoiceUrl}
                       InputProps={{
                         readOnly: true,
-                        sx: {
-                          fontFamily: 'monospace',
-                          fontSize: '0.875rem',
-                          width: '500px',
-                        },
+                        sx: { fontFamily: 'monospace', fontSize: '0.875rem' },
                       }}
                       size='small'
                     />
@@ -576,26 +591,45 @@ const CustomOrderDetails = () => {
                     >
                       Open
                     </Button>
-                    {(!order.customerPaid &&
-                      order.status !== 'CANCELLED' &&
-                      order.status !== 'COMPLETED') && (
-                      <Button
-                        variant='contained'
-                        color='primary'
-                        onClick={handleRegeneratePaymentLink}
-                        disabled={regeneratePaymentLinkMutation.isPending}
-                        startIcon={
-                          regeneratePaymentLinkMutation.isPending ? (
-                            <CircularProgress size={16} />
-                          ) : (
-                            <Refresh />
-                          )
-                        }
-                      >
-                        Regenerate
-                      </Button>
-                    )}
                   </Box>
+
+                  {/* Regenerate Payment Link Button */}
+                  {!order.customerPaid && (
+                    <Box sx={{ mt: 2 }}>
+                      <Button
+                        variant='outlined'
+                        color='warning'
+                        onClick={handleRegeneratePaymentLink}
+                        startIcon={<Refresh />}
+                        disabled={
+                          !canRegeneratePaymentLink() ||
+                          regeneratePaymentLinkMutation.isPending
+                        }
+                        fullWidth
+                      >
+                        {regeneratePaymentLinkMutation.isPending ? (
+                          <CircularProgress size={20} />
+                        ) : canRegeneratePaymentLink() ? (
+                          'Regenerate Payment Link'
+                        ) : (
+                          `Regenerate in ${getRemainingTime()} min`
+                        )}
+                      </Button>
+                      {order.payTabsInvoiceDateCreated && (
+                        <Typography
+                          variant='caption'
+                          color='text.secondary'
+                          display='block'
+                          sx={{ mt: 1, textAlign: 'center' }}
+                        >
+                          Link created:{' '}
+                          {new Date(
+                            order.payTabsInvoiceDateCreated
+                          ).toLocaleString()}
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
                 </Box>
 
                 {!order.customerPaid && (
