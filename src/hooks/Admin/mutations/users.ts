@@ -94,6 +94,7 @@ export const useChangeUserPhone = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [FETCH_USER_QUERIES.FETCH_USER_BY_ID, variables.userId],
       });
@@ -129,6 +130,8 @@ export const useChangeUserEmail = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [FETCH_USER_QUERIES.FETCH_USER_BY_ID, variables.userId],
       });

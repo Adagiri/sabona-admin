@@ -14,7 +14,6 @@ import {
   Checkbox,
   FormControlLabel,
   Tooltip,
-  Chip,
 } from '@mui/material';
 import { ViewColumn, MoreVert } from '@mui/icons-material';
 

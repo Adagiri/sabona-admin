@@ -50,6 +50,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onClose, user }) 
   const [showPhoneConfirm, setShowPhoneConfirm] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
+  console.log(typeof showEmailConfirm)
+
   // Reset form when user changes or dialog opens
   useEffect(() => {
     if (user && open) {
