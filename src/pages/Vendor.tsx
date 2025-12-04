@@ -1,21 +1,20 @@
-// File: src/pages/Vendor.tsx
-
 import {
   Box,
   Typography,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Paper,
   Pagination,
   CircularProgress,
   Alert,
   Stack,
   Chip,
+  Avatar,
 } from '@mui/material';
-import { Business, LocalLaundryService } from '@mui/icons-material';
+import {
+  Visibility,
+  Edit,
+  PhotoCamera,
+  Business,
+  LocalLaundryService,
+} from '@mui/icons-material';
 import { useFetchAllUsers, useFetchAllLaundries } from '../hooks/Admin/query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { USER_TYPES } from '../hooks/Admin/interface';
@@ -26,7 +25,11 @@ import {
   useUploadImage,
 } from '../hooks/Admin/mutation';
 import uploadAndFinalizeImage from '../utils/uploadAndFinalizeImage';
-import EnhancedVendorTableRow from '../components/EnhancedVendorTableRow';
+import DataTable, {
+  DataTableColumn,
+  DataTableAction,
+} from '../components/DataTable';
+import EditUserDialog from '../components/EditUserDialog';
 
 const Vendor = () => {
   const { pageNumber } = useParams<{ pageNumber: string }>();
@@ -35,11 +38,16 @@ const Vendor = () => {
 
   const { mutateAsync: uploadVendorDoc } = useUploadImage();
   const { mutateAsync: finaliseVendorDoc } = useFinaliseUploadImage();
-  const [uploadId, setUploadId] = useState<string | null>(null); // Fixed: Added both state and setter
+  const [uploadId, setUploadId] = useState<string | null>(null);
+
+  console.log(typeof uploadId)
 
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileInputRefs = useRef<Record<string | number, HTMLInputElement>>({});
-  console.log(uploadId);
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+
   const {
     data: vendors,
     isLoading,
@@ -58,8 +66,8 @@ const Vendor = () => {
     toast(errorMessage, { type: 'error' });
   }, []);
 
-  const showSuccess = useCallback((errorMessage: string) => {
-    toast(errorMessage, { type: 'success' });
+  const showSuccess = useCallback((successMessage: string) => {
+    toast(successMessage, { type: 'success' });
   }, []);
 
   useEffect(() => {
@@ -109,8 +117,10 @@ const Vendor = () => {
             false
           );
           await refetchVendor();
+          showSuccess('Vendor image uploaded successfully');
         } catch (err) {
           console.error('Upload failed:', err);
+          showError('Failed to upload vendor image');
         } finally {
           setIsUploading(false);
         }
@@ -124,12 +134,169 @@ const Vendor = () => {
     navigate(`/vendor/${value}`);
   };
 
+  const handleRowClick = useCallback(
+    (row: any) => {
+      if (row?.id) navigate(`/user-details/${row.id}`);
+    },
+    [navigate]
+  );
+
+  const handleEditClick = useCallback((row: any) => {
+    setSelectedUser(row);
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleViewClick = useCallback(
+    (row: any) => {
+      if (row?.id) navigate(`/user-details/${row.id}`);
+    },
+    [navigate]
+  );
+
+  const handleUploadImageClick = useCallback(
+    (row: any) => {
+      handleImageClick(row.id)();
+    },
+    [handleImageClick]
+  );
+
   // Calculate laundry stats
   const totalLaundries = allLaundries?.data?.length || 0;
   const vendorsWithLaundries =
     vendors?.data?.filter((vendor: any) =>
       allLaundries?.data?.some((laundry: any) => laundry.vendorId === vendor.id)
     ).length || 0;
+
+  // Get laundry count for a specific vendor
+  const getLaundryCount = useCallback(
+    (vendorId: string) => {
+      return (
+        allLaundries?.data?.filter(
+          (laundry: any) => laundry.vendorId === vendorId
+        ).length || 0
+      );
+    },
+    [allLaundries]
+  );
+
+  const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
+  const currentEnd = useMemo(
+    () => Math.min(page * limit, vendors?.count || 0),
+    [page, limit, vendors?.count]
+  );
+
+  // Define table columns
+  const columns: DataTableColumn[] = [
+    {
+      id: 'vendor',
+      label: 'Vendor',
+      minWidth: 200,
+      render: (row: any) => (
+        <Stack direction='row' alignItems='center' spacing={2}>
+          <Avatar
+            src={row?.profileImage?.url}
+            onClick={handleImageClick(row.id)}
+            sx={{ cursor: 'pointer', width: 40, height: 40 }}
+          >
+            {row?.firstName?.charAt(0) ||
+              row?.phone?.charAt(row.phone.length - 1)}
+          </Avatar>
+          <Box>
+            <Typography variant='body1' fontWeight='bold'>
+              {row?.name ||
+                `${row?.firstName || ''} ${row?.lastName || ''}`.trim()}
+            </Typography>
+            <Typography variant='body2' color='text.secondary'>
+              {row?.email || 'No email'}
+            </Typography>
+          </Box>
+          <input
+            type='file'
+            accept='image/*'
+            ref={(el) => {
+              if (el) fileInputRefs.current[row.id] = el;
+            }}
+            style={{ display: 'none' }}
+            onChange={handleImageChange(row.id)}
+          />
+        </Stack>
+      ),
+      hideable: false,
+    },
+    {
+      id: 'phone',
+      label: 'Phone',
+      minWidth: 140,
+      accessor: 'phone',
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      minWidth: 100,
+      render: (row: any) => (
+        <Chip
+          label={row?.status || 'N/A'}
+          color={
+            row?.status === 'ACTIVE'
+              ? 'success'
+              : row?.status === 'INACTIVE'
+              ? 'error'
+              : row?.status === 'REJECTED'
+              ? 'warning'
+              : 'default'
+          }
+          size='small'
+        />
+      ),
+    },
+    {
+      id: 'laundries',
+      label: 'Laundries',
+      minWidth: 120,
+      render: (row: any) => {
+        const count = getLaundryCount(row.id);
+        return (
+          <Stack direction='row' alignItems='center' spacing={1}>
+            <LocalLaundryService fontSize='small' color='primary' />
+            <Chip
+              label={`${count} laundries`}
+              color={count > 0 ? 'primary' : 'default'}
+              size='small'
+            />
+          </Stack>
+        );
+      },
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      minWidth: 120,
+      accessor: (row: any) =>
+        row?.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A',
+    },
+  ];
+
+  // Define table actions
+  const actions: DataTableAction[] = [
+    {
+      label: 'View Details',
+      icon: <Visibility fontSize='small' />,
+      onClick: handleViewClick,
+      color: 'primary',
+    },
+    {
+      label: 'Edit Vendor',
+      icon: <Edit fontSize='small' />,
+      onClick: handleEditClick,
+      color: 'secondary',
+    },
+    {
+      label: 'Upload Image',
+      icon: <PhotoCamera fontSize='small' />,
+      onClick: handleUploadImageClick,
+      color: 'default',
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -186,58 +353,27 @@ const Vendor = () => {
       </Stack>
 
       {/* Vendors Table */}
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell width={50}></TableCell>
-              <TableCell>
-                <strong>Vendor Details</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Phone</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Status</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Laundries</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Created</strong>
-              </TableCell>
-              <TableCell>
-                <strong>Actions</strong>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {vendors?.data?.length && vendors.data.length > 0 ? (
-              vendors.data.map((vendor: any) => (
-                <EnhancedVendorTableRow
-                  key={vendor.id}
-                  vendor={vendor}
-                  handleImageClick={handleImageClick}
-                  handleImageChange={handleImageChange}
-                  fileInputRefs={fileInputRefs}
-                />
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} align='center'>
-                  <Typography variant='body1' color='text.secondary' py={4}>
-                    No vendors found.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Paper>
+      <DataTable
+        columns={columns}
+        data={vendors?.data || []}
+        actions={actions}
+        onRowClick={handleRowClick}
+        loading={isLoading}
+        emptyMessage='No vendors available'
+        rowKey='id'
+        maxHeight='65vh'
+      />
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' mt={3}>
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mt={2}
+        py={2}
+        px={2}
+      >
+        <Box flex='1' display='flex' justifyContent='center' ml={20}>
           <Pagination
             count={totalPages}
             page={page}
@@ -245,8 +381,26 @@ const Vendor = () => {
             color='primary'
           />
         </Box>
-      )}
+        {vendors && (
+          <Typography variant='body2' sx={{ ml: 3 }}>
+            Showing{' '}
+            {vendors?.data?.length > 0 ? `${currentStart}-${currentEnd}` : 0} of{' '}
+            {vendors?.count || 0} items
+          </Typography>
+        )}
+      </Box>
 
+      {/* Edit User Dialog */}
+      <EditUserDialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
+
+      {/* Upload Loading Overlay */}
       {isUploading && (
         <Box
           position='fixed'

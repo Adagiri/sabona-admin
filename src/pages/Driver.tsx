@@ -1,21 +1,13 @@
 // File: src/pages/Driver.tsx
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Paper,
   Pagination,
   CircularProgress,
   Alert,
-  IconButton,
   Chip,
-  Stack,
   Button,
   Dialog,
   DialogTitle,
@@ -28,12 +20,18 @@ import {
   CheckCircle,
   Warning,
   Error,
+  Description,
 } from '@mui/icons-material';
 import { useFetchAllUsers } from '../hooks/Admin/query';
 import { USER_TYPES } from '../hooks/Admin/interface';
 import { ToastContainer } from 'react-toastify';
 import { useNavigate, useParams } from 'react-router-dom';
 import RiderDocumentUpload from '../components/RiderDocumentUpload';
+import DataTable, {
+  DataTableColumn,
+  DataTableAction,
+} from '../components/DataTable';
+import EditUserDialog from '../components/EditUserDialog';
 
 const Driver = () => {
   const { pageNumber } = useParams<{ pageNumber: string }>();
@@ -41,6 +39,8 @@ const Driver = () => {
   const [limit] = useState(10);
   const [selectedRiderId, setSelectedRiderId] = useState<string | null>(null);
   const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const {
     data: drivers,
@@ -63,31 +63,48 @@ const Driver = () => {
     event: React.ChangeEvent<unknown>,
     value: number
   ) => {
-    console.log(typeof event)
+    console.log(typeof event);
     setPage(value);
     navigate(`/drivers/${value}`);
   };
 
-  const handleViewDetails = (riderId: string) => {
-    navigate(`/user-details/${riderId}`);
-  };
+  const handleViewDetails = useCallback(
+    (row: any) => {
+      navigate(`/user-details/${row.id}`);
+    },
+    [navigate]
+  );
 
-  const handleManageDocuments = (riderId: string) => {
-    setSelectedRiderId(riderId);
+  const handleManageDocuments = useCallback((row: any) => {
+    setSelectedRiderId(row.id);
     setDocumentDialogOpen(true);
-  };
+  }, []);
+
+  const handleEditClick = useCallback((row: any) => {
+    setSelectedUser(row);
+    setEditDialogOpen(true);
+  }, []);
 
   const getStatusChip = (status: string) => {
     const statusMap = {
       ACTIVE: {
         color: 'success' as const,
-        icon: <CheckCircle />,
+        icon: <CheckCircle fontSize='small' />,
         label: 'Active',
       },
-      INACTIVE: { color: 'error' as const, icon: <Error />, label: 'Inactive' },
+      INACTIVE: {
+        color: 'error' as const,
+        icon: <Error fontSize='small' />,
+        label: 'Inactive',
+      },
+      REJECTED: {
+        color: 'error' as const,
+        icon: <Error fontSize='small' />,
+        label: 'Rejected',
+      },
       PENDING: {
         color: 'warning' as const,
-        icon: <Warning />,
+        icon: <Warning fontSize='small' />,
         label: 'Pending',
       },
     };
@@ -105,12 +122,12 @@ const Driver = () => {
     );
   };
 
-  const getDocumentStatus = (driver:any) => {
+  const getDocumentStatus = (driver: any) => {
     // Check if rider has documents uploaded
     const hasDocuments = driver.settings?.isDocumentsUploaded || false;
     const hasDriverLicense =
       driver.medias?.some(
-        (media) => media.meta?.docType === 'DRIVER_LICENSE_DOC'
+        (media: any) => media.meta?.docType === 'DRIVER_LICENSE_DOC'
       ) || false;
 
     if (hasDocuments && hasDriverLicense) {
@@ -121,6 +138,86 @@ const Driver = () => {
       return { status: 'Missing', color: 'error' as const };
     }
   };
+
+  const currentStart = useMemo(() => (page - 1) * limit + 1, [page, limit]);
+  const currentEnd = useMemo(
+    () => Math.min(page * limit, drivers?.count || 0),
+    [page, limit, drivers?.count]
+  );
+
+  // Define table columns
+  const columns: DataTableColumn[] = [
+    {
+      id: 'name',
+      label: 'Name',
+      minWidth: 150,
+      accessor: (row: any) =>
+        row?.name || `${row?.firstName || ''} ${row?.lastName || ''}`.trim(),
+    },
+    {
+      id: 'phone',
+      label: 'Phone',
+      minWidth: 140,
+      accessor: 'phone',
+    },
+    {
+      id: 'email',
+      label: 'Email',
+      minWidth: 200,
+      accessor: (row: any) => row?.email || 'Not provided',
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      minWidth: 120,
+      render: (row: any) => getStatusChip(row?.status),
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      minWidth: 120,
+      render: (row: any) => {
+        const docStatus = getDocumentStatus(row);
+        return (
+          <Chip
+            label={docStatus.status}
+            color={docStatus.color}
+            size='small'
+            variant='outlined'
+          />
+        );
+      },
+    },
+    {
+      id: 'createdAt',
+      label: 'Created',
+      minWidth: 120,
+      accessor: (row: any) =>
+        row?.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A',
+    },
+  ];
+
+  // Define table actions
+  const actions: DataTableAction[] = [
+    {
+      label: 'View Details',
+      icon: <Visibility fontSize='small' />,
+      onClick: handleViewDetails,
+      color: 'primary',
+    },
+    {
+      label: 'Edit Rider',
+      icon: <Edit fontSize='small' />,
+      onClick: handleEditClick,
+      color: 'secondary',
+    },
+    {
+      label: 'Manage Documents',
+      icon: <Description fontSize='small' />,
+      onClick: handleManageDocuments,
+      color: 'info',
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -146,119 +243,57 @@ const Driver = () => {
 
   return (
     <Box p={3}>
+      <ToastContainer />
       <Typography variant='h4' gutterBottom fontWeight='bold'>
         Driver Management
       </Typography>
 
       {drivers?.data?.length ? (
         <>
-          <Paper sx={{ width: '100%', overflow: 'hidden', mb: 3 }}>
-            <Table stickyHeader>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Phone</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Documents</TableCell>
-                  <TableCell>Level</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {drivers.data.map((driver) => {
-                  const docStatus = getDocumentStatus(driver);
-                  return (
-                    <TableRow key={driver.id} hover>
-                      <TableCell>
-                        <Typography variant='body2' fontFamily='monospace'>
-                          {driver.id.slice(0, 8)}...
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2' fontWeight='medium'>
-                          {driver.firstName} {driver.lastName}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>
-                          {driver.email || 'Not provided'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>
-                          {driver.phone || 'Not provided'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>{getStatusChip(driver.status)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={docStatus.status}
-                          color={docStatus.color}
-                          size='small'
-                          variant='outlined'
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={driver.level || 'BASIC'}
-                          size='small'
-                          variant='outlined'
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>
-                          {new Date(driver.createdAt).toLocaleDateString()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction='row' spacing={1}>
-                          <IconButton
-                            size='small'
-                            color='primary'
-                            onClick={() => handleViewDetails(driver.id)}
-                            title='View Details'
-                          >
-                            <Visibility />
-                          </IconButton>
-                          <IconButton
-                            size='small'
-                            color='secondary'
-                            onClick={() => handleManageDocuments(driver.id)}
-                            title='Manage Documents'
-                          >
-                            <Edit />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Paper>
+          <DataTable
+            columns={columns}
+            data={drivers.data}
+            actions={actions}
+            onRowClick={handleViewDetails}
+            loading={isLoading}
+            emptyMessage='No drivers found'
+            rowKey='id'
+            maxHeight='65vh'
+          />
 
-          <Box display='flex' justifyContent='center' mt={3}>
-            <Pagination
-              count={totalPages}
-              page={page}
-              onChange={handlePageChange}
-              color='primary'
-              size='large'
-            />
+          {/* Pagination */}
+          <Box
+            display='flex'
+            justifyContent='space-between'
+            alignItems='center'
+            mt={2}
+            py={2}
+            px={2}
+          >
+            <Box flex='1' display='flex' justifyContent='center' ml={20}>
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={handlePageChange}
+                color='primary'
+                size='large'
+              />
+            </Box>
+            {drivers && (
+              <Typography variant='body2' sx={{ ml: 3 }}>
+                Showing{' '}
+                {drivers?.data?.length > 0
+                  ? `${currentStart}-${currentEnd}`
+                  : 0}{' '}
+                of {drivers?.count || 0} items
+              </Typography>
+            )}
           </Box>
         </>
       ) : (
-        <Paper sx={{ p: 4, textAlign: 'center' }}>
-          <Typography variant='h6' color='textSecondary'>
-            No drivers found
-          </Typography>
-          <Typography variant='body2' color='textSecondary' mt={1}>
-            No riders are currently registered in the system.
-          </Typography>
-        </Paper>
+        <Alert severity='info'>
+          No drivers found. No riders are currently registered in the system.
+        </Alert>
       )}
 
       {/* Document Management Dialog */}
@@ -287,7 +322,15 @@ const Driver = () => {
         </DialogActions>
       </Dialog>
 
-      <ToastContainer />
+      {/* Edit User Dialog */}
+      <EditUserDialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
     </Box>
   );
 };

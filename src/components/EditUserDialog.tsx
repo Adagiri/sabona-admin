@@ -34,7 +34,11 @@ interface EditUserDialogProps {
   user: User | null;
 }
 
-const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onClose, user }) => {
+const EditUserDialog: React.FC<EditUserDialogProps> = ({
+  open,
+  onClose,
+  user,
+}) => {
   const editUserMutation = useEditUser();
 
   const [formData, setFormData] = useState({
@@ -50,7 +54,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onClose, user }) 
   const [showPhoneConfirm, setShowPhoneConfirm] = useState(false);
   const [showEmailConfirm, setShowEmailConfirm] = useState(false);
 
-  console.log(typeof showEmailConfirm)
+  console.log(typeof showEmailConfirm);
 
   // Reset form when user changes or dialog opens
   useEffect(() => {
@@ -111,7 +115,11 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onClose, user }) 
     if (formData.status && formData.status !== user.status) {
       updateData.status = formData.status;
     }
-    if (user.type === 'USER' && formData.level && formData.level !== user.level) {
+    if (
+      user.type === 'USER' &&
+      formData.level &&
+      formData.level !== user.level
+    ) {
       updateData.level = formData.level;
     }
 
@@ -128,100 +136,111 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onClose, user }) 
       });
       onClose();
     } catch (error) {
-      console.log(typeof error)
+      console.log(typeof error);
       // Error already handled by mutation
     }
   };
 
   const isCustomer = user?.type === 'USER';
-  const phoneChanged = formData.phone !== user?.phone;
-  const emailChanged = formData.email !== user?.email;
+  const phoneChanged =
+    formData.phone !== user?.phone && user?.phone ? true : false;
+  const emailChanged =
+    formData.email !== user?.email && user?.email ? true : false;
   const phoneReasonRequired = phoneChanged && !phoneReason.trim();
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
       <DialogTitle>Edit User Profile</DialogTitle>
       <DialogContent>
         {user && (
           <Box sx={{ pt: 2 }}>
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Editing {user.type.toLowerCase()}: {user.name || user.phone || user.email}
+            <Alert severity='info' sx={{ mb: 2 }}>
+              Editing {user.type.toLowerCase()}:{' '}
+              {user.name || user.phone || user.email}
             </Alert>
 
             {/* Name */}
             <TextField
               fullWidth
-              label="Name"
+              label='Name'
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              margin="normal"
-              helperText="Full name (2-100 characters)"
+              margin='normal'
+              helperText='Full name (2-100 characters)'
             />
 
             {/* Email */}
             <TextField
               fullWidth
-              label="Email"
-              type="email"
+              label='Email'
+              type='email'
               value={formData.email}
               onChange={(e) => handleChange('email', e.target.value)}
-              margin="normal"
-              helperText={emailChanged ? "Email will be updated" : ""}
+              margin='normal'
+              helperText={emailChanged ? 'Email will be updated' : ''}
               error={emailChanged && !formData.email}
             />
 
             {emailChanged && (
               <TextField
                 fullWidth
-                label="Email Change Reason (Optional)"
+                label='Email Change Reason (Optional)'
                 value={emailReason}
                 onChange={(e) => setEmailReason(e.target.value)}
-                margin="normal"
+                margin='normal'
                 multiline
                 rows={2}
-                placeholder="Why is the email being changed?"
+                placeholder='Why is the email being changed?'
               />
             )}
 
             {/* Phone */}
             <TextField
               fullWidth
-              label="Phone Number"
+              label='Phone Number'
               value={formData.phone}
               onChange={(e) => handleChange('phone', e.target.value)}
-              margin="normal"
-              helperText={phoneChanged ? "⚠️ Phone change requires a reason" : "Saudi format: +966XXXXXXXXX, 05XXXXXXXX"}
+              margin='normal'
+              helperText={
+                phoneChanged
+                  ? '⚠️ Phone change requires a reason'
+                  : 'Saudi format: +966XXXXXXXXX, 05XXXXXXXX'
+              }
               error={phoneReasonRequired}
             />
 
             {phoneChanged && (
               <>
-                <Alert severity="warning" sx={{ mt: 1, mb: 1 }}>
-                  <Typography variant="body2">
+                <Alert severity='warning' sx={{ mt: 1, mb: 1 }}>
+                  <Typography variant='body2'>
                     <strong>Phone Number Change Confirmation</strong>
                   </Typography>
-                  <Typography variant="caption" display="block">
+                  <Typography variant='caption' display='block'>
                     • Old number will become available immediately
                   </Typography>
-                  <Typography variant="caption" display="block">
+                  <Typography variant='caption' display='block'>
                     • User will be notified via push notification
                   </Typography>
-                  <Typography variant="caption" display="block">
+                  <Typography variant='caption' display='block'>
                     • Change will be logged for audit
                   </Typography>
                 </Alert>
                 <TextField
                   fullWidth
-                  label="Phone Change Reason *"
+                  label='Phone Change Reason *'
                   value={phoneReason}
                   onChange={(e) => setPhoneReason(e.target.value)}
-                  margin="normal"
+                  margin='normal'
                   multiline
                   rows={2}
                   required
                   error={phoneReasonRequired}
-                  helperText={phoneReasonRequired ? "Reason is required for phone changes" : "Min 10 characters"}
-                  placeholder="Why is the phone number being changed?"
+                  helperText={
+                    phoneReasonRequired
+                      ? 'Reason is required for phone changes'
+                      : 'Min 10 characters'
+                  }
+                  placeholder='Why is the phone number being changed?'
                 />
               </>
             )}
@@ -229,33 +248,33 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onClose, user }) 
             <Divider sx={{ my: 2 }} />
 
             {/* Status */}
-            <FormControl fullWidth margin="normal">
+            <FormControl fullWidth margin='normal'>
               <InputLabel>Status</InputLabel>
               <Select
                 value={formData.status}
                 onChange={(e) => handleChange('status', e.target.value)}
-                label="Status"
+                label='Status'
               >
-                <MenuItem value="ACTIVE">Active</MenuItem>
-                <MenuItem value="INACTIVE">Inactive</MenuItem>
+                <MenuItem value='ACTIVE'>Active</MenuItem>
+                <MenuItem value='INACTIVE'>Inactive</MenuItem>
                 {(user.type === 'VENDOR' || user.type === 'RIDER') && (
-                  <MenuItem value="REJECTED">Rejected</MenuItem>
+                  <MenuItem value='REJECTED'>Rejected</MenuItem>
                 )}
               </Select>
             </FormControl>
 
             {/* Level (only for customers) */}
             {isCustomer && (
-              <FormControl fullWidth margin="normal">
+              <FormControl fullWidth margin='normal'>
                 <InputLabel>Level</InputLabel>
                 <Select
                   value={formData.level}
                   onChange={(e) => handleChange('level', e.target.value)}
-                  label="Level"
+                  label='Level'
                 >
-                  <MenuItem value="BASIC">Basic</MenuItem>
-                  <MenuItem value="LOYAL">Loyal</MenuItem>
-                  <MenuItem value="ELITE">Elite</MenuItem>
+                  <MenuItem value='BASIC'>Basic</MenuItem>
+                  <MenuItem value='LOYAL'>Loyal</MenuItem>
+                  <MenuItem value='ELITE'>Elite</MenuItem>
                 </Select>
               </FormControl>
             )}
@@ -268,7 +287,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onClose, user }) 
         </Button>
         <Button
           onClick={handleSubmit}
-          variant="contained"
+          variant='contained'
           disabled={editUserMutation.isPending || phoneReasonRequired}
         >
           {editUserMutation.isPending ? (
