@@ -128,6 +128,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({ open, onClose, user }) 
       });
       onClose();
     } catch (error) {
+      console.log(typeof error)
       // Error already handled by mutation
     }
   };
