@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../../services/api-service';
 import { toast } from 'react-toastify';
-import { FETCH_USER_QUERIES } from '../query';
+import { FETCH_ORDER_QUERIES } from '../query';
 
 // Types
 export interface EditUserRequest {
@@ -58,10 +58,10 @@ export const useEditUser = () => {
     onSuccess: (data, variables) => {
       // Invalidate user queries to refresh data
       queryClient.invalidateQueries({
-        queryKey: [FETCH_USER_QUERIES.FETCH_USER_BY_ID, variables.userId],
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_USER_DETAILS, variables.userId],
       });
       queryClient.invalidateQueries({
-        queryKey: [FETCH_USER_QUERIES.FETCH_ALL_USERS],
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_USERS],
       });
 
       const changesApplied = data.changesApplied?.join(', ') || 'profile';
@@ -96,10 +96,10 @@ export const useChangeUserPhone = () => {
     onSuccess: (data, variables) => {
       console.log(typeof data)
       queryClient.invalidateQueries({
-        queryKey: [FETCH_USER_QUERIES.FETCH_USER_BY_ID, variables.userId],
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_USER_DETAILS, variables.userId],
       });
       queryClient.invalidateQueries({
-        queryKey: [FETCH_USER_QUERIES.FETCH_ALL_USERS],
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_USERS],
       });
       toast.success('Phone number updated successfully');
     },
@@ -133,10 +133,10 @@ export const useChangeUserEmail = () => {
       console.log(typeof data);
 
       queryClient.invalidateQueries({
-        queryKey: [FETCH_USER_QUERIES.FETCH_USER_BY_ID, variables.userId],
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_USER_DETAILS, variables.userId],
       });
       queryClient.invalidateQueries({
-        queryKey: [FETCH_USER_QUERIES.FETCH_ALL_USERS],
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_USERS],
       });
       toast.success('Email updated successfully');
     },
