@@ -1,23 +1,21 @@
 import {
   Box,
   Typography,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Paper,
   Pagination,
   CircularProgress,
   Alert,
   ToggleButtonGroup,
   ToggleButton,
+  Chip,
 } from '@mui/material';
+import { Visibility, Edit } from '@mui/icons-material';
 import { useFetchAllUsers } from '../hooks/Admin/query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Filter, LEVELS, USER_TYPES } from '../hooks/Admin/interface';
 import { toast, ToastContainer } from 'react-toastify';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import DataTable, { DataTableColumn, DataTableAction } from '../components/DataTable';
+import EditUserDialog from '../components/EditUserDialog';
 
 const FILTER_ARRAY = [
   { value: 'Today', status: 'Today' },
@@ -35,6 +33,9 @@ const Customer = () => {
   const pageNumber = searchParams.get('page') || '1';
   const [page, setPage] = useState<number>(Number(pageNumber));
   const [limit] = useState(10);
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   const {
     data: customers,
@@ -91,8 +92,20 @@ const Customer = () => {
   );
 
   const handleRowClick = useCallback(
-    (customerId: string) => {
-      if (customerId) navigate(`/customer/${customerId}`);
+    (row: any) => {
+      if (row?.id) navigate(`/customer/${row.id}`);
+    },
+    [navigate]
+  );
+
+  const handleEditClick = useCallback((row: any) => {
+    setSelectedUser(row);
+    setEditDialogOpen(true);
+  }, []);
+
+  const handleViewClick = useCallback(
+    (row: any) => {
+      if (row?.id) navigate(`/customer/${row.id}`);
     },
     [navigate]
   );
@@ -102,6 +115,86 @@ const Customer = () => {
     () => Math.min(page * limit, customers?.count || 0),
     [page, limit, customers?.count]
   );
+
+  // Define table columns
+  const columns: DataTableColumn[] = [
+    {
+      id: 'name',
+      label: 'Name',
+      minWidth: 150,
+      accessor: (row: any) => row?.name || `${row?.firstName || ''} ${row?.lastName || ''}`.trim(),
+    },
+    {
+      id: 'level',
+      label: 'Level',
+      minWidth: 100,
+      render: (row: any) => (
+        <Chip
+          label={row?.level || 'N/A'}
+          color={row?.level === LEVELS.LOYAL ? 'secondary' : 'default'}
+          size="small"
+          sx={{
+            fontWeight: row?.level === LEVELS.LOYAL ? 'bold' : 'normal',
+          }}
+        />
+      ),
+    },
+    {
+      id: 'phone',
+      label: 'Phone',
+      minWidth: 140,
+      accessor: 'phone',
+    },
+    {
+      id: 'email',
+      label: 'Email',
+      minWidth: 200,
+      accessor: 'email',
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      minWidth: 100,
+      render: (row: any) => (
+        <Chip
+          label={row?.status || 'N/A'}
+          color={
+            row?.status === 'ACTIVE'
+              ? 'success'
+              : row?.status === 'INACTIVE'
+              ? 'error'
+              : 'default'
+          }
+          size="small"
+        />
+      ),
+    },
+    {
+      id: 'createdAt',
+      label: 'Created At',
+      minWidth: 120,
+      accessor: (row: any) =>
+        row?.createdAt
+          ? new Date(row.createdAt).toLocaleDateString()
+          : 'N/A',
+    },
+  ];
+
+  // Define table actions
+  const actions: DataTableAction[] = [
+    {
+      label: 'View Details',
+      icon: <Visibility fontSize="small" />,
+      onClick: handleViewClick,
+      color: 'primary',
+    },
+    {
+      label: 'Edit User',
+      icon: <Edit fontSize="small" />,
+      onClick: handleEditClick,
+      color: 'secondary',
+    },
+  ];
 
   return (
     <Box pr={5}>
@@ -156,86 +249,17 @@ const Customer = () => {
           </Alert>
         </Box>
       ) : (
-        <Paper>
-          <Table>
-            <TableHead>
-              <TableRow
-                sx={{
-                  backgroundColor: (theme) => theme.palette.secondary.main,
-                }}
-                hover
-              >
-                {[
-                  'First Name',
-                  'Last Name',
-                  'Level',
-                  'Phone',
-                  'Email',
-                  'Status',
-                  'Created At',
-                ].map((col) => (
-                  <TableCell
-                    key={col}
-                    sx={{ fontWeight: 'bold', color: 'white' }}
-                  >
-                    {col}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {Array.isArray(customers?.data) && customers.data.length > 0 ? (
-                customers.data.map((row: any, index: number) => (
-                  <TableRow
-                    key={row?.id || index}
-                    onClick={() => handleRowClick(row?.id)}
-                    sx={{
-                      cursor: 'pointer',
-                      '&:hover': { backgroundColor: '#f5f5f5' },
-                    }}
-                  >
-                    <TableCell>{row?.firstName ?? 'N/A'}</TableCell>
-                    <TableCell>{row?.lastName ?? 'N/A'}</TableCell>
-                    <TableCell
-                      sx={
-                        row?.level === LEVELS.LOYAL
-                          ? { color: 'maroon', fontWeight: 'bolder' }
-                          : {}
-                      }
-                    >
-                      {row?.level ?? 'N/A'}
-                    </TableCell>
-                    <TableCell>{row?.phone ?? 'N/A'}</TableCell>
-                    <TableCell>{row?.email ?? 'N/A'}</TableCell>
-                    <TableCell
-                      sx={{
-                        color:
-                          row?.status === 'INACTIVE'
-                            ? 'red'
-                            : row?.status
-                            ? 'green'
-                            : 'gray',
-                      }}
-                    >
-                      {row?.status ?? 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {row?.createdAt
-                        ? new Date(row.createdAt).toLocaleDateString()
-                        : 'N/A'}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} align='center'>
-                    No customers available
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        <>
+          <DataTable
+            columns={columns}
+            data={customers?.data || []}
+            actions={actions}
+            onRowClick={handleRowClick}
+            loading={isLoading}
+            emptyMessage="No customers available"
+            rowKey="id"
+            maxHeight="65vh"
+          />
 
           {/* Pagination */}
           <Box
@@ -264,8 +288,18 @@ const Customer = () => {
               </Typography>
             )}
           </Box>
-        </Paper>
+        </>
       )}
+
+      {/* Edit User Dialog */}
+      <EditUserDialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setSelectedUser(null);
+        }}
+        user={selectedUser}
+      />
     </Box>
   );
 };
