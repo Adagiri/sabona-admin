@@ -364,3 +364,30 @@ export const useCancelOrder = () => {
     },
   });
 };
+
+// Accept order on behalf of vendor
+export const useAcceptOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const response = await api.patch(`/admin/order/${orderId}/accept`);
+      return response.data;
+    },
+    onSuccess: (data, orderId) => {
+      console.log(typeof data)
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [FETCH_ORDER_QUERIES.FETCH_ALL_ORDERS],
+      });
+      toast.success('Order accepted successfully. Driver has been assigned.');
+    },
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message || 'Failed to accept order';
+      toast.error(message);
+    },
+  });
+};

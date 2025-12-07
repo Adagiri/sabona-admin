@@ -56,7 +56,7 @@ import { useFetchOrderDetails } from '../hooks/Admin/query';
 import { toast } from 'react-toastify';
 import { Cancel } from '@mui/icons-material';
 import { FormControlLabel, Checkbox } from '@mui/material';
-import { useCancelOrder } from '../hooks/Admin/mutations/customOrders';
+import { useCancelOrder, useAcceptOrder } from '../hooks/Admin/mutations/customOrders';
 import { LinkIcon } from 'lucide-react';
 
 const OrderDetails: React.FC = () => {
@@ -78,6 +78,7 @@ const OrderDetails: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [refundCustomer, setRefundCustomer] = useState(false);
   const cancelMutation = useCancelOrder();
+  const acceptOrderMutation = useAcceptOrder();
   //  const regeneratePaymentLinkMutation = useRegeneratePaymentLink();
 
 
@@ -116,6 +117,17 @@ const OrderDetails: React.FC = () => {
     toast.success('Notes saved successfully');
     setNotesDialogOpen(false);
   }, []);
+
+  const handleAcceptOrder = useCallback(async () => {
+    if (!orderId) return;
+
+    try {
+      await acceptOrderMutation.mutateAsync(orderId);
+      await refetch(); // Refresh order details after accepting
+    } catch (error) {
+      console.error('Failed to accept order:', error);
+    }
+  }, [orderId, acceptOrderMutation, refetch]);
 
   const handleUpdateStatus = useCallback((newStatus: string) => {
     // TODO: Implement API call to update order status
@@ -678,10 +690,15 @@ const OrderDetails: React.FC = () => {
                     variant='contained'
                     color='success'
                     startIcon={<CheckCircle />}
-                    onClick={() => handleUpdateStatus('ACCEPTED')}
+                    onClick={handleAcceptOrder}
+                    disabled={acceptOrderMutation.isPending}
                     fullWidth
                   >
-                    Accept Order
+                    {acceptOrderMutation.isPending ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      'Accept Order'
+                    )}
                   </Button>
                 )}
                 {orderDetails.status === 'ACCEPTED' && (
