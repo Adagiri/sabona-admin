@@ -46,6 +46,7 @@ import CustomOrderDetails from './pages/CustomOrderDetails';
 import CustomerDetails from './pages/CustomerDetails';
 import Withdrawals from './pages/Withdrawal';
 import PreWithdrawal from './pages/PreWithdrawal';
+import BroadcastNotification from './pages/BroadcastNotification';
 
 const App: React.FC = () => {
   return (
@@ -149,6 +150,10 @@ const AppContent: React.FC = () => {
             <Route path='/admin-settings' element={<AdminSettings />} />
             <Route path='/withdrawals' element={<Withdrawals />} />
             <Route path='/pre-withdrawals' element={<PreWithdrawal />} />
+            <Route
+              path='/broadcast-notifications'
+              element={<BroadcastNotification />}
+            />
           </Route>
         </Routes>
       </Box>

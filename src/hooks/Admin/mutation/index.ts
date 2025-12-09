@@ -10,6 +10,8 @@ import {
   UploadImage,
   UserCredentials,
   UserLoginResponse,
+  BroadcastNotificationRequest,
+  BroadcastNotificationResponse,
 } from '../interface';
 import { AxiosResponse } from 'axios';
 import { FETCH_ORDER_QUERIES } from '../query';
@@ -729,6 +731,32 @@ export const useReorderLaundryServiceItems = () => {
           variables.serviceId,
         ],
       });
+    },
+  });
+};
+
+// ==================== BROADCAST NOTIFICATION MUTATION ====================
+
+const sendBroadcastNotification = async (
+  data: BroadcastNotificationRequest
+): Promise<BroadcastNotificationResponse> => {
+  const response: AxiosResponse<BroadcastNotificationResponse> = await api.post(
+    '/v1/notification/admin/broadcast',
+    data
+  );
+  return response.data;
+};
+
+export const useBroadcastNotification = () => {
+  return useMutation({
+    mutationFn: (data: BroadcastNotificationRequest) =>
+      sendBroadcastNotification(data),
+    onError: (error: any) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to send broadcast notification';
+      toast.error(message);
     },
   });
 };

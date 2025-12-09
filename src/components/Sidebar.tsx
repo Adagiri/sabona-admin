@@ -32,6 +32,7 @@ import {
   SettingsApplications,
   Dashboard,
   Assessment,
+  NotificationsActive,
 } from '@mui/icons-material';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -107,6 +108,7 @@ const menuStructure: (MenuItem | MenuSection)[] = [
     items: [
       { text: 'Applications', icon: <Apps />, route: '/application' },
       { text: 'Map Stats', icon: <Map />, route: '/map-stats' },
+      { text: 'Broadcast Notifications', icon: <NotificationsActive />, route: '/broadcast-notifications' },
       { text: 'Settings', icon: <Settings />, route: '/admin-settings' },
     ],
   },
