@@ -741,7 +741,7 @@ const sendBroadcastNotification = async (
   data: BroadcastNotificationRequest
 ): Promise<BroadcastNotificationResponse> => {
   const response: AxiosResponse<BroadcastNotificationResponse> = await api.post(
-    '/v1/notification/admin/broadcast',
+    '/notification/admin/broadcast',
     data
   );
   return response.data;
