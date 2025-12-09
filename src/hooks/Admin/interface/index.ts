@@ -447,3 +447,32 @@ export interface FinalizeRiderDocumentResponse {
 //   vatNumberDoc?: ApplicationDocument;
 //   businessCertDoc?: ApplicationDocument;
 // }
+
+// ==================== BROADCAST NOTIFICATION TYPES ====================
+
+export enum NOTIFICATION_ACTION_TYPE {
+  ORDERS = 'ORDERS',
+  PROFILE = 'PROFILE',
+  HOME = 'HOME',
+  PROMOTIONS = 'PROMOTIONS',
+}
+
+export interface BroadcastNotificationRequest {
+  titleEn: string;
+  bodyEn: string;
+  titleAr: string;
+  bodyAr: string;
+  actionType?: NOTIFICATION_ACTION_TYPE;
+  route?: string;
+  userTypes?: ('USER' | 'VENDOR' | 'RIDER')[];
+  registrationStartDate?: string;
+  registrationEndDate?: string;
+  minOrderCount?: number;
+  maxOrderCount?: number;
+}
+
+export interface BroadcastNotificationResponse {
+  message: string;
+  totalRecipients: number;
+  notificationsSent: number;
+}
