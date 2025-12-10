@@ -109,6 +109,25 @@ const schema = yup.object({
     ),
 });
 
+const defaultFormValues: FormData = {
+  titleEn: '',
+  bodyEn: '',
+  titleAr: '',
+  bodyAr: '',
+  actionType: '',
+  route: '',
+  sendToAll: true,
+  userTypes: {
+    USER: false,
+    VENDOR: false,
+    RIDER: false,
+  },
+  registrationStartDate: null,
+  registrationEndDate: null,
+  minOrderCount: null,
+  maxOrderCount: null,
+};
+
 const BroadcastNotification: React.FC = () => {
   const [previewLang, setPreviewLang] = useState<'en' | 'ar'>('en');
   const [result, setResult] = useState<{
@@ -122,27 +141,11 @@ const BroadcastNotification: React.FC = () => {
     handleSubmit,
     watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: yupResolver(schema) as any,
-    defaultValues: {
-      titleEn: '',
-      bodyEn: '',
-      titleAr: '',
-      bodyAr: '',
-      actionType: '',
-      route: '',
-      sendToAll: true,
-      userTypes: {
-        USER: false,
-        VENDOR: false,
-        RIDER: false,
-      },
-      registrationStartDate: null,
-      registrationEndDate: null,
-      minOrderCount: null,
-      maxOrderCount: null,
-    },
+    defaultValues: defaultFormValues,
   });
 
   const broadcastMutation = useBroadcastNotification();
@@ -195,14 +198,14 @@ const BroadcastNotification: React.FC = () => {
       toast.success('Notification sent successfully!');
 
       // Reset form after successful send
-      reset();
+      reset(defaultFormValues);
     } catch (error: any) {
       console.error('Broadcast error:', error);
     }
   };
 
   const handleCancel = () => {
-    reset();
+    reset(defaultFormValues);
     setResult(null);
   };
 
@@ -346,11 +349,7 @@ const BroadcastNotification: React.FC = () => {
                     onChange={(e) => {
                       field.onChange(e);
                       const route = getRouteForActionType(e.target.value);
-                      reset({
-                        ...formValues,
-                        actionType: e.target.value as any,
-                        route,
-                      });
+                      setValue('route', route);
                     }}
                   >
                     <MenuItem value="">None (default - opens home screen)</MenuItem>
