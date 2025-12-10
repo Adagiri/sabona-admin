@@ -22,7 +22,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import dayjs, { Dayjs } from 'dayjs';
+import { Dayjs } from 'dayjs';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useBroadcastNotification } from '../hooks/Admin/mutation';
@@ -103,7 +103,7 @@ const schema = yup.object({
       'Max orders must be greater than min orders',
       function (value) {
         const { minOrderCount } = this.parent;
-        if (value === null || minOrderCount === null) return true;
+        if (value === null || value === undefined || minOrderCount === null) return true;
         return value >= minOrderCount;
       }
     ),
