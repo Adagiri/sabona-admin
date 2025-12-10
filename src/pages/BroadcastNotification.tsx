@@ -193,6 +193,9 @@ const BroadcastNotification: React.FC = () => {
       const response = await broadcastMutation.mutateAsync(payload);
       setResult(response);
       toast.success('Notification sent successfully!');
+
+      // Reset form after successful send
+      reset();
     } catch (error: any) {
       console.error('Broadcast error:', error);
     }
