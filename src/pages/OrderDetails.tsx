@@ -100,6 +100,26 @@ const OrderDetails: React.FC = () => {
   const markDeliveredMutation = useMarkDelivered();
   const addNotesMutation = useAddOrderNotes();
 
+  // Track which action button is loading
+  const getActionLoading = (label: string) => {
+    switch (label) {
+      case 'Accept Pickup Ride (Driver)':
+        return acceptPickupRideMutation.isPending;
+      case 'Mark Picked Up (Driver)':
+        return markPickedUpMutation.isPending;
+      case 'Mark Dropped at Vendor (Driver)':
+        return markDroppedAtVendorMutation.isPending;
+      case 'Mark Ready (Vendor)':
+        return markReadyMutation.isPending;
+      case 'Accept Delivery Ride (Driver)':
+        return acceptDeliveryRideMutation.isPending;
+      case 'Mark Delivered (Driver)':
+        return markDeliveredMutation.isPending;
+      default:
+        return false;
+    }
+  };
+
 
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
@@ -130,6 +150,12 @@ const OrderDetails: React.FC = () => {
     refetch();
     toast.success('Order details refreshed');
   }, [refetch]);
+
+  const handleOpenNotesDialog = useCallback(() => {
+    // Pre-populate with existing notes when opening
+    setAdminNotes(orderDetails?.adminNotes || '');
+    setNotesDialogOpen(true);
+  }, [orderDetails?.adminNotes]);
 
   const handleSaveNotes = useCallback(async () => {
     if (!adminNotes.trim()) {
@@ -809,15 +835,15 @@ const OrderDetails: React.FC = () => {
                 Quick Actions
               </Typography>
               <Stack spacing={2}>
-                {/* Add Notes */}
+                {/* Add/Edit Notes */}
                 <Button
                   variant='contained'
                   color='primary'
                   startIcon={<Edit />}
-                  onClick={() => setNotesDialogOpen(true)}
+                  onClick={handleOpenNotesDialog}
                   fullWidth
                 >
-                  Add Notes
+                  {orderDetails?.adminNotes ? 'Edit Notes' : 'Add Notes'}
                 </Button>
 
                 {/* Cancel Order */}
@@ -852,21 +878,48 @@ const OrderDetails: React.FC = () => {
                 )}
 
                 {/* Dynamic Next Actions */}
-                {nextActions.map((action, index) => (
-                  <Button
-                    key={index}
-                    variant='contained'
-                    color={action.color}
-                    startIcon={action.icon}
-                    onClick={action.handler}
-                    fullWidth
-                  >
-                    {action.label}
-                  </Button>
-                ))}
+                {nextActions.map((action, index) => {
+                  const isLoading = getActionLoading(action.label);
+                  return (
+                    <Button
+                      key={index}
+                      variant='contained'
+                      color={action.color}
+                      startIcon={!isLoading && action.icon}
+                      onClick={action.handler}
+                      disabled={isLoading}
+                      fullWidth
+                    >
+                      {isLoading ? (
+                        <CircularProgress size={20} color='inherit' />
+                      ) : (
+                        action.label
+                      )}
+                    </Button>
+                  );
+                })}
               </Stack>
             </CardContent>
           </Card>
+
+          {/* Admin Notes - Display existing notes */}
+          {orderDetails?.adminNotes && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
+                  <Typography variant='h6'>
+                    Admin Notes
+                  </Typography>
+                  <IconButton size='small' onClick={handleOpenNotesDialog}>
+                    <Edit fontSize='small' />
+                  </IconButton>
+                </Stack>
+                <Typography variant='body2' color='text.secondary' sx={{ whiteSpace: 'pre-wrap' }}>
+                  {orderDetails.adminNotes}
+                </Typography>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Order Timeline */}
           <Card sx={{ mb: 3 }}>
@@ -966,7 +1019,7 @@ const OrderDetails: React.FC = () => {
         maxWidth='sm'
         fullWidth
       >
-        <DialogTitle>Add Admin Notes</DialogTitle>
+        <DialogTitle>{orderDetails?.adminNotes ? 'Edit Admin Notes' : 'Add Admin Notes'}</DialogTitle>
         <DialogContent>
           <TextField
             label='Admin Notes'

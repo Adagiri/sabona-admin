@@ -238,6 +238,7 @@ export interface OrderDetails {
     pickupTime: string;
     pickupLat?: number;
     pickupLong?: number;
+    status?: string; // PENDING, ACCEPTED, PICKED_UP, DROPPED_AT_VENDOR
     rider?: {
       id: string;
       firstName: string;
@@ -252,6 +253,7 @@ export interface OrderDetails {
     deliveryType: string;
     deliveryLat?: number;
     deliveryLong?: number;
+    status?: string; // PENDING, ACCEPTED, DELIVERED
     rider?: {
       id: string;
       firstName: string;
