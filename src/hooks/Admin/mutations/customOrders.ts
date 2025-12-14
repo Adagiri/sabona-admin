@@ -44,8 +44,6 @@ export const useUpdateCustomOrderPricing = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log(typeof data);
-
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -84,8 +82,6 @@ export const useAssignDriverToCustomOrder = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log(typeof data);
-
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -139,8 +135,6 @@ export const useUploadCustomOrderReceipt = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log(typeof data);
-
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -169,8 +163,6 @@ export const useSendCustomOrderInvoice = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
-      console.log(typeof data);
-
       queryClient.invalidateQueries({
         queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
       });
@@ -185,6 +177,7 @@ export const useSendCustomOrderInvoice = () => {
 };
 
 // Mark custom order as ready for delivery
+// FIXED: Updated endpoint path to match backend
 export const useMarkCustomOrderReady = () => {
   const queryClient = useQueryClient();
 
@@ -196,8 +189,8 @@ export const useMarkCustomOrderReady = () => {
       orderId: string;
       deliveryRiderId?: string;
     }) => {
-      const response = await api.patch(
-        `/admin/custom-order/${orderId}/mark-ready`,
+      const response = await api.post(
+        `/admin/custom-order/${orderId}/mark-ready-for-delivery`,
         {
           deliveryRiderId,
         }
@@ -205,7 +198,6 @@ export const useMarkCustomOrderReady = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -240,7 +232,6 @@ export const useUpdateCustomOrderNotes = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -269,7 +260,6 @@ export const useRegeneratePaymentLink = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
-      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
       });
@@ -307,7 +297,6 @@ export const useCancelCustomOrder = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -348,7 +337,6 @@ export const useCancelOrder = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, variables.orderId],
       });
@@ -375,7 +363,6 @@ export const useAcceptOrder = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
-      console.log(typeof data)
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
       });
