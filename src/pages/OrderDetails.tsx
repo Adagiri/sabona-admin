@@ -158,11 +158,12 @@ const OrderDetails: React.FC = () => {
   }, [orderDetails?.adminNotes]);
 
   const handleSaveNotes = useCallback(async () => {
-    if (!adminNotes.trim()) {
-      toast.error('Please enter some notes');
+    if (!orderId) {
+      toast.error('Order ID is missing');
       return;
     }
 
+    // Allow empty notes to clear them
     try {
       await addNotesMutation.mutateAsync({
         orderId: orderId!,
@@ -1037,7 +1038,7 @@ const OrderDetails: React.FC = () => {
           <Button
             onClick={handleSaveNotes}
             variant='contained'
-            disabled={addNotesMutation.isPending || !adminNotes.trim()}
+            disabled={addNotesMutation.isPending}
           >
             {addNotesMutation.isPending ? (
               <CircularProgress size={20} />

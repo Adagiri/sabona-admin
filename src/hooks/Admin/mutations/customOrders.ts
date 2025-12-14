@@ -260,9 +260,22 @@ export const useRegeneratePaymentLink = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
-      queryClient.invalidateQueries({
-        queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
-      });
+      // Immediately update the cached order data with new payment link
+      queryClient.setQueryData(
+        [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            payTabsInvoiceUrl: data.data?.invoiceUrl || data.invoiceUrl,
+            payTabsInvoiceDateCreated: new Date().toISOString(),
+            payTabsInvoiceId: data.data?.invoiceId || data.invoiceId,
+            payTabsTransactionRef: data.data?.transactionRef || data.transactionRef,
+          };
+        }
+      );
+
       toast.success('Payment link regenerated successfully');
     },
     onError: (error: any) => {
