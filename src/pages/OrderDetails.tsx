@@ -56,7 +56,19 @@ import { useFetchOrderDetails } from '../hooks/Admin/query';
 import { toast } from 'react-toastify';
 import { Cancel } from '@mui/icons-material';
 import { FormControlLabel, Checkbox } from '@mui/material';
-import { useCancelOrder, useAcceptOrder } from '../hooks/Admin/mutations/customOrders';
+import {
+  useCancelOrder,
+  useAcceptOrder,
+} from '../hooks/Admin/mutations/customOrders';
+import {
+  useAcceptPickupRide,
+  useMarkPickedUp,
+  useMarkDroppedAtVendor,
+  useMarkReadyForDelivery,
+  useAcceptDeliveryRide,
+  useMarkDelivered,
+  useAddOrderNotes,
+} from '../hooks/Admin/mutations/orders';
 import { LinkIcon } from 'lucide-react';
 
 const OrderDetails: React.FC = () => {
@@ -73,13 +85,20 @@ const OrderDetails: React.FC = () => {
   // State management
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [adminNotes, setAdminNotes] = useState('');
-
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [refundCustomer, setRefundCustomer] = useState(false);
+
+  // Mutations
   const cancelMutation = useCancelOrder();
   const acceptOrderMutation = useAcceptOrder();
-  //  const regeneratePaymentLinkMutation = useRegeneratePaymentLink();
+  const acceptPickupRideMutation = useAcceptPickupRide();
+  const markPickedUpMutation = useMarkPickedUp();
+  const markDroppedAtVendorMutation = useMarkDroppedAtVendor();
+  const markReadyMutation = useMarkReadyForDelivery();
+  const acceptDeliveryRideMutation = useAcceptDeliveryRide();
+  const markDeliveredMutation = useMarkDelivered();
+  const addNotesMutation = useAddOrderNotes();
 
 
   const handleCancelOrder = async () => {
@@ -112,11 +131,23 @@ const OrderDetails: React.FC = () => {
     toast.success('Order details refreshed');
   }, [refetch]);
 
-  const handleSaveNotes = useCallback(() => {
-    // TODO: Implement API call to save admin notes
-    toast.success('Notes saved successfully');
-    setNotesDialogOpen(false);
-  }, []);
+  const handleSaveNotes = useCallback(async () => {
+    if (!adminNotes.trim()) {
+      toast.error('Please enter some notes');
+      return;
+    }
+
+    try {
+      await addNotesMutation.mutateAsync({
+        orderId: orderId!,
+        notes: adminNotes,
+      });
+      setNotesDialogOpen(false);
+      setAdminNotes('');
+    } catch (error) {
+      console.error('Failed to save notes:', error);
+    }
+  }, [adminNotes, orderId, addNotesMutation]);
 
   const handleAcceptOrder = useCallback(async () => {
     if (!orderId) return;
@@ -129,10 +160,66 @@ const OrderDetails: React.FC = () => {
     }
   }, [orderId, acceptOrderMutation, refetch]);
 
-  const handleUpdateStatus = useCallback((newStatus: string) => {
-    // TODO: Implement API call to update order status
-    toast.success(`Order status updated to ${newStatus}`);
-  }, []);
+  // Driver and vendor action handlers
+  const handleAcceptPickupRide = useCallback(async () => {
+    if (!orderId) return;
+    try {
+      await acceptPickupRideMutation.mutateAsync(orderId);
+      await refetch();
+    } catch (error) {
+      console.error('Failed to accept pickup ride:', error);
+    }
+  }, [orderId, acceptPickupRideMutation, refetch]);
+
+  const handleMarkPickedUp = useCallback(async () => {
+    if (!orderId) return;
+    try {
+      await markPickedUpMutation.mutateAsync(orderId);
+      await refetch();
+    } catch (error) {
+      console.error('Failed to mark as picked up:', error);
+    }
+  }, [orderId, markPickedUpMutation, refetch]);
+
+  const handleMarkDroppedAtVendor = useCallback(async () => {
+    if (!orderId) return;
+    try {
+      await markDroppedAtVendorMutation.mutateAsync(orderId);
+      await refetch();
+    } catch (error) {
+      console.error('Failed to mark as dropped at vendor:', error);
+    }
+  }, [orderId, markDroppedAtVendorMutation, refetch]);
+
+  const handleMarkReady = useCallback(async () => {
+    if (!orderId) return;
+    try {
+      await markReadyMutation.mutateAsync(orderId);
+      await refetch();
+    } catch (error) {
+      console.error('Failed to mark as ready:', error);
+    }
+  }, [orderId, markReadyMutation, refetch]);
+
+  const handleAcceptDeliveryRide = useCallback(async () => {
+    if (!orderId) return;
+    try {
+      await acceptDeliveryRideMutation.mutateAsync(orderId);
+      await refetch();
+    } catch (error) {
+      console.error('Failed to accept delivery ride:', error);
+    }
+  }, [orderId, acceptDeliveryRideMutation, refetch]);
+
+  const handleMarkDelivered = useCallback(async () => {
+    if (!orderId) return;
+    try {
+      await markDeliveredMutation.mutateAsync(orderId);
+      await refetch();
+    } catch (error) {
+      console.error('Failed to mark as delivered:', error);
+    }
+  }, [orderId, markDeliveredMutation, refetch]);
 
   // Utility functions
   const getStatusColor = (
@@ -235,6 +322,73 @@ const OrderDetails: React.FC = () => {
     },
   ];
 
+  // Get next available actions based on order status and pickup/delivery status
+  const getNextActions = () => {
+    if (!orderDetails) return [];
+
+    const actions = [];
+    const { status, pickup, delivery } = orderDetails;
+
+    // Driver pickup actions
+    if (status === 'ACCEPTED' && pickup?.status === 'PENDING') {
+      actions.push({
+        label: 'Accept Pickup Ride (Driver)',
+        handler: handleAcceptPickupRide,
+        color: 'success' as const,
+        icon: <CheckCircle />,
+      });
+    }
+
+    if (status === 'ACCEPTED' && pickup?.status === 'ACCEPTED') {
+      actions.push({
+        label: 'Mark Picked Up (Driver)',
+        handler: handleMarkPickedUp,
+        color: 'primary' as const,
+        icon: <DriveEta />,
+      });
+    }
+
+    if (status === 'ACCEPTED' && pickup?.status === 'PICKED_UP') {
+      actions.push({
+        label: 'Mark Dropped at Vendor (Driver)',
+        handler: handleMarkDroppedAtVendor,
+        color: 'info' as const,
+        icon: <Store />,
+      });
+    }
+
+    // Vendor action
+    if (status === 'IN_PROGRESS') {
+      actions.push({
+        label: 'Mark Ready (Vendor)',
+        handler: handleMarkReady,
+        color: 'warning' as const,
+        icon: <AccessTime />,
+      });
+    }
+
+    // Driver delivery actions
+    if (status === 'READY_FOR_PICKUP' && delivery?.status === 'PENDING') {
+      actions.push({
+        label: 'Accept Delivery Ride (Driver)',
+        handler: handleAcceptDeliveryRide,
+        color: 'success' as const,
+        icon: <CheckCircle />,
+      });
+    }
+
+    if (status === 'READY_FOR_PICKUP' && delivery?.status === 'ACCEPTED') {
+      actions.push({
+        label: 'Mark Delivered (Driver)',
+        handler: handleMarkDelivered,
+        color: 'primary' as const,
+        icon: <LocalShipping />,
+      });
+    }
+
+    return actions;
+  };
+
   if (isLoading) {
     return (
       <Box
@@ -262,16 +416,7 @@ const OrderDetails: React.FC = () => {
   }
 
   const workflowSteps = getOrderWorkflowSteps();
-
-
-    // const handleRegeneratePaymentLink = async () => {
-    //   if (!orderId) return;
-    //   try {
-    //     await regeneratePaymentLinkMutation.mutateAsync(orderId);
-    //   } catch (error) {
-    //     console.error('Failed to regenerate payment link:', error);
-    //   }
-    // };
+  const nextActions = getNextActions();
 
   return (
     <Box p={4}>
@@ -664,6 +809,7 @@ const OrderDetails: React.FC = () => {
                 Quick Actions
               </Typography>
               <Stack spacing={2}>
+                {/* Add Notes */}
                 <Button
                   variant='contained'
                   color='primary'
@@ -674,6 +820,7 @@ const OrderDetails: React.FC = () => {
                   Add Notes
                 </Button>
 
+                {/* Cancel Order */}
                 {orderDetails?.status !== 'CANCELLED' &&
                   orderDetails?.status !== 'COMPLETED' && (
                     <Button
@@ -685,6 +832,8 @@ const OrderDetails: React.FC = () => {
                       Cancel Order
                     </Button>
                   )}
+
+                {/* Accept Order (PENDING → ACCEPTED) */}
                 {orderDetails.status === 'PENDING' && (
                   <Button
                     variant='contained'
@@ -695,34 +844,26 @@ const OrderDetails: React.FC = () => {
                     fullWidth
                   >
                     {acceptOrderMutation.isPending ? (
-                      <CircularProgress size={20} color="inherit" />
+                      <CircularProgress size={20} color='inherit' />
                     ) : (
-                      'Accept Order'
+                      'Accept Order (Vendor)'
                     )}
                   </Button>
                 )}
-                {orderDetails.status === 'ACCEPTED' && (
+
+                {/* Dynamic Next Actions */}
+                {nextActions.map((action, index) => (
                   <Button
+                    key={index}
                     variant='contained'
-                    color='info'
-                    startIcon={<LocalLaundryService />}
-                    onClick={() => handleUpdateStatus('IN_PROGRESS')}
+                    color={action.color}
+                    startIcon={action.icon}
+                    onClick={action.handler}
                     fullWidth
                   >
-                    Start Processing
+                    {action.label}
                   </Button>
-                )}
-                {orderDetails.status === 'IN_PROGRESS' && (
-                  <Button
-                    variant='contained'
-                    color='warning'
-                    startIcon={<AccessTime />}
-                    onClick={() => handleUpdateStatus('READY_FOR_PICKUP')}
-                    fullWidth
-                  >
-                    Mark Ready
-                  </Button>
-                )}
+                ))}
               </Stack>
             </CardContent>
           </Card>
@@ -840,8 +981,16 @@ const OrderDetails: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setNotesDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleSaveNotes} variant='contained'>
-            Save Notes
+          <Button
+            onClick={handleSaveNotes}
+            variant='contained'
+            disabled={addNotesMutation.isPending || !adminNotes.trim()}
+          >
+            {addNotesMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              'Save Notes'
+            )}
           </Button>
         </DialogActions>
       </Dialog>
