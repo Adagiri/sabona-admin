@@ -11,6 +11,10 @@ import {
   Stack,
   TextField,
   IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   LocationOn,
@@ -29,6 +33,7 @@ import {
   Sms,
   Launch,
   Schedule,
+  Business,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
@@ -386,6 +391,75 @@ const CustomOrderDetails = () => {
           </Paper>
         </Grid>
 
+        {/* Order Summary */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography
+              variant='h6'
+              gutterBottom
+              display='flex'
+              alignItems='center'
+              gap={1}
+            >
+              <Receipt /> Order Summary
+            </Typography>
+            <List dense>
+              <ListItem>
+                <ListItemIcon>
+                  <Receipt fontSize='small' />
+                </ListItemIcon>
+                <ListItemText
+                  primary='Order ID'
+                  secondary={
+                    <Box display='flex' alignItems='center' gap={1}>
+                      <Typography variant='body2'>
+                        #{order.id.slice(-8)}
+                      </Typography>
+                      <IconButton
+                        size='small'
+                        onClick={() => copyToClipboard(order.id, 'Order ID')}
+                      >
+                        <ContentCopy fontSize='small' />
+                      </IconButton>
+                    </Box>
+                  }
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemIcon>
+                  <Schedule fontSize='small' />
+                </ListItemIcon>
+                <ListItemText
+                  primary='Created'
+                  secondary={new Date(order.createdAt).toLocaleString()}
+                />
+              </ListItem>
+              <ListItem>
+                <ListItemIcon>
+                  <Money fontSize='small' />
+                </ListItemIcon>
+                <ListItemText
+                  primary='Pricing'
+                  secondary={
+                    order.adminServiceCharge ? (
+                      <Box>
+                        <Typography variant='body2'>
+                          Service Charge: {order.adminServiceCharge} SAR
+                        </Typography>
+                        <Typography variant='body2' fontWeight='bold'>
+                          Total: {order.totalAmount} SAR
+                        </Typography>
+                      </Box>
+                    ) : (
+                      'Not set'
+                    )
+                  }
+                />
+              </ListItem>
+            </List>
+          </Paper>
+        </Grid>
+
         {/* Customer Information */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3, height: '100%' }}>
@@ -477,21 +551,42 @@ const CustomOrderDetails = () => {
               alignItems='center'
               gap={1}
             >
-              <LocationOn /> Custom Laundry Location
+              <Business /> Custom Laundry Location
             </Typography>
             <Box sx={{ mt: 2 }}>
-              <Typography variant='body1' fontWeight='medium'>
+              <Typography variant='body1' fontWeight='medium' mb={1}>
                 {order.customLaundryName}
               </Typography>
-              <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
+              <Typography variant='body2' color='text.secondary' sx={{ mt: 1, mb: 2 }}>
                 {order.customLaundryDescription}
               </Typography>
               {order.customLaundryAddress && (
-                <Box display='flex' alignItems='center' gap={1} mt={1}>
-                  <LocationOn fontSize='small' color='action' />
-                  <Typography variant='body2'>
-                    {order.customLaundryAddress}
-                  </Typography>
+                <Box display='flex' alignItems='flex-start' gap={1} mb={1}>
+                  <LocationOn fontSize='small' color='action' sx={{ mt: 0.5 }} />
+                  <Box flex={1}>
+                    <Typography variant='body2' fontWeight='medium'>
+                      {order.customLaundryAddress}
+                    </Typography>
+                    <Box mt={1}>
+                      <Typography variant='caption' color='text.secondary' display='block'>
+                        Lat: {order.customLaundryLat.toFixed(6)}, Lng: {order.customLaundryLong.toFixed(6)}
+                      </Typography>
+                      <Button
+                        size='small'
+                        startIcon={<Launch />}
+                        onClick={() =>
+                          openMap(
+                            order.customLaundryLat,
+                            order.customLaundryLong,
+                            order.customLaundryName
+                          )
+                        }
+                        sx={{ mt: 0.5 }}
+                      >
+                        View on Map
+                      </Button>
+                    </Box>
+                  </Box>
                 </Box>
               )}
             </Box>
