@@ -44,6 +44,9 @@ export const useUpdateCustomOrderPricing = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -82,6 +85,10 @@ export const useAssignDriverToCustomOrder = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -135,6 +142,8 @@ export const useUploadCustomOrderReceipt = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -163,6 +172,7 @@ export const useSendCustomOrderInvoice = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS, orderId],
       });
@@ -198,6 +208,8 @@ export const useMarkCustomOrderReady = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -232,6 +244,8 @@ export const useUpdateCustomOrderNotes = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -271,7 +285,8 @@ export const useRegeneratePaymentLink = () => {
             payTabsInvoiceUrl: data.data?.invoiceUrl || data.invoiceUrl,
             payTabsInvoiceDateCreated: new Date().toISOString(),
             payTabsInvoiceId: data.data?.invoiceId || data.invoiceId,
-            payTabsTransactionRef: data.data?.transactionRef || data.transactionRef,
+            payTabsTransactionRef:
+              data.data?.transactionRef || data.transactionRef,
           };
         }
       );
@@ -310,6 +325,8 @@ export const useCancelCustomOrder = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [
           CUSTOM_ORDER_QUERIES.FETCH_CUSTOM_ORDER_DETAILS,
@@ -328,7 +345,6 @@ export const useCancelCustomOrder = () => {
     },
   });
 };
-
 
 export const useCancelOrder = () => {
   const queryClient = useQueryClient();
@@ -350,6 +366,8 @@ export const useCancelOrder = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
+
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, variables.orderId],
       });
@@ -376,6 +394,7 @@ export const useAcceptOrder = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
       });

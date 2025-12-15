@@ -29,6 +29,7 @@ export const useAcceptPickupRide = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
       });
@@ -60,6 +61,7 @@ export const useMarkPickedUp = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
       });
@@ -92,6 +94,7 @@ export const useMarkDroppedAtVendor = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
       });
@@ -128,6 +131,7 @@ export const useMarkReadyForDelivery = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
       });
@@ -166,6 +170,7 @@ export const useAcceptDeliveryRide = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
       });
@@ -198,6 +203,7 @@ export const useMarkDelivered = () => {
       return response.data;
     },
     onSuccess: (data, orderId) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS, orderId],
       });
@@ -240,6 +246,7 @@ export const useAddOrderNotes = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
+      console.log(typeof data);
       queryClient.invalidateQueries({
         queryKey: [
           FETCH_ORDER_QUERIES.FETCH_ORDER_DETAILS,
