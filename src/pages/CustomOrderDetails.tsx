@@ -472,72 +472,94 @@ const CustomOrderDetails = () => {
             >
               <Person /> Customer Information
             </Typography>
-            <Box sx={{ mt: 2 }}>
-              <Typography variant='body1' fontWeight='medium' mb={2}>
-                {order.customer?.firstName} {order.customer?.lastName}
-              </Typography>
-
-              {/* Phone with copy and contact buttons */}
-              <Box display='flex' alignItems='flex-start' gap={1} mt={1} mb={2}>
-                <Phone fontSize='small' color='action' sx={{ mt: 0.5 }} />
-                <Box flex={1}>
-                  <Box display='flex' alignItems='center' gap={1}>
-                    <Typography variant='body2'>{order.customer?.phone}</Typography>
-                    <IconButton
-                      size='small'
-                      onClick={() =>
-                        copyToClipboard(order.customer?.phone ?? '', 'Phone')
-                      }
-                    >
-                      <ContentCopy fontSize='small' />
-                    </IconButton>
-                  </Box>
-                  <Stack direction='row' spacing={1} mt={1}>
-                    <Button
-                      size='small'
-                      variant='outlined'
-                      color='success'
-                      startIcon={<WhatsApp />}
-                      onClick={() => {
-                        const phone = order.customer?.phone?.replace(/\D/g, '');
-                        window.open(`https://wa.me/${phone}`, '_blank');
-                      }}
-                    >
-                      WhatsApp
-                    </Button>
-                    <Button
-                      size='small'
-                      variant='outlined'
-                      color='primary'
-                      startIcon={<Sms />}
-                      onClick={() => {
-                        window.open(`sms:${order.customer?.phone}`, '_blank');
-                      }}
-                    >
-                      SMS
-                    </Button>
-                  </Stack>
-                </Box>
-              </Box>
-
-              {/* Email with copy button */}
+            <List dense>
+              <ListItem>
+                <ListItemIcon>
+                  <Person fontSize='small' />
+                </ListItemIcon>
+                <ListItemText
+                  primary='Name'
+                  secondary={`${order.customer?.firstName} ${order.customer?.lastName}`}
+                />
+              </ListItem>
               {order.customer?.email && (
-                <Box display='flex' alignItems='center' gap={1} mt={1}>
-                  <Email fontSize='small' color='action' />
-                  <Typography variant='body2'>
-                    {order.customer?.email}
-                  </Typography>
-                  <IconButton
-                    size='small'
-                    onClick={() =>
-                      copyToClipboard(order.customer?.email ?? '', 'Email')
+                <ListItem>
+                  <ListItemIcon>
+                    <Email fontSize='small' />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary='Email'
+                    secondary={
+                      <Box display='flex' alignItems='center' gap={1}>
+                        <Typography variant='body2'>
+                          {order.customer?.email}
+                        </Typography>
+                        <IconButton
+                          size='small'
+                          onClick={() =>
+                            copyToClipboard(order.customer?.email ?? '', 'Email')
+                          }
+                        >
+                          <ContentCopy fontSize='small' />
+                        </IconButton>
+                      </Box>
                     }
-                  >
-                    <ContentCopy fontSize='small' />
-                  </IconButton>
-                </Box>
+                  />
+                </ListItem>
               )}
-            </Box>
+              {order.customer?.phone && (
+                <ListItem>
+                  <ListItemIcon>
+                    <Phone fontSize='small' />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary='Phone'
+                    secondary={
+                      <Box>
+                        <Box display='flex' alignItems='center' gap={1}>
+                          <Typography variant='body2'>
+                            {order.customer?.phone}
+                          </Typography>
+                          <IconButton
+                            size='small'
+                            onClick={() =>
+                              copyToClipboard(order.customer?.phone ?? '', 'Phone')
+                            }
+                          >
+                            <ContentCopy fontSize='small' />
+                          </IconButton>
+                        </Box>
+                        <Box display='flex' gap={1} mt={1}>
+                          <Button
+                            size='small'
+                            variant='outlined'
+                            color='success'
+                            startIcon={<WhatsApp />}
+                            onClick={() => {
+                              const phone = order.customer?.phone?.replace(/\D/g, '');
+                              window.open(`https://wa.me/${phone}`, '_blank');
+                            }}
+                          >
+                            WhatsApp
+                          </Button>
+                          <Button
+                            size='small'
+                            variant='outlined'
+                            color='primary'
+                            startIcon={<Sms />}
+                            onClick={() => {
+                              window.open(`sms:${order.customer?.phone}`, '_blank');
+                            }}
+                          >
+                            Send SMS
+                          </Button>
+                        </Box>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              )}
+            </List>
           </Paper>
         </Grid>
 
