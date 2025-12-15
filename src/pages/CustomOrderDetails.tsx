@@ -10,6 +10,7 @@ import {
   Divider,
   Stack,
   TextField,
+  IconButton,
 } from '@mui/material';
 import {
   LocationOn,
@@ -24,6 +25,10 @@ import {
   Upload,
   ContentCopy,
   OpenInNew,
+  WhatsApp,
+  Sms,
+  Launch,
+  Schedule,
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
@@ -139,6 +144,17 @@ const CustomOrderDetails = () => {
     isLoading,
     isError,
   } = useFetchCustomOrderById(orderId || '');
+
+  // Helper functions
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  };
+
+  const openMap = (lat: number, lng: number, name: string) => {
+    const url = `https://maps.google.com/maps?q=${lat},${lng}&z=15&ll=${lat},${lng}`;
+    window.open(url, '_blank');
+  };
 
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
@@ -383,19 +399,68 @@ const CustomOrderDetails = () => {
               <Person /> Customer Information
             </Typography>
             <Box sx={{ mt: 2 }}>
-              <Typography variant='body1' fontWeight='medium'>
+              <Typography variant='body1' fontWeight='medium' mb={2}>
                 {order.customer?.firstName} {order.customer?.lastName}
               </Typography>
-              <Box display='flex' alignItems='center' gap={1} mt={1}>
-                <Phone fontSize='small' color='action' />
-                <Typography variant='body2'>{order.customer?.phone}</Typography>
+
+              {/* Phone with copy and contact buttons */}
+              <Box display='flex' alignItems='flex-start' gap={1} mt={1} mb={2}>
+                <Phone fontSize='small' color='action' sx={{ mt: 0.5 }} />
+                <Box flex={1}>
+                  <Box display='flex' alignItems='center' gap={1}>
+                    <Typography variant='body2'>{order.customer?.phone}</Typography>
+                    <IconButton
+                      size='small'
+                      onClick={() =>
+                        copyToClipboard(order.customer?.phone ?? '', 'Phone')
+                      }
+                    >
+                      <ContentCopy fontSize='small' />
+                    </IconButton>
+                  </Box>
+                  <Stack direction='row' spacing={1} mt={1}>
+                    <Button
+                      size='small'
+                      variant='outlined'
+                      color='success'
+                      startIcon={<WhatsApp />}
+                      onClick={() => {
+                        const phone = order.customer?.phone?.replace(/\D/g, '');
+                        window.open(`https://wa.me/${phone}`, '_blank');
+                      }}
+                    >
+                      WhatsApp
+                    </Button>
+                    <Button
+                      size='small'
+                      variant='outlined'
+                      color='primary'
+                      startIcon={<Sms />}
+                      onClick={() => {
+                        window.open(`sms:${order.customer?.phone}`, '_blank');
+                      }}
+                    >
+                      SMS
+                    </Button>
+                  </Stack>
+                </Box>
               </Box>
+
+              {/* Email with copy button */}
               {order.customer?.email && (
                 <Box display='flex' alignItems='center' gap={1} mt={1}>
                   <Email fontSize='small' color='action' />
                   <Typography variant='body2'>
                     {order.customer?.email}
                   </Typography>
+                  <IconButton
+                    size='small'
+                    onClick={() =>
+                      copyToClipboard(order.customer?.email ?? '', 'Email')
+                    }
+                  >
+                    <ContentCopy fontSize='small' />
+                  </IconButton>
                 </Box>
               )}
             </Box>
@@ -429,6 +494,112 @@ const CustomOrderDetails = () => {
                   </Typography>
                 </Box>
               )}
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Pickup Details */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography
+              variant='h6'
+              gutterBottom
+              display='flex'
+              alignItems='center'
+              gap={1}
+            >
+              <Schedule /> Pickup Details
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Box display='flex' alignItems='center' gap={1} mb={2}>
+                <Schedule fontSize='small' color='action' />
+                <Typography variant='body2'>
+                  {order.pickup?.pickupDate} at {order.pickup?.pickupTime}
+                </Typography>
+              </Box>
+              <Box display='flex' alignItems='flex-start' gap={1} mb={1}>
+                <LocationOn fontSize='small' color='action' sx={{ mt: 0.5 }} />
+                <Box flex={1}>
+                  <Typography variant='body2' fontWeight='medium'>
+                    {order.pickup?.pickupAddress}
+                  </Typography>
+                  {order.pickup?.pickupLat && order.pickup?.pickupLong && (
+                    <Box mt={1}>
+                      <Typography variant='caption' color='text.secondary' display='block'>
+                        Lat: {order.pickup.pickupLat.toFixed(6)}, Lng: {order.pickup.pickupLong.toFixed(6)}
+                      </Typography>
+                      <Button
+                        size='small'
+                        startIcon={<Launch />}
+                        onClick={() =>
+                          openMap(
+                            order.pickup!.pickupLat!,
+                            order.pickup!.pickupLong!,
+                            'Pickup Location'
+                          )
+                        }
+                        sx={{ mt: 0.5 }}
+                      >
+                        View on Map
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </Box>
+          </Paper>
+        </Grid>
+
+        {/* Delivery Details */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography
+              variant='h6'
+              gutterBottom
+              display='flex'
+              alignItems='center'
+              gap={1}
+            >
+              <LocalShipping /> Delivery Details
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Box display='flex' alignItems='center' gap={1} mb={2}>
+                <LocalShipping fontSize='small' color='action' />
+                <Chip
+                  label={order.deliveryType}
+                  size='small'
+                  color={order.deliveryType === 'EXPRESS' ? 'warning' : 'default'}
+                />
+              </Box>
+              <Box display='flex' alignItems='flex-start' gap={1}>
+                <LocationOn fontSize='small' color='action' sx={{ mt: 0.5 }} />
+                <Box flex={1}>
+                  <Typography variant='body2' fontWeight='medium'>
+                    {order.delivery?.deliveryAddress}
+                  </Typography>
+                  {order.delivery?.deliveryLat && order.delivery?.deliveryLong && (
+                    <Box mt={1}>
+                      <Typography variant='caption' color='text.secondary' display='block'>
+                        Lat: {order.delivery.deliveryLat.toFixed(6)}, Lng: {order.delivery.deliveryLong.toFixed(6)}
+                      </Typography>
+                      <Button
+                        size='small'
+                        startIcon={<Launch />}
+                        onClick={() =>
+                          openMap(
+                            order.delivery!.deliveryLat!,
+                            order.delivery!.deliveryLong!,
+                            'Delivery Location'
+                          )
+                        }
+                        sx={{ mt: 0.5 }}
+                      >
+                        View on Map
+                      </Button>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
             </Box>
           </Paper>
         </Grid>
