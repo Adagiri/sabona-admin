@@ -32,6 +32,7 @@ import {
   Step,
   StepLabel,
   StepContent,
+  LinearProgress,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -80,6 +81,7 @@ const OrderDetails: React.FC = () => {
     isLoading,
     error,
     refetch,
+    isFetching,
   } = useFetchOrderDetails(orderId || '');
 
   // State management
@@ -99,6 +101,18 @@ const OrderDetails: React.FC = () => {
   const acceptDeliveryRideMutation = useAcceptDeliveryRide();
   const markDeliveredMutation = useMarkDelivered();
   const addNotesMutation = useAddOrderNotes();
+
+  // Check if any mutation is pending
+  const isAnyMutationPending =
+    cancelMutation.isPending ||
+    acceptOrderMutation.isPending ||
+    acceptPickupRideMutation.isPending ||
+    markPickedUpMutation.isPending ||
+    markDroppedAtVendorMutation.isPending ||
+    markReadyMutation.isPending ||
+    acceptDeliveryRideMutation.isPending ||
+    markDeliveredMutation.isPending ||
+    addNotesMutation.isPending;
 
   // Track which action button is loading
   const getActionLoading = (label: string) => {
@@ -449,6 +463,19 @@ const OrderDetails: React.FC = () => {
 
   return (
     <Box p={4}>
+      {/* Loading indicator for background refetch */}
+      {isFetching && (
+        <LinearProgress
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+          }}
+        />
+      )}
+
       {/* Header */}
       <Stack direction='row' alignItems='center' spacing={2} mb={3}>
         <IconButton onClick={handleBack}>
@@ -462,7 +489,12 @@ const OrderDetails: React.FC = () => {
           color={getStatusColor(orderDetails.status)}
           size='medium'
         />
-        <Button variant='outlined' onClick={handleRefresh} size='small'>
+        <Button
+          variant='outlined'
+          onClick={handleRefresh}
+          size='small'
+          disabled={isAnyMutationPending || isFetching}
+        >
           Refresh
         </Button>
       </Stack>
@@ -857,6 +889,7 @@ const OrderDetails: React.FC = () => {
                   color='primary'
                   startIcon={<Edit />}
                   onClick={handleOpenNotesDialog}
+                  disabled={isAnyMutationPending || isFetching}
                   fullWidth
                 >
                   {orderDetails?.adminNotes ? 'Edit Notes' : 'Add Notes'}
@@ -870,6 +903,7 @@ const OrderDetails: React.FC = () => {
                       color='error'
                       startIcon={<Cancel />}
                       onClick={() => setCancelDialogOpen(true)}
+                      disabled={isAnyMutationPending || isFetching}
                     >
                       Cancel Order
                     </Button>
@@ -882,7 +916,7 @@ const OrderDetails: React.FC = () => {
                     color='success'
                     startIcon={<CheckCircle />}
                     onClick={handleAcceptOrder}
-                    disabled={acceptOrderMutation.isPending}
+                    disabled={acceptOrderMutation.isPending || isAnyMutationPending || isFetching}
                     fullWidth
                   >
                     {acceptOrderMutation.isPending ? (
@@ -903,7 +937,7 @@ const OrderDetails: React.FC = () => {
                       color={action.color}
                       startIcon={!isLoading && action.icon}
                       onClick={action.handler}
-                      disabled={isLoading}
+                      disabled={isLoading || isAnyMutationPending || isFetching}
                       fullWidth
                     >
                       {isLoading ? (
