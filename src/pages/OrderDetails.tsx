@@ -120,7 +120,6 @@ const OrderDetails: React.FC = () => {
     }
   };
 
-
   const handleCancelOrder = async () => {
     if (!cancelReason.trim()) {
       toast.error('Please provide a cancellation reason');
@@ -287,7 +286,9 @@ const OrderDetails: React.FC = () => {
   const getItemPrice = (item: any) => {
     // Use snapshot values (price at time of purchase)
     if (orderDetails?.deliveryType === 'EXPRESS') {
-      return item.expressPlatformPriceSnapshot || item.platformPriceSnapshot || 0;
+      return (
+        item.expressPlatformPriceSnapshot || item.platformPriceSnapshot || 0
+      );
     }
     return item.platformPriceSnapshot || 0;
   };
@@ -314,17 +315,9 @@ const OrderDetails: React.FC = () => {
       icon: <Store />,
     },
     {
-      label: 'In Progress',
-      description: 'Order is being processed by vendor',
-      completed: ['IN_PROGRESS', 'READY_FOR_PICKUP', 'COMPLETED'].includes(
-        orderDetails?.status || ''
-      ),
-      icon: <LocalLaundryService />,
-    },
-    {
       label: 'Pickup Assigned',
       description: 'Pickup driver assigned and dispatched',
-      completed: !!orderDetails?.pickup?.rider,
+      completed: !!orderDetails?.pickup?.riderId,
       icon: <DriveEta />,
     },
     {
@@ -336,9 +329,18 @@ const OrderDetails: React.FC = () => {
       icon: <CheckCircle />,
     },
     {
+      label: 'In Progress',
+      description: 'Order is being processed by vendor',
+      completed: ['IN_PROGRESS', 'READY_FOR_PICKUP', 'COMPLETED'].includes(
+        orderDetails?.status || ''
+      ),
+      icon: <LocalLaundryService />,
+    },
+
+    {
       label: 'Delivery Assigned',
       description: 'Delivery driver assigned',
-      completed: !!orderDetails?.delivery?.rider,
+      completed: !!orderDetails?.delivery?.riderId,
       icon: <LocalShipping />,
     },
     {
@@ -353,7 +355,7 @@ const OrderDetails: React.FC = () => {
   const getNextActions = () => {
     if (!orderDetails) return [];
 
-    const actions = [];
+    const actions: any = [];
     const { status, pickup, delivery } = orderDetails;
 
     // Driver pickup actions
@@ -615,12 +617,16 @@ const OrderDetails: React.FC = () => {
                           <TableRow key={`${service.id}-${itemIndex}`}>
                             <TableCell>
                               <Typography variant='body2' fontWeight='medium'>
-                                {item.serviceName || service.laundryService?.name || 'Service'}
+                                {item.serviceName ||
+                                  service.laundryService?.name ||
+                                  'Service'}
                               </Typography>
                             </TableCell>
                             <TableCell>
                               <Typography variant='body2'>
-                                {item.itemName || item.laundryServiceItem?.name || 'Item'}
+                                {item.itemName ||
+                                  item.laundryServiceItem?.name ||
+                                  'Item'}
                               </Typography>
                             </TableCell>
                             <TableCell align='center'>
@@ -634,7 +640,10 @@ const OrderDetails: React.FC = () => {
                               </Typography>
                             </TableCell>
                             <TableCell align='right'>
-                              <Typography variant='body2' color='text.secondary'>
+                              <Typography
+                                variant='body2'
+                                color='text.secondary'
+                              >
                                 {formatCurrency(vendorPrice)}
                               </Typography>
                             </TableCell>
@@ -802,9 +811,14 @@ const OrderDetails: React.FC = () => {
                     </Typography>
                   </Grid>
                 )}
-                {(orderDetails.paymentLink || orderDetails.payTabsInvoiceUrl) && (
+                {(orderDetails.paymentLink ||
+                  orderDetails.payTabsInvoiceUrl) && (
                   <Grid item xs={12}>
-                    <Typography variant='body2' color='text.secondary' gutterBottom>
+                    <Typography
+                      variant='body2'
+                      color='text.secondary'
+                      gutterBottom
+                    >
                       Payment Link
                     </Typography>
                     <Button
@@ -813,7 +827,8 @@ const OrderDetails: React.FC = () => {
                       startIcon={<LinkIcon />}
                       onClick={() =>
                         window.open(
-                          orderDetails.paymentLink || orderDetails.payTabsInvoiceUrl,
+                          orderDetails.paymentLink ||
+                            orderDetails.payTabsInvoiceUrl,
                           '_blank'
                         )
                       }
@@ -907,15 +922,22 @@ const OrderDetails: React.FC = () => {
           {orderDetails?.adminNotes && (
             <Card sx={{ mb: 3 }}>
               <CardContent>
-                <Stack direction='row' justifyContent='space-between' alignItems='center' mb={2}>
-                  <Typography variant='h6'>
-                    Admin Notes
-                  </Typography>
+                <Stack
+                  direction='row'
+                  justifyContent='space-between'
+                  alignItems='center'
+                  mb={2}
+                >
+                  <Typography variant='h6'>Admin Notes</Typography>
                   <IconButton size='small' onClick={handleOpenNotesDialog}>
                     <Edit fontSize='small' />
                   </IconButton>
                 </Stack>
-                <Typography variant='body2' color='text.secondary' sx={{ whiteSpace: 'pre-wrap' }}>
+                <Typography
+                  variant='body2'
+                  color='text.secondary'
+                  sx={{ whiteSpace: 'pre-wrap' }}
+                >
                   {orderDetails.adminNotes}
                 </Typography>
               </CardContent>
@@ -1020,7 +1042,9 @@ const OrderDetails: React.FC = () => {
         maxWidth='sm'
         fullWidth
       >
-        <DialogTitle>{orderDetails?.adminNotes ? 'Edit Admin Notes' : 'Add Admin Notes'}</DialogTitle>
+        <DialogTitle>
+          {orderDetails?.adminNotes ? 'Edit Admin Notes' : 'Add Admin Notes'}
+        </DialogTitle>
         <DialogContent>
           <TextField
             label='Admin Notes'

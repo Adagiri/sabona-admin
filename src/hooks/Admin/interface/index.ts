@@ -245,6 +245,7 @@ export interface OrderDetails {
       lastName: string;
       phone: string;
     };
+    riderId?: string;
   };
 
   delivery?: {
@@ -260,6 +261,7 @@ export interface OrderDetails {
       lastName: string;
       phone: string;
     };
+    riderId?: string;
   };
 
   // Payment information

@@ -25,7 +25,6 @@ import {
   Receipt,
   Money,
   LocalShipping,
-  Edit,
   Upload,
   ContentCopy,
   OpenInNew,
@@ -51,7 +50,10 @@ import {
   DialogContent,
   DialogActions,
 } from '@mui/material';
-import { useCancelCustomOrder, useRegeneratePaymentLink } from '../hooks/Admin/mutations/customOrders';
+import {
+  useCancelCustomOrder,
+  useRegeneratePaymentLink,
+} from '../hooks/Admin/mutations/customOrders';
 import { Refresh } from '@mui/icons-material';
 
 /**
@@ -156,7 +158,7 @@ const CustomOrderDetails = () => {
     toast.success(`${label} copied to clipboard`);
   };
 
-  const openMap = (lat: number, lng: number, name: string) => {
+  const openMap = (lat: number, lng: number) => {
     const url = `https://maps.google.com/maps?q=${lat},${lng}&z=15&ll=${lat},${lng}`;
     window.open(url, '_blank');
   };
@@ -189,7 +191,8 @@ const CustomOrderDetails = () => {
 
     const now = new Date();
     const linkCreatedAt = new Date(order.payTabsInvoiceDateCreated);
-    const timeDifferenceInMinutes = (now.getTime() - linkCreatedAt.getTime()) / (1000 * 60);
+    const timeDifferenceInMinutes =
+      (now.getTime() - linkCreatedAt.getTime()) / (1000 * 60);
 
     return timeDifferenceInMinutes >= 20;
   };
@@ -202,8 +205,12 @@ const CustomOrderDetails = () => {
 
     const now = new Date();
     const linkCreatedAt = new Date(order.payTabsInvoiceDateCreated);
-    const timeDifferenceInMinutes = (now.getTime() - linkCreatedAt.getTime()) / (1000 * 60);
-    const remainingMinutes = Math.max(0, Math.ceil(20 - timeDifferenceInMinutes));
+    const timeDifferenceInMinutes =
+      (now.getTime() - linkCreatedAt.getTime()) / (1000 * 60);
+    const remainingMinutes = Math.max(
+      0,
+      Math.ceil(20 - timeDifferenceInMinutes)
+    );
 
     return remainingMinutes;
   };
@@ -305,14 +312,18 @@ const CustomOrderDetails = () => {
         if (contextualActions.length === 0) return null;
 
         return (
-          <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.light' }}>
+          <Paper sx={{ p: 2, mb: 3, bgcolor: '#eee' }}>
             <Box
               display='flex'
               justifyContent='space-between'
               alignItems='center'
             >
               <Box>
-                <Typography variant='body1' fontWeight='bold' color='primary.dark'>
+                <Typography
+                  variant='body1'
+                  fontWeight='bold'
+                  color='primary.dark'
+                >
                   {contextualActions[0].disabled
                     ? 'Current Status'
                     : 'Action Required'}
@@ -479,7 +490,7 @@ const CustomOrderDetails = () => {
                 </ListItemIcon>
                 <ListItemText
                   primary='Name'
-                  secondary={`${order.customer?.firstName} ${order.customer?.lastName}`}
+                  secondary={`${order.customer?.name || "nil"}`}
                 />
               </ListItem>
               {order.customer?.email && (
@@ -497,7 +508,10 @@ const CustomOrderDetails = () => {
                         <IconButton
                           size='small'
                           onClick={() =>
-                            copyToClipboard(order.customer?.email ?? '', 'Email')
+                            copyToClipboard(
+                              order.customer?.email ?? '',
+                              'Email'
+                            )
                           }
                         >
                           <ContentCopy fontSize='small' />
@@ -523,7 +537,10 @@ const CustomOrderDetails = () => {
                           <IconButton
                             size='small'
                             onClick={() =>
-                              copyToClipboard(order.customer?.phone ?? '', 'Phone')
+                              copyToClipboard(
+                                order.customer?.phone ?? '',
+                                'Phone'
+                              )
                             }
                           >
                             <ContentCopy fontSize='small' />
@@ -536,7 +553,10 @@ const CustomOrderDetails = () => {
                             color='success'
                             startIcon={<WhatsApp />}
                             onClick={() => {
-                              const phone = order.customer?.phone?.replace(/\D/g, '');
+                              const phone = order.customer?.phone?.replace(
+                                /\D/g,
+                                ''
+                              );
                               window.open(`https://wa.me/${phone}`, '_blank');
                             }}
                           >
@@ -548,7 +568,10 @@ const CustomOrderDetails = () => {
                             color='primary'
                             startIcon={<Sms />}
                             onClick={() => {
-                              window.open(`sms:${order.customer?.phone}`, '_blank');
+                              window.open(
+                                `sms:${order.customer?.phone}`,
+                                '_blank'
+                              );
                             }}
                           >
                             Send SMS
@@ -579,19 +602,32 @@ const CustomOrderDetails = () => {
               <Typography variant='body1' fontWeight='medium' mb={1}>
                 {order.customLaundryName}
               </Typography>
-              <Typography variant='body2' color='text.secondary' sx={{ mt: 1, mb: 2 }}>
+              <Typography
+                variant='body2'
+                color='text.secondary'
+                sx={{ mt: 1, mb: 2 }}
+              >
                 {order.customLaundryDescription}
               </Typography>
               {order.customLaundryAddress && (
                 <Box display='flex' alignItems='flex-start' gap={1} mb={1}>
-                  <LocationOn fontSize='small' color='action' sx={{ mt: 0.5 }} />
+                  <LocationOn
+                    fontSize='small'
+                    color='action'
+                    sx={{ mt: 0.5 }}
+                  />
                   <Box flex={1}>
                     <Typography variant='body2' fontWeight='medium'>
                       {order.customLaundryAddress}
                     </Typography>
                     <Box mt={1}>
-                      <Typography variant='caption' color='text.secondary' display='block'>
-                        Lat: {order.customLaundryLat.toFixed(6)}, Lng: {order.customLaundryLong.toFixed(6)}
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        display='block'
+                      >
+                        Lat: {order.customLaundryLat.toFixed(6)}, Lng:{' '}
+                        {order.customLaundryLong.toFixed(6)}
                       </Typography>
                       <Button
                         size='small'
@@ -599,8 +635,7 @@ const CustomOrderDetails = () => {
                         onClick={() =>
                           openMap(
                             order.customLaundryLat,
-                            order.customLaundryLong,
-                            order.customLaundryName
+                            order.customLaundryLong
                           )
                         }
                         sx={{ mt: 0.5 }}
@@ -642,8 +677,13 @@ const CustomOrderDetails = () => {
                   </Typography>
                   {order.pickup?.pickupLat && order.pickup?.pickupLong && (
                     <Box mt={1}>
-                      <Typography variant='caption' color='text.secondary' display='block'>
-                        Lat: {order.pickup.pickupLat.toFixed(6)}, Lng: {order.pickup.pickupLong.toFixed(6)}
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        display='block'
+                      >
+                        Lat: {order.pickup.pickupLat.toFixed(6)}, Lng:{' '}
+                        {order.pickup.pickupLong.toFixed(6)}
                       </Typography>
                       <Button
                         size='small'
@@ -651,8 +691,7 @@ const CustomOrderDetails = () => {
                         onClick={() =>
                           openMap(
                             order.pickup!.pickupLat!,
-                            order.pickup!.pickupLong!,
-                            'Pickup Location'
+                            order.pickup!.pickupLong!
                           )
                         }
                         sx={{ mt: 0.5 }}
@@ -685,7 +724,9 @@ const CustomOrderDetails = () => {
                 <Chip
                   label={order.deliveryType}
                   size='small'
-                  color={order.deliveryType === 'EXPRESS' ? 'warning' : 'default'}
+                  color={
+                    order.deliveryType === 'EXPRESS' ? 'warning' : 'default'
+                  }
                 />
               </Box>
               <Box display='flex' alignItems='flex-start' gap={1}>
@@ -694,27 +735,32 @@ const CustomOrderDetails = () => {
                   <Typography variant='body2' fontWeight='medium'>
                     {order.delivery?.deliveryAddress}
                   </Typography>
-                  {order.delivery?.deliveryLat && order.delivery?.deliveryLong && (
-                    <Box mt={1}>
-                      <Typography variant='caption' color='text.secondary' display='block'>
-                        Lat: {order.delivery.deliveryLat.toFixed(6)}, Lng: {order.delivery.deliveryLong.toFixed(6)}
-                      </Typography>
-                      <Button
-                        size='small'
-                        startIcon={<Launch />}
-                        onClick={() =>
-                          openMap(
-                            order.delivery!.deliveryLat!,
-                            order.delivery!.deliveryLong!,
-                            'Delivery Location'
-                          )
-                        }
-                        sx={{ mt: 0.5 }}
-                      >
-                        View on Map
-                      </Button>
-                    </Box>
-                  )}
+                  {order.delivery?.deliveryLat &&
+                    order.delivery?.deliveryLong && (
+                      <Box mt={1}>
+                        <Typography
+                          variant='caption'
+                          color='text.secondary'
+                          display='block'
+                        >
+                          Lat: {order.delivery.deliveryLat.toFixed(6)}, Lng:{' '}
+                          {order.delivery.deliveryLong.toFixed(6)}
+                        </Typography>
+                        <Button
+                          size='small'
+                          startIcon={<Launch />}
+                          onClick={() =>
+                            openMap(
+                              order.delivery!.deliveryLat!,
+                              order.delivery!.deliveryLong!
+                            )
+                          }
+                          sx={{ mt: 0.5 }}
+                        >
+                          View on Map
+                        </Button>
+                      </Box>
+                    )}
                 </Box>
               </Box>
             </Box>
