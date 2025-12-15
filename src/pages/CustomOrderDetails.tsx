@@ -15,6 +15,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  LinearProgress,
 } from '@mui/material';
 import {
   LocationOn,
@@ -148,7 +149,12 @@ const CustomOrderDetails = () => {
     data: order,
     isLoading,
     isError,
+    isFetching,
   } = useFetchCustomOrderById(orderId || '');
+
+  // Check if any mutation is pending
+  const isAnyMutationPending =
+    cancelMutation.isPending || regeneratePaymentLinkMutation.isPending;
 
   // Helper functions
   const copyToClipboard = (text: string, label: string) => {
@@ -273,6 +279,19 @@ const CustomOrderDetails = () => {
 
   return (
     <Box sx={{ p: 3, maxWidth: '1200px', mx: 'auto' }}>
+      {/* Loading indicator for background refetch */}
+      {isFetching && (
+        <LinearProgress
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+          }}
+        />
+      )}
+
       {/* Header */}
       <Box
         display='flex'
@@ -329,7 +348,7 @@ const CustomOrderDetails = () => {
                     color={action.color || 'primary'}
                     startIcon={<action.icon />}
                     onClick={action.onClick}
-                    disabled={action.disabled}
+                    disabled={action.disabled || isAnyMutationPending || isFetching}
                   >
                     {action.label}
                   </Button>
@@ -372,6 +391,7 @@ const CustomOrderDetails = () => {
                 onClick={() => setReceiptDialogOpen(true)}
                 variant='outlined'
                 size='small'
+                disabled={isAnyMutationPending || isFetching}
               >
                 View/Upload Receipt
               </Button>
@@ -383,6 +403,7 @@ const CustomOrderDetails = () => {
                   variant='outlined'
                   color='error'
                   size='small'
+                  disabled={isAnyMutationPending || isFetching}
                 >
                   Cancel Order
                 </Button>
@@ -910,6 +931,7 @@ const CustomOrderDetails = () => {
                         toast.success('Invoice link copied to clipboard!');
                       }}
                       startIcon={<ContentCopy />}
+                      disabled={isAnyMutationPending || isFetching}
                     >
                       Copy
                     </Button>
@@ -919,6 +941,7 @@ const CustomOrderDetails = () => {
                         window.open(order.payTabsInvoiceUrl, '_blank')
                       }
                       startIcon={<OpenInNew />}
+                      disabled={isAnyMutationPending || isFetching}
                     >
                       Open
                     </Button>
@@ -934,7 +957,9 @@ const CustomOrderDetails = () => {
                         startIcon={<Refresh />}
                         disabled={
                           !canRegeneratePaymentLink() ||
-                          regeneratePaymentLinkMutation.isPending
+                          regeneratePaymentLinkMutation.isPending ||
+                          isAnyMutationPending ||
+                          isFetching
                         }
                         fullWidth
                       >
