@@ -27,7 +27,6 @@ import {
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchCustomOrderById } from '../hooks/Admin/customOrdersHooks';
-import CustomOrderDetailsDialog from '../components/CustomOrderDetailsDialog';
 import DriverAssignmentDialog from '../components/DriverAssignmentDialog';
 import ReceiptUploadDialog from '../components/ReceiptUploadDialog';
 import { useState } from 'react';
@@ -125,7 +124,6 @@ const CustomOrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
 
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [driverDialogOpen, setDriverDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const [deliveryDriverDialogOpen, setDeliveryDriverDialogOpen] =
@@ -348,15 +346,6 @@ const CustomOrderDetails = () => {
 
             {/* Management Actions */}
             <Stack direction='row' spacing={2}>
-              <Button
-                startIcon={<Edit />}
-                onClick={() => setDetailsDialogOpen(true)}
-                variant='outlined'
-                size='small'
-              >
-                Edit Details
-              </Button>
-
               <Button
                 startIcon={<Receipt />}
                 onClick={() => setReceiptDialogOpen(true)}
@@ -802,13 +791,6 @@ const CustomOrderDetails = () => {
       </Grid>
 
       {/* Management Dialogs */}
-      <CustomOrderDetailsDialog
-        open={detailsDialogOpen}
-        onClose={() => setDetailsDialogOpen(false)}
-        order={order}
-        // onUpdate={refetch}
-      />
-
       <DriverAssignmentDialog
         open={driverDialogOpen}
         onClose={() => setDriverDialogOpen(false)}
