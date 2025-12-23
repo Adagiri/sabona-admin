@@ -141,7 +141,7 @@ const CreateVoucher = () => {
       discount: 0,
       maxDiscount: undefined,
       minOrderAmount: undefined,
-      expiryDate: dayjs().add(1, 'day'), //tomorrow
+      expiryDate: dayjs().add(1, 'day'),
       usageLimit: undefined,
       singleUse: true,
       isActive: true,
@@ -153,30 +153,29 @@ const CreateVoucher = () => {
   console.log('errors', errors);
   const onSubmit = useCallback(
     async (data: FormDataInterface) => {
-      console.log(typeof data)
-      // const payload = {
-      //   ...data,
-      //   code: data.code,
-      //   nameLocale: data.nameLocale,
-      //   type: data.type,
-      //   discount: data.discount,
-      //   ...(data.maxDiscount !== null &&
-      //     data.maxDiscount !== undefined && { maxDiscount: data.maxDiscount }),
-      //   ...(data.minOrderAmount !== null &&
-      //     data.minOrderAmount !== undefined && {
-      //       minOrderAmount: data.minOrderAmount,
-      //     }),
-      //   ...(data.usageLimit !== null &&
-      //     data.usageLimit !== undefined && { usageLimit: data.usageLimit }),
-      //   singleUse: data.singleUse,
-      //   isActive: data.isActive,
-      //   startDate: data.isActive
-      //     ? dayjs().toISOString()
-      //     : data.startDate?.toISOString(),
-      //   expiryDate: data.expiryDate.toISOString(),
-      // };
+      const payload = {
+        code: data.code,
+        nameLocale: data.nameLocale,
+        type: data.type,
+        discount: data.discount,
+        ...(data.maxDiscount !== null &&
+          data.maxDiscount !== undefined && { maxDiscount: data.maxDiscount }),
+        ...(data.minOrderAmount !== null &&
+          data.minOrderAmount !== undefined && {
+            minOrderAmount: data.minOrderAmount,
+          }),
+        ...(data.usageLimit !== null &&
+          data.usageLimit !== undefined && { usageLimit: data.usageLimit }),
+        singleUse: data.singleUse,
+        isActive: data.isActive,
+        startDate: data.isActive
+          ? dayjs().toISOString()
+          : data.startDate?.toISOString(),
+        expiryDate: data.expiryDate.toISOString(),
+      };
+
       try {
-        // await createCoupon();
+        await createCoupon(payload);
         navigate('/voucher');
       } catch (e: any) {
         console.log('catch error', e);
@@ -185,6 +184,7 @@ const CreateVoucher = () => {
     },
     [createCoupon, toast, navigate]
   );
+
   const showError = (message: string) => {
     toast.error(message);
   };
